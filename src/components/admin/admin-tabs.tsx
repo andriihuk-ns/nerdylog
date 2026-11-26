@@ -22,7 +22,7 @@ export function AdminTabs({ tab, year, panels }: { tab: AdminTab; year: number; 
     >
       <TabsList aria-label="Admin sections">
         {ADMIN_TABS.map((t) => (
-          <TabsTrigger key={t} value={t} className="hit-target px-4">
+          <TabsTrigger key={t} value={t} className="px-4">
             {LABEL[t]}
           </TabsTrigger>
         ))}

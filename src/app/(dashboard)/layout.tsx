@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense, type ReactNode } from "react";
+import { NerdylogLogo } from "@/components/brand/nerdylog-logo";
 import { ShellNav, ShellNavSkeleton } from "@/components/shell/shell-nav";
 
 /**
@@ -12,8 +13,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     <div className="flex min-h-full flex-1 flex-col">
       <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div className="mx-auto flex h-14 w-full max-w-[1280px] items-center gap-6 px-4 sm:px-6">
-          <Link href="/my-time" className="text-base font-semibold tracking-[-0.01em]">
-            Tempo
+          <Link
+            href="/my-time"
+            className="hit-target -mx-1 inline-flex shrink-0 items-center rounded-sm px-1 text-foreground"
+          >
+            <NerdylogLogo height={19} />
           </Link>
           <Suspense fallback={<ShellNavSkeleton />}>
             <ShellNav />

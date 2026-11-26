@@ -6,7 +6,7 @@ const MAX_FACES = 5;
 
 /** Overlapping member avatars (first five) + count. Names are in the tooltip and for screen readers. */
 export function TeamMembers({ members }: { members: DirectoryUser[] }) {
-  if (members.length === 0) return <span className="text-sm text-muted-foreground">No members in Tempo</span>;
+  if (members.length === 0) return <span className="text-sm text-muted-foreground">No members in nerdylog</span>;
   const names = members.map((m) => m.fullName).join(", ");
 
   return (

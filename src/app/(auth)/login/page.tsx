@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AlertCircle } from "lucide-react";
+import { NerdylogLogo } from "@/components/brand/nerdylog-logo";
 import { Button } from "@/components/ui/button";
 import { SlackMark } from "@/components/shell/slack-mark";
 import { loginErrorMessage, signInHref } from "@/components/shell/login-errors";
@@ -13,9 +14,11 @@ export default function LoginPage({ searchParams }: { searchParams: SearchParams
   return (
     <main className="flex flex-1 items-center justify-center px-4 py-12 sm:px-6">
       <div className="w-full max-w-sm rounded-lg border bg-card p-8">
-        <p className="text-2xl font-semibold tracking-[-0.01em]">Tempo</p>
-        <p className="mt-2 text-muted-foreground">
-          Log time and share your standup from Slack. Sign in with your workspace account.
+        <h1 className="text-foreground">
+          <NerdylogLogo height={28} />
+        </h1>
+        <p className="mt-4 text-muted-foreground">
+          Log time and share your standup from Slack with nerdylog. Sign in with your workspace account.
         </p>
         <Suspense fallback={<SignInButton href="/auth/sign-in" />}>
           <LoginActions searchParams={searchParams} />

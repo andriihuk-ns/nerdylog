@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: { default: "Tempo", template: "%s · Tempo" },
-  description: "Time tracking and async standups for the team.",
+  title: { default: "nerdylog", template: "%s · nerdylog" },
+  description: "nerdylog: time tracking and async standups for the team, from Slack.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

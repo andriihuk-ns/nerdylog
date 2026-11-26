@@ -45,7 +45,7 @@ export function channelErrorText(
   channelName: string | undefined,
 ): string {
   if (failure.reason === "private_needs_invite") {
-    return `Private channel: run /invite @Tempo in #${channelName ?? "the channel"}, then pick it again`;
+    return `Private channel: run /invite @nerdylog in #${channelName ?? "the channel"}, then pick it again`;
   }
   return failure.message;
 }

@@ -57,7 +57,7 @@ describe("findChannel / channelLabel", () => {
 describe("channelErrorText", () => {
   it("names the invite fix for private channels", () => {
     expect(channelErrorText({ reason: "private_needs_invite", message: "x" }, "team-dog")).toBe(
-      "Private channel: run /invite @Tempo in #team-dog, then pick it again",
+      "Private channel: run /invite @nerdylog in #team-dog, then pick it again",
     );
   });
 
