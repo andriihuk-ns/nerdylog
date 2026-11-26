@@ -4,10 +4,10 @@ import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-export const ADMIN_TABS = ["directory", "projects", "holidays"] as const;
+export const ADMIN_TABS = ["directory", "projects", "holidays", "settings"] as const;
 export type AdminTab = (typeof ADMIN_TABS)[number];
 
-const LABEL: Record<AdminTab, string> = { directory: "Directory", projects: "Projects", holidays: "Holidays" };
+const LABEL: Record<AdminTab, string> = { directory: "Directory", projects: "Projects", holidays: "Holidays", settings: "Settings" };
 
 export function parseAdminTab(value: unknown): AdminTab {
   return ADMIN_TABS.includes(value as AdminTab) ? (value as AdminTab) : "directory";

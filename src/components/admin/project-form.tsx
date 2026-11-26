@@ -1,28 +1,34 @@
 "use client";
 
 import { useId, useState, useTransition, type FormEvent } from "react";
-import type { ProjectView } from "@/contracts";
+import type { ProjectView, SlackChannelOption } from "@/contracts";
 import { upsertProjectAction } from "@/app/(dashboard)/admin/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { parseBoundedNumber } from "./parse-number";
+import { ChannelField } from "./channel-field";
+import { channelErrorText, findChannel } from "./channel-options";
 
 interface Props {
   project?: ProjectView; // omitted → create
+  channels: SlackChannelOption[] | null; // null → Slack not configured
+  taken: Map<string, string>; // channels linked to other projects
   onDone: (message: string) => void;
   onCancel: () => void;
 }
 
 /** Create/edit a project: name, code, monthly hour cap, billable, active (FR-WEB-06). */
-export function ProjectForm({ project, onDone, onCancel }: Props) {
+export function ProjectForm({ project, channels, taken, onDone, onCancel }: Props) {
   const id = useId();
   const [name, setName] = useState(project?.name ?? "");
   const [code, setCode] = useState(project?.code ?? "");
   const [cap, setCap] = useState(project?.monthlyHourCap?.toString() ?? "");
   const [isBillable, setBillable] = useState(project?.isBillable ?? true);
   const [isActive, setActive] = useState(project?.isActive ?? true);
+  const [channelId, setChannelId] = useState<string | null>(project?.slackChannelId ?? null);
+  const [channelError, setChannelError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -31,6 +37,8 @@ export function ProjectForm({ project, onDone, onCancel }: Props) {
     const monthlyHourCap = parseBoundedNumber(cap, 0.25, 10000, 0.25, true);
     if (monthlyHourCap === undefined) return setError("Cap must be a positive number of hours, or empty for no cap.");
     if (!name.trim()) return setError("Name is required.");
+    setError(null);
+    setChannelError(null);
     startTransition(async () => {
       const res = await upsertProjectAction({
         id: project?.id,
@@ -39,8 +47,10 @@ export function ProjectForm({ project, onDone, onCancel }: Props) {
         monthlyHourCap,
         isBillable,
         isActive,
+        slackChannelId: channelId,
       });
-      if (res.ok) onDone(project ? `Saved ${res.data.name}.` : `Created ${res.data.name}.`);
+      if (res.ok) return onDone(project ? `Saved ${res.data.name}.` : `Created ${res.data.name}.`);
+      if ("field" in res) setChannelError(channelErrorText(res, findChannel(channels, channelId)?.name));
       else setError(res.message);
     });
   }
@@ -79,6 +89,20 @@ export function ProjectForm({ project, onDone, onCancel }: Props) {
         <Switch checked={isActive} onCheckedChange={setActive} />
         Active
       </label>
+      <ChannelField
+        id={`${id}-channel`}
+        label="Slack channel"
+        noneLabel="No channel"
+        channels={channels}
+        value={channelId}
+        taken={taken}
+        error={channelError}
+        onChange={(next) => {
+          setChannelId(next);
+          setChannelError(null);
+        }}
+        className="sm:col-span-3"
+      />
       {error ? (
         <p role="alert" className="text-destructive sm:col-span-5">
           {error}

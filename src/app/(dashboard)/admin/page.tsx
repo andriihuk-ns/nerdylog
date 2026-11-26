@@ -1,15 +1,18 @@
 import type { Metadata } from "next";
-import type { DirectoryUser, HolidayView, ProjectView } from "@/contracts";
+import type { AppSettings, DirectoryUser, HolidayView, ProjectView, SlackChannelOption } from "@/contracts";
 import { requireActor } from "@/server/auth/session";
 import { listDirectory } from "@/server/services/directory-service";
 import { listProjects } from "@/server/services/project-service";
 import { listHolidays } from "@/server/services/holiday-service";
+import { getAppSettings } from "@/server/services/settings-service";
 import { todayIn } from "@/components/lib/dates";
 import { NoAccessPanel } from "@/components/shell/state-panels";
 import { AdminTabs, parseAdminTab } from "@/components/admin/admin-tabs";
 import { DirectoryPanel } from "@/components/admin/directory-panel";
 import { ProjectsPanel } from "@/components/admin/projects-panel";
 import { HolidaysPanel } from "@/components/admin/holidays-panel";
+import { SettingsPanel } from "@/components/admin/settings-panel";
+import { loadSlackChannels } from "./load-channels";
 
 export const metadata: Metadata = { title: "Admin" };
 
@@ -27,10 +30,18 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
   const params = await searchParams;
   const currentYear = Number(todayIn().slice(0, 4));
   const year = parseYear(params.year, currentYear);
-  const [users, projects, holidays]: [DirectoryUser[], ProjectView[], HolidayView[]] = await Promise.all([
+  const [users, projects, holidays, settings, channels]: [
+    DirectoryUser[],
+    ProjectView[],
+    HolidayView[],
+    AppSettings,
+    SlackChannelOption[] | null,
+  ] = await Promise.all([
     listDirectory(actor),
     listProjects(actor, { includeArchived: true }),
     listHolidays(actor, year),
+    getAppSettings(actor),
+    loadSlackChannels(),
   ]);
 
   return (
@@ -41,8 +52,9 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
         year={year}
         panels={{
           directory: <DirectoryPanel users={users} />,
-          projects: <ProjectsPanel projects={projects} />,
+          projects: <ProjectsPanel projects={projects} channels={channels} />,
           holidays: <HolidaysPanel key={year} holidays={holidays} year={year} currentYear={currentYear} />,
+          settings: <SettingsPanel settings={settings} channels={channels} />,
         }}
       />
     </div>
