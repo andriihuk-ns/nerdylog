@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 
 interface Props {
   label: string; // "Nov 23 – 29, 2026" / "November 2026"
-  unit: "week" | "month";
+  unit: "week" | "month" | "year";
   prevHref: string;
   nextHref: string;
   todayHref?: string; // omitted when already on the current period
@@ -20,9 +20,9 @@ export function PeriodSwitcher({ label, unit, prevHref, nextHref, todayHref, tod
           <ChevronLeft aria-hidden />
         </Link>
       </Button>
-      <h2 className="tabular min-w-44 text-center text-sm font-medium" aria-live="polite">
+      <p className="tabular min-w-44 text-center text-sm font-medium" aria-live="polite">
         {label}
-      </h2>
+      </p>
       <Button asChild variant="ghost" size="icon" className="hit-target">
         <Link href={nextHref} aria-label={`Next ${unit}`} aria-keyshortcuts="]">
           <ChevronRight aria-hidden />
