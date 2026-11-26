@@ -9,7 +9,7 @@ vi.mock("@/server/db/client", async () => {
   return { getDb: () => activeTx(), closeDb: async () => {} };
 });
 
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import type { SlackDirectoryMember } from "@/contracts";
 import { timeEntries, users } from "@/server/db/schema";
@@ -40,7 +40,7 @@ describe("time-entry-service RBAC", () => {
       ).rejects.toBeInstanceOf(ForbiddenError);
       await expect(listWeekEntries(actor, other.id, "2026-11-02")).rejects.toBeInstanceOf(ForbiddenError);
       await expect(setDayStatus(actor, other.id, "2026-11-02", "sick")).rejects.toBeInstanceOf(ForbiddenError);
-      const rows = await tx.select().from(timeEntries);
+      const rows = await tx.select().from(timeEntries).where(inArray(timeEntries.userId, [member.id, other.id]));
       expect(rows).toHaveLength(1);
       expect(rows[0].hours).toBe(6);
     });
@@ -58,7 +58,7 @@ describe("time-entry-service RBAC", () => {
       const view = await updateTimeEntry(actorOf(boss), id, { hours: 7.5, taskSummary: "Fix DOG-1364" });
       expect(view).toMatchObject({ userId: other.id, hours: 7.5, ticketRefs: ["DOG-1364"], source: "web_ui" });
       await deleteTimeEntry(actorOf(boss), id2);
-      expect(await tx.$count(timeEntries)).toBe(1);
+      expect(await tx.$count(timeEntries, eq(timeEntries.userId, other.id))).toBe(1);
     });
   });
 
@@ -100,8 +100,8 @@ describe("setDayStatus (FR-WEB-02)", () => {
 
 describe("syncDirectoryFromSlack", () => {
   const members = (name: string, tz: string | null): SlackDirectoryMember[] => [
-    { slackUserId: "UTESTSYNC1", fullName: name, email: "sync1@example.test", avatarUrl: null, timezone: tz },
-    { slackUserId: "UTESTSYNC2", fullName: "Sync Two", email: null, avatarUrl: null, timezone: null },
+    { slackUserId: "UTESTSYNC1", fullName: name, email: "sync1@example.test", avatarUrl: null, title: null, timezone: tz },
+    { slackUserId: "UTESTSYNC2", fullName: "Sync Two", email: null, avatarUrl: null, title: null, timezone: null },
   ];
 
   it("creates, then updates profile fields without touching role/norm/allowance/active/auth", async () => {
@@ -137,7 +137,8 @@ describe("syncDirectoryFromSlack", () => {
     await withRollback(async (tx) => {
       const u = await seedUser(tx, { role });
       await expect(syncDirectoryFromSlack(actorOf(u), members("X", null))).rejects.toBeInstanceOf(ForbiddenError);
-      expect(await tx.$count(users)).toBe(1);
+      // Nothing from the payload was written (the dev DB holds real users, so no global count).
+      expect(await tx.$count(users, inArray(users.slackUserId, ["UTESTSYNC1", "UTESTSYNC2"]))).toBe(0);
     });
   });
 });

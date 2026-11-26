@@ -88,9 +88,14 @@ describe("RLS policies (Data-API grants simulated in the tx): reads", () => {
         checkins: await checkinOwners(sp),
         users: await sp.select({ id: users.id }).from(users),
       }));
-      expect(new Set(seen.entries.map((r) => r.userId))).toEqual(new Set([w.member.id, w.other.id, w.inactive.id]));
-      expect(seen.checkins).toHaveLength(2);
-      expect(seen.users).toHaveLength(5);
+      // The dev DB holds real rows too: scope every assertion to the ids this fixture created.
+      const ours = new Set([w.member, w.other, w.manager, w.admin, w.inactive].map((u) => u.id));
+      const mine = <T>(rows: T[], id: (r: T) => string) => rows.filter((r) => ours.has(id(r)));
+      expect(new Set(mine(seen.entries, (r) => r.userId).map((r) => r.userId))).toEqual(
+        new Set([w.member.id, w.other.id, w.inactive.id]),
+      );
+      expect(mine(seen.checkins, (r) => r.userId)).toHaveLength(2);
+      expect(new Set(mine(seen.users, (r) => r.id).map((r) => r.id))).toEqual(ours);
     });
   });
 });

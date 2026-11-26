@@ -57,8 +57,12 @@ const weekTotals = (row: UserMonthRollup) => row.weeks.map(({ hours, days, vacSi
 describe("getTeamMonthRollup (real SQL)", () => {
   it("manager sees all active users with month-week and month totals", async () => {
     await withRollback(async (tx) => {
-      const { alpha, bravo } = await seedNovember(tx);
-      const rows = await getTeamMonthRollup({ userId: alpha.id, role: "manager" }, "2026-11");
+      const { alpha, bravo, gone } = await seedNovember(tx);
+      const fixtureIds = new Set([alpha.id, bravo.id, gone.id]);
+      // The dev DB holds real users too: keep only the rows this fixture created (order preserved).
+      const rows = (await getTeamMonthRollup({ userId: alpha.id, role: "manager" }, "2026-11")).filter((r) =>
+        fixtureIds.has(r.userId),
+      );
       expect(rows.map((r) => r.userId)).toEqual([alpha.id, bravo.id]); // archived user excluded, sorted by name
 
       const [a, b] = rows;
