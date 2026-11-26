@@ -43,6 +43,8 @@ export interface CheckinView extends DailyCheckinInput {
   hasBlocker: boolean;
 }
 /** manager/admin: all active users' check-ins for the date; member: only own. */
+/** System call after the channel broadcast (no actor; Slack layer only). */
+export type SetCheckinChannelTs = (userId: string, checkinDate: IsoDate, ts: string) => Promise<void>;
 export type ListCheckinsForDate = (actor: Actor, date: IsoDate) => Promise<CheckinView[]>;
 
 // ── src/server/services/directory-service.ts (admin) ─────────────────────────
@@ -104,6 +106,7 @@ export type RemoveHoliday = (actor: Actor, id: string) => Promise<void>; // admi
 export interface PingTarget {
   userId: string;
   slackUserId: string;
+  fullName: string;
   timezone: string;
   localDate: IsoDate; // today in the user's timezone
   logDate: IsoDate; // previousBusinessDay(localDate)
