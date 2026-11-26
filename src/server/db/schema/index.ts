@@ -6,4 +6,5 @@ export * from "./daily-checkins";
 export * from "./company-holidays";
 export * from "./slack-submissions";
 export * from "./daily-pings";
+export * from "./app-settings";
 export * from "./relations";

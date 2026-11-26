@@ -22,6 +22,20 @@
       "when": 1795722322995,
       "tag": "0002_pto_allowance",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795725245980,
+      "tag": "0003_project_channels",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795725246766,
+      "tag": "0004_app_settings_rls",
+      "breakpoints": true
     }
   ]
 }
