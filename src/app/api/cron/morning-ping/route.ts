@@ -4,8 +4,8 @@ import { runMorningPings } from "@/server/slack/handlers/morning-ping";
 import { hasBearer } from "@/server/slack/route-helpers";
 
 /**
- * GET /api/cron/morning-ping — Vercel Cron every 15 minutes on weekdays (amendment A4).
- * Vercel sends `Authorization: Bearer ${CRON_SECRET}`.
+ * GET /api/cron/morning-ping — called by Supabase pg_cron (pg_net) every 15 minutes (amendment A10).
+ * The caller sends `Authorization: Bearer ${CRON_SECRET}` (see scripts/setup-pg-cron.sql).
  */
 export async function GET(request: Request) {
   if (!hasBearer(request.headers.get("authorization"), serverEnv().CRON_SECRET)) {
