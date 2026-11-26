@@ -50,6 +50,20 @@
       "when": 1795730194365,
       "tag": "0006_user_title",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795731644585,
+      "tag": "0007_teams",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1795731649443,
+      "tag": "0008_teams_rls",
+      "breakpoints": true
     }
   ]
 }

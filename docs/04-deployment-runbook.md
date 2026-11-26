@@ -60,7 +60,8 @@ URL-encode special characters in the database password inside connection strings
 5. Confirm the request URLs verify: Event Subscriptions (`/api/slack/events`), Interactivity (`/api/slack/interactions`), slash commands `/log` and `/pto` (`/api/slack/commands`).
 6. Channels are picked in `/admin` (amendment A11), not in env vars: the general standup channel (full standup card) and one channel per project (only that project's lines). No channel set → nothing is posted. Public channels: the bot joins on pick. Private channels: `/invite @Tempo` in the channel first, then pick it.
    Bot scopes required by A11: `channels:read`, `groups:read`, `channels:join`. An existing install must be **reinstalled** (OAuth & Permissions → Reinstall to Workspace) after the manifest gains these scopes; the bot token may change, so re-copy `SLACK_BOT_TOKEN` if it does.
-7. In `/admin`, click **Sync from Slack** to import members (new users start as active `member`s).
+   Bot scope required by A13: `usergroups:read` (Sync from Slack reads user groups via `usergroups.list` incl. disabled and `usergroups.users.list`). Adding it also needs a **reinstall** (OAuth & Permissions → Reinstall to Workspace); re-copy `SLACK_BOT_TOKEN` if it changes. Ship migrations `0007_teams` and `0008_teams_rls` (`npm run db:migrate`, section 3) before deploying the code that reads `teams`.
+7. In `/admin`, click **Sync from Slack** to import members (new users start as active `member`s) and teams (one per Slack user group, A13). Then pick one channel per team in `/admin` → Teams. Morning standup cards go to every channel of a member's active teams; members with no team channel fall back to the general standup channel.
 
 ## 5. Vercel
 

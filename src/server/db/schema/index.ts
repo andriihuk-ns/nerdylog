@@ -7,4 +7,5 @@ export * from "./company-holidays";
 export * from "./slack-submissions";
 export * from "./daily-pings";
 export * from "./app-settings";
+export * from "./teams";
 export * from "./relations";
