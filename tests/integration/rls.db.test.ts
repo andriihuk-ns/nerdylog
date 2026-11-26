@@ -236,14 +236,14 @@ describe("RLS policies: server-only tables and inactive / anonymous callers", ()
         checkins: await checkinOwners(sp),
         users: await sp.select().from(users),
         settings: await sp.select().from(appSettings),
-        // Finding: projects/company_holidays use USING (true), so inactive users still read them.
+        // Fixed in 0005 (QA finding 4): inactive users no longer read projects/company_holidays.
         projects: await sp.select().from(projects),
       }));
       expect(seen.entries).toEqual([]);
       expect(seen.checkins).toEqual([]);
       expect(seen.users).toEqual([]);
       expect(seen.settings).toEqual([]);
-      expect(seen.projects).toHaveLength(1);
+      expect(seen.projects).toHaveLength(0);
       await expectRlsDenied(tx, sub(w.inactive), (sp) => sp.insert(projects).values({ name: "Nope" }));
     });
   });
