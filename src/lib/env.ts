@@ -13,7 +13,7 @@ const serverEnvSchema = z.object({
   SLACK_CLIENT_SECRET: z.string().min(1),
   // Only members of this Slack workspace may sign in (OIDC claim https://slack.com/team_id).
   SLACK_TEAM_ID: z.string().regex(/^T[A-Z0-9]{6,}$/, "Slack workspace id starts with T"),
-  APP_BASE_URL: z.url(),
+  APP_BASE_URL: z.url().transform((u) => u.replace(/\/+$/, "")), // tolerate a trailing slash
   CRON_SECRET: z.string().min(16),
 });
 
