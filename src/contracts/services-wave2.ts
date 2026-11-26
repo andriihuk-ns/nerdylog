@@ -115,7 +115,7 @@ export interface PingTarget {
   logDate: IsoDate; // previousBusinessDay(localDate)
 }
 /**
- * Amendment A4. Returns active users whose local time is in [09:30, 09:45) on a weekday,
+ * Amendments A4/A10. Returns active users whose local time is in [09:30, 11:00) (amendment A10) on a weekday,
  * not a company holiday, not on PTO that day, and inserts their daily_pings row
  * (ON CONFLICT DO NOTHING) — only users newly claimed are returned.
  */
