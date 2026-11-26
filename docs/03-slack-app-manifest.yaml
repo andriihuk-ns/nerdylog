@@ -1,0 +1,68 @@
+# Tempo — Slack app manifest (copy-paste into api.slack.com/apps → Create New App → From a manifest).
+#
+# Placeholders to replace before pasting:
+#   APP_BASE_URL  → public origin of the deployed app, e.g. tempo.example.com (no trailing slash).
+#                   For local dev, use a tunnel (ngrok / cloudflared) origin; Slack cannot reach localhost.
+#   <project>     → your Supabase project ref (Supabase dashboard → Project Settings → General).
+#
+# Route ownership: all inbound Slack HTTP traffic lands under /api/slack/* and is verified with
+# X-Slack-Signature (src/server/slack/verify-signature.ts). Those routes are excluded from src/proxy.ts.
+_metadata:
+  major_version: 2
+  minor_version: 1
+
+display_information:
+  name: Tempo
+  description: Daily standups and time tracking, straight from Slack.
+  background_color: "#1f2937"
+
+features:
+  app_home:
+    home_tab_enabled: true # App Home "Home" tab: today's status + quick actions (app_home_opened)
+    messages_tab_enabled: true # DM thread with Tempo: morning ping + confirmations
+    messages_tab_read_only_enabled: false # users may reply / trigger shortcuts in the DM
+  bot_user:
+    display_name: Tempo
+    always_online: true
+  slash_commands:
+    - command: /log
+      url: https://APP_BASE_URL/api/slack/commands
+      description: Log hours for a project
+      usage_hint: "[hours] [project] [note]"
+      should_escape: false
+    - command: /pto
+      url: https://APP_BASE_URL/api/slack/commands
+      description: Record vacation, sick leave or a holiday
+      usage_hint: "[vacation|sick|holiday] [date or range]"
+      should_escape: false
+
+oauth_config:
+  redirect_urls:
+    # Sign in with Slack (OIDC) goes through Supabase Auth, which owns the OAuth callback.
+    - https://<project>.supabase.co/auth/v1/callback # hosted Supabase
+    - http://127.0.0.1:54321/auth/v1/callback # local `supabase start`
+  scopes:
+    user:
+      - openid # required for Sign in with Slack (OIDC id_token)
+      - email # email claim → users.email
+      - profile # name, picture, https://slack.com/user_id claims → users row
+    bot:
+      - chat:write # post the morning ping, confirmations and the standup broadcast as Tempo.
+      #   Standup channel: invite the bot (`/invite @Tempo` in SLACK_STANDUP_CHANNEL_ID) instead of
+      #   adding chat:write.public, so Tempo can only post where it was explicitly invited.
+      - im:write # open a DM channel with a user (conversations.open) for the morning ping
+      - users:read # "Sync from Slack": list members, read tz + avatar
+      - users:read.email # "Sync from Slack": match members to Tempo users by email
+      - commands # register /log and /pto
+
+settings:
+  event_subscriptions:
+    request_url: https://APP_BASE_URL/api/slack/events
+    bot_events:
+      - app_home_opened # render / refresh the Home tab
+  interactivity:
+    is_enabled: true
+    request_url: https://APP_BASE_URL/api/slack/interactions # modal submissions, button clicks
+  org_deploy_enabled: false
+  socket_mode_enabled: false # HTTP only; Vercel route handlers (amendment A3)
+  token_rotation_enabled: false
