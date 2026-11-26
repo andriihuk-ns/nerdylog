@@ -1,12 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/server/auth/supabase-server";
 import { LOGIN_PATH, safeNextPath } from "@/server/auth/route-rules";
-import { slackIdentityFromUser } from "@/server/auth/slack-claims";
+import { isAllowedSlackTeam, slackClaimsFromUser } from "@/server/auth/slack-claims";
+import { serverEnv } from "@/lib/env";
 import { InactiveUserError, upsertUserFromSlack } from "@/server/services/user-service";
 
 /**
  * GET /auth/callback?code=... — Supabase redirects here after Slack consent.
- * Exchanges the code for a session (sets auth cookies), binds the Slack identity to a Tempo user,
+ * Exchanges the code for a session (sets auth cookies), rejects tokens from any Slack workspace other
+ * than SLACK_TEAM_ID (before any user row is created), binds the Slack identity to a Tempo user,
  * then redirects to `next` (default /my-time). Failures go to /login?error=<reason>.
  */
 export async function GET(request: NextRequest) {
@@ -20,11 +22,16 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
   if (error || !data.user) return fail("exchange_failed");
 
-  const identity = slackIdentityFromUser(data.user);
-  if (!identity) {
+  const claims = slackClaimsFromUser(data.user);
+  if (!claims) {
     await supabase.auth.signOut();
     return fail("missing_slack_identity");
   }
+  if (!isAllowedSlackTeam(claims.teamId, serverEnv().SLACK_TEAM_ID)) {
+    await supabase.auth.signOut();
+    return fail("wrong_workspace");
+  }
+  const { identity } = claims;
 
   try {
     await upsertUserFromSlack(identity);

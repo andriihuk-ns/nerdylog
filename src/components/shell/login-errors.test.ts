@@ -10,6 +10,7 @@ describe("login helpers", () => {
       "user_link_failed",
       "oauth_start",
       "inactive_user",
+      "wrong_workspace",
     ]) {
       const msg = loginErrorMessage(code);
       expect(msg).toBeTruthy();

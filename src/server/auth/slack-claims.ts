@@ -9,6 +9,14 @@ export interface SupabaseUserLike {
 }
 
 const SLACK_USER_ID_CLAIM = "https://slack.com/user_id";
+const SLACK_TEAM_ID_CLAIM = "https://slack.com/team_id";
+
+/** Result of mapping a slack_oidc user: the contract identity plus the Slack workspace (team) id. */
+export interface SlackClaims {
+  identity: SlackIdentity;
+  /** `https://slack.com/team_id` claim; null when absent. Callers must check it against SLACK_TEAM_ID. */
+  teamId: string | null;
+}
 
 function str(value: unknown): string | null {
   return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
@@ -37,15 +45,20 @@ function validUrl(value: string | null): string | null {
   }
 }
 
+function claimSources(user: SupabaseUserLike): Record<string, unknown>[] {
+  const identity = user.identities?.find((i) => i.provider === "slack_oidc")?.identity_data ?? {};
+  return [user.user_metadata ?? {}, identity];
+}
+
 /**
  * Maps a Supabase user created by the `slack_oidc` provider to a SlackIdentity.
  * Supabase stores non-standard OIDC claims under `user_metadata.custom_claims`; we also check the
  * top level and the slack_oidc identity_data. Slack OIDC has no timezone claim → timezone: null.
  * Returns null when the Slack user id is missing or the result fails the contract schema.
+ * Does NOT check the workspace; use `slackClaimsFromUser` + `isAllowedSlackTeam` for sign-in.
  */
 export function slackIdentityFromUser(user: SupabaseUserLike): SlackIdentity | null {
-  const identity = user.identities?.find((i) => i.provider === "slack_oidc")?.identity_data ?? {};
-  const sources = [user.user_metadata ?? {}, identity];
+  const sources = claimSources(user);
 
   const slackUserId = claim(sources, SLACK_USER_ID_CLAIM);
   if (!slackUserId) return null;
@@ -59,4 +72,16 @@ export function slackIdentityFromUser(user: SupabaseUserLike): SlackIdentity | n
     timezone: null,
   });
   return parsed.success ? parsed.data : null;
+}
+
+/** Identity plus the Slack team id claim (same lookup order as the user id). Null when no valid identity. */
+export function slackClaimsFromUser(user: SupabaseUserLike): SlackClaims | null {
+  const identity = slackIdentityFromUser(user);
+  if (!identity) return null;
+  return { identity, teamId: claim(claimSources(user), SLACK_TEAM_ID_CLAIM) };
+}
+
+/** True only when the token's team id is present and equals the configured workspace id. */
+export function isAllowedSlackTeam(teamId: string | null | undefined, expectedTeamId: string): boolean {
+  return typeof teamId === "string" && teamId !== "" && expectedTeamId !== "" && teamId === expectedTeamId;
 }

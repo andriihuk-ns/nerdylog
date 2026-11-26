@@ -6,6 +6,7 @@ const MESSAGES: Record<string, string> = {
   missing_slack_identity: "Slack didn't share your user ID with Tempo. Ask an admin to check the Slack app's scopes.",
   user_link_failed: "Signed in with Slack, but we couldn't link your Tempo account. Try again or contact an admin.",
   inactive_user: "Your Tempo account is archived. Ask an admin to reactivate it.",
+  wrong_workspace: "This Slack workspace isn't connected to Tempo. Sign in with your team's workspace.",
 };
 
 export function loginErrorMessage(code: string | string[] | undefined): string | null {
