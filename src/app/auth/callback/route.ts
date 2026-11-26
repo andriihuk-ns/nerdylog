@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/server/auth/supabase-server";
 import { LOGIN_PATH, safeNextPath } from "@/server/auth/route-rules";
 import { slackIdentityFromUser } from "@/server/auth/slack-claims";
-import { upsertUserFromSlack } from "@/server/services/user-service";
+import { InactiveUserError, upsertUserFromSlack } from "@/server/services/user-service";
 
 /**
  * GET /auth/callback?code=... — Supabase redirects here after Slack consent.
@@ -29,8 +29,9 @@ export async function GET(request: NextRequest) {
   try {
     await upsertUserFromSlack(identity);
   } catch (err) {
-    console.error("auth/callback: upsertUserFromSlack failed", err instanceof Error ? err.message : err);
     await supabase.auth.signOut();
+    if (err instanceof InactiveUserError) return fail("inactive_user");
+    console.error("auth/callback: upsertUserFromSlack failed", err instanceof Error ? err.message : err);
     return fail("user_link_failed");
   }
 

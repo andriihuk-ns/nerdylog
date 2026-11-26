@@ -1,0 +1,83 @@
+import type { Actor, IsoDate, SlackSubmissionKind } from "@/contracts";
+import { previousBusinessDay } from "@/server/services/calendar";
+import { loadingModal, noticeModal, notLinkedMessage } from "../blocks/common";
+import { buildPtoModal } from "../blocks/pto-modal";
+import { buildTimeModal } from "../blocks/time-modal";
+import { localIsoDate, yearOf } from "../dates";
+import type { ModalMetadata } from "../metadata";
+import type { SlackDeps, TempoPorts } from "../types";
+
+export interface OpenModalRequest {
+  kind: SlackSubmissionKind;
+  slackUserId: string;
+  triggerId: string;
+  /** Pre-computed default date (from the morning DM button); otherwise derived. */
+  logDate?: IsoDate | null;
+}
+
+const TITLES: Record<SlackSubmissionKind, string> = { standup: "Daily standup", log: "Log time", pto: "Quick PTO" };
+
+/** Company holidays for the given years as a Set of ISO dates. */
+export async function holidaySet(tempo: TempoPorts, actor: Actor, years: number[]): Promise<Set<IsoDate>> {
+  const lists = await Promise.all([...new Set(years)].map((y) => tempo.listHolidays(actor, y)));
+  return new Set(lists.flat().map((h) => h.holidayDate));
+}
+
+/**
+ * Step 1 (inside the 3 s window): open a "Loading…" modal with the trigger id before any
+ * DB work. Step 2 (deferred): load the user and projects, then replace it via views.update.
+ * Returns false when Slack refused views.open (expired trigger, API error).
+ */
+export async function openModalFast(deps: SlackDeps, req: OpenModalRequest): Promise<boolean> {
+  let viewId: string;
+  try {
+    viewId = await deps.slack.openView(req.triggerId, loadingModal(TITLES[req.kind]));
+  } catch (error) {
+    console.error("slack: views.open failed", error instanceof Error ? error.message : error);
+    return false;
+  }
+  deps.defer(() => fillModal(deps, req, viewId));
+  return true;
+}
+
+async function fillModal(deps: SlackDeps, req: OpenModalRequest, viewId: string): Promise<void> {
+  try {
+    const profile = await deps.tempo.resolveUser(req.slackUserId);
+    if (!profile) {
+      await deps.slack.updateView(viewId, noticeModal(TITLES[req.kind], notLinkedMessage(deps.appBaseUrl)));
+      return;
+    }
+    const today = localIsoDate(deps.now(), profile.timezone);
+    let logDate = req.logDate ?? null;
+    if (!logDate) {
+      logDate =
+        req.kind === "pto"
+          ? today
+          : previousBusinessDay(today, await holidaySet(deps.tempo, profile, [yearOf(today), yearOf(today) - 1]));
+    }
+    const meta: ModalMetadata = { kind: req.kind, logDate, userId: profile.userId, today, rows: 1 };
+    if (req.kind === "pto") {
+      await deps.slack.updateView(viewId, buildPtoModal(meta));
+      return;
+    }
+    const projects = await deps.tempo.listProjects(profile);
+    await deps.slack.updateView(viewId, buildTimeModal({ meta, projects: projects.filter((p) => p.isActive) }));
+  } catch (error) {
+    console.error("slack: modal load failed", error instanceof Error ? error.message : error);
+    await deps.slack
+      .updateView(viewId, noticeModal(TITLES[req.kind], "Something went wrong loading Tempo. Please try again."))
+      .catch(() => undefined);
+  }
+}
+
+/** "+ Add project" / "Remove last": rebuild the time modal with a new row count, keeping block ids. */
+export async function resizeTimeModal(
+  deps: SlackDeps,
+  args: { slackUserId: string; viewId: string; hash?: string; meta: ModalMetadata; rows: number },
+): Promise<void> {
+  const profile = await deps.tempo.resolveUser(args.slackUserId);
+  if (!profile || profile.userId !== args.meta.userId) return;
+  const projects = await deps.tempo.listProjects(profile);
+  const meta = { ...args.meta, rows: args.rows };
+  await deps.slack.updateView(args.viewId, buildTimeModal({ meta, projects: projects.filter((p) => p.isActive) }), args.hash);
+}
