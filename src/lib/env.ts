@@ -11,7 +11,6 @@ const serverEnvSchema = z.object({
   SLACK_BOT_TOKEN: z.string().min(1),
   SLACK_CLIENT_ID: z.string().min(1),
   SLACK_CLIENT_SECRET: z.string().min(1),
-  SLACK_STANDUP_CHANNEL_ID: z.string().optional(),
   APP_BASE_URL: z.url(),
   CRON_SECRET: z.string().min(16),
 });
