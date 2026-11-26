@@ -7,7 +7,7 @@ import { styles } from "./styles";
 /** FR-EXP-02 report: header, date range, overall totals, then one section per employee. */
 export function ReportDocument({ model }: { model: ReportModel }) {
   return (
-    <Document title={`Tempo ${model.title} ${model.from} – ${model.to}`} author="Tempo" creator="Tempo">
+    <Document title={`nerdylog ${model.title} ${model.from} – ${model.to}`} author="nerdylog" creator="nerdylog">
       <Page size="A4" style={styles.page} wrap>
         <View style={styles.header}>
           <Text style={styles.brand}>TEMPO</Text>
@@ -30,7 +30,7 @@ export function ReportDocument({ model }: { model: ReportModel }) {
 
         <View style={styles.footer} fixed>
           <Text>
-            Tempo · {model.from} – {model.to}
+            nerdylog · {model.from} – {model.to}
           </Text>
           <Text render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} />
         </View>

@@ -96,7 +96,7 @@ export function buildUnlinkedHome(message: string, appBaseUrl: string): HomeView
   return {
     type: "home",
     blocks: [
-      header("Tempo"),
+      header("nerdylog"),
       mrkdwnSection(message),
       {
         type: "actions",

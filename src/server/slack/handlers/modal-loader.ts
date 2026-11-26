@@ -65,7 +65,7 @@ async function fillModal(deps: SlackDeps, req: OpenModalRequest, viewId: string)
   } catch (error) {
     console.error("slack: modal load failed", error instanceof Error ? error.message : error);
     await deps.slack
-      .updateView(viewId, noticeModal(TITLES[req.kind], "Something went wrong loading Tempo. Please try again."))
+      .updateView(viewId, noticeModal(TITLES[req.kind], "Something went wrong loading nerdylog. Please try again."))
       .catch(() => undefined);
   }
 }

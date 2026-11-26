@@ -20,6 +20,6 @@ export async function handleSlashCommand(form: URLSearchParams, deps: SlackDeps)
   if (!triggerId || !slackUserId) return ephemeral("Slack did not send a trigger. Please try again.");
 
   const opened = await openModalFast(deps, { kind, slackUserId, triggerId });
-  if (!opened) return ephemeral("Tempo could not open the form. Please try again.");
+  if (!opened) return ephemeral("nerdylog could not open the form. Please try again.");
   return new Response(null, { status: 200 });
 }

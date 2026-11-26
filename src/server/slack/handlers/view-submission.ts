@@ -18,7 +18,7 @@ function errorsResponse(errors: FieldErrors): Response {
 }
 
 function noticeResponse(message: string): Response {
-  return Response.json({ response_action: "update", view: noticeModal("Tempo", message) });
+  return Response.json({ response_action: "update", view: noticeModal("nerdylog", message) });
 }
 
 /**

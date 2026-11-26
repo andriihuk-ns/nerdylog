@@ -81,6 +81,6 @@ export async function joinSlackChannel(
 }
 
 function privateNeedsInvite(): JoinSlackChannelResult {
-  return { ok: false, reason: "private_needs_invite", message: "Private channel: invite @Tempo to it first" };
+  return { ok: false, reason: "private_needs_invite", message: "Private channel: invite @nerdylog to it first" };
 }
 

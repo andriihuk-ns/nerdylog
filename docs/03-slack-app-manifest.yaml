@@ -1,4 +1,4 @@
-# Tempo — Slack app manifest (copy-paste into api.slack.com/apps → Create New App → From a manifest).
+# nerdylog — Slack app manifest (copy-paste into api.slack.com/apps → Create New App → From a manifest).
 #
 # Placeholders to replace before pasting:
 #   APP_BASE_URL  → public origin of the deployed app, e.g. tempo.example.com (no trailing slash).
@@ -12,17 +12,17 @@ _metadata:
   minor_version: 1
 
 display_information:
-  name: Tempo
+  name: nerdylog
   description: Daily standups and time tracking, straight from Slack.
   background_color: "#1f2937"
 
 features:
   app_home:
     home_tab_enabled: true # App Home "Home" tab: today's status + quick actions (app_home_opened)
-    messages_tab_enabled: true # DM thread with Tempo: morning ping + confirmations
+    messages_tab_enabled: true # DM thread with nerdylog: morning ping + confirmations
     messages_tab_read_only_enabled: false # users may reply / trigger shortcuts in the DM
   bot_user:
-    display_name: Tempo
+    display_name: nerdylog
     always_online: true
   slash_commands:
     - command: /log
@@ -45,16 +45,16 @@ oauth_config:
       - email # email claim → users.email
       - profile # name, picture, https://slack.com/user_id claims → users row
     bot:
-      - chat:write # post the morning ping, confirmations, project lines and the standup card as Tempo.
-      #   Channels (general standup + one per project) are chosen in /admin (amendment A11). Tempo
-      #   joins public ones itself; private ones need `/invite @Tempo`. No chat:write.public, so
-      #   Tempo only posts in channels it is a member of.
+      - chat:write # post the morning ping, confirmations, project lines and the standup card as nerdylog.
+      #   Channels (general standup + one per project) are chosen in /admin (amendment A11). nerdylog
+      #   joins public ones itself; private ones need `/invite @nerdylog`. No chat:write.public, so
+      #   nerdylog only posts in channels it is a member of.
       - channels:read # /admin channel picker: list public channels (conversations.list/info)
-      - groups:read # /admin channel picker: list private channels Tempo was invited to
+      - groups:read # /admin channel picker: list private channels nerdylog was invited to
       - channels:join # join a public channel when an admin picks it in /admin (conversations.join)
       - im:write # open a DM channel with a user (conversations.open) for the morning ping
       - users:read # "Sync from Slack": list members, read tz + avatar
-      - users:read.email # "Sync from Slack": match members to Tempo users by email
+      - users:read.email # "Sync from Slack": match members to nerdylog users by email
       - usergroups:read # "Sync from Slack" (A13): read user groups, members and default channels → teams
       - commands # register /log and /pto
 

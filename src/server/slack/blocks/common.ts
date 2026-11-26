@@ -58,7 +58,7 @@ export function noticeModal(heading: string, message: string): ModalView {
 }
 
 export function notLinkedMessage(appBaseUrl: string): string {
-  return `You are not set up in Tempo yet. Sign in once at <${appBaseUrl}|Tempo> or ask an admin to sync the team from Slack.`;
+  return `You are not set up in nerdylog yet. Sign in once at <${appBaseUrl}|nerdylog> or ask an admin to sync the team from Slack.`;
 }
 
 export { title as modalTitle };

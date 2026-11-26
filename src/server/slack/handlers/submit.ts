@@ -107,7 +107,7 @@ export async function processSubmission(
   } catch (error) {
     // The modal already closed, so tell the user in a DM instead of failing silently.
     console.error("slack: submission failed", input.kind, error instanceof Error ? error.message : error);
-    await notify(deps, profile, "Tempo could not save your last submission. Please try again or use the web panel.");
+    await notify(deps, profile, "nerdylog could not save your last submission. Please try again or use the web panel.");
     return;
   }
   await routeSubmission(deps, profile, input);
