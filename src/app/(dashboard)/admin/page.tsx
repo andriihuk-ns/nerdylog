@@ -32,6 +32,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
   if (actor.role !== "admin") return <NoAccessPanel area="Admin" />;
 
   const [params, profile] = await Promise.all([searchParams, getCurrentProfile()]);
+  const tab = parseAdminTab(params.tab);
   const currentYear = Number(todayIn(profile.timezone).slice(0, 4));
   const year = parseYear(params.year, currentYear);
   const [users, teams, projects, holidays, settings, channels]: [
@@ -47,14 +48,15 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
     listProjects(actor, { includeArchived: true }),
     listHolidays(actor, year),
     getAppSettings(actor),
-    loadSlackChannels(),
+    // Only the Teams/Projects/Settings pickers need Slack channels (Tier 2 rate limits).
+    tab === "directory" || tab === "holidays" ? Promise.resolve(null) : loadSlackChannels(),
   ]);
 
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-semibold tracking-[-0.01em]">Admin</h1>
       <AdminTabs
-        tab={parseAdminTab(params.tab)}
+        tab={tab}
         year={year}
         panels={{
           directory: <DirectoryPanel users={users} teams={teams} />,

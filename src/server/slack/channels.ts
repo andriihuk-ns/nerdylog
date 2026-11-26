@@ -21,8 +21,40 @@ export interface ConversationsClient {
   };
 }
 
-const PAGE_SIZE = 200;
-const MAX_PAGES = 50; // 10 000 channels; a guard against a cursor loop
+const PAGE_SIZE = 1000; // Slack's maximum for conversations.list: fewest calls per workspace
+const MAX_PAGES = 20; // 20 000 channels; a guard against a cursor loop
+const CACHE_TTL_MS = 10 * 60 * 1000;
+
+/**
+ * conversations.list is a Tier 2 method (~20 calls/min per workspace), and /admin renders often.
+ * Cache the list per server instance for 10 minutes and share one in-flight request; when Slack
+ * rate-limits a refresh, keep serving the last good list.
+ */
+let cache: { at: number; channels: SlackChannelOption[] } | undefined;
+let inflight: Promise<SlackChannelOption[]> | undefined;
+
+export async function listSlackChannelsCached(opts: { refresh?: boolean } = {}): Promise<SlackChannelOption[]> {
+  if (!opts.refresh && cache && Date.now() - cache.at < CACHE_TTL_MS) return cache.channels;
+  inflight ??= listSlackChannels()
+    .then((channels) => {
+      cache = { at: Date.now(), channels };
+      return channels;
+    })
+    .catch((err: unknown) => {
+      if (cache) return cache.channels; // stale beats nothing (e.g. rate limited)
+      throw err;
+    })
+    .finally(() => {
+      inflight = undefined;
+    });
+  return inflight;
+}
+
+/** Test hook: forget the cached list. */
+export function resetSlackChannelsCache(): void {
+  cache = undefined;
+  inflight = undefined;
+}
 
 /**
  * A11 admin channel picker: non-archived public channels plus private channels the bot can
