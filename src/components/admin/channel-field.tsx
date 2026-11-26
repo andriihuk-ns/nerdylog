@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useTranslations } from "next-intl";
 import type { SlackChannelOption } from "@/contracts";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
@@ -24,7 +25,8 @@ interface Props {
 export function ChannelField({ id, label, noneLabel, channels, value, onChange, taken, error, helper, disabled, className }: Props) {
   const noteId = `${id}-note`;
   const errorId = `${id}-error`;
-  const note = channels === null ? "Connect the Slack app to choose channels" : helper;
+  const t = useTranslations("admin.channel");
+  const note = channels === null ? t("connect") : helper;
 
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>

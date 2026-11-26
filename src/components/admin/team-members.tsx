@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import type { DirectoryUser } from "@/contracts";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { initials } from "@/components/lib/format";
@@ -6,7 +7,8 @@ const MAX_FACES = 5;
 
 /** Overlapping member avatars (first five) + count. Names are in the tooltip and for screen readers. */
 export function TeamMembers({ members }: { members: DirectoryUser[] }) {
-  if (members.length === 0) return <span className="text-sm text-muted-foreground">No members in nerdylog</span>;
+  const t = useTranslations("admin.teams");
+  if (members.length === 0) return <span className="text-sm text-muted-foreground">{t("noMembers")}</span>;
   const names = members.map((m) => m.fullName).join(", ");
 
   return (
@@ -21,7 +23,7 @@ export function TeamMembers({ members }: { members: DirectoryUser[] }) {
       </span>
       <span className="text-sm text-muted-foreground">
         <span className="tabular">{members.length}</span>
-        <span className="sr-only">{` members: ${names}`}</span>
+        <span className="sr-only">{t("membersSr", { names })}</span>
       </span>
     </span>
   );

@@ -1,11 +1,13 @@
 "use client";
 
 import { useId, useOptimistic, useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import type { DirectoryUser, SlackChannelOption, TeamView } from "@/contracts";
 import { cn } from "@/lib/utils";
 import { updateTeamChannelAction } from "@/app/(dashboard)/admin/actions";
 import { ChannelPicker } from "./channel-picker";
-import { channelErrorText, channelLabel, findChannel } from "./channel-options";
+import { channelLabel, findChannel } from "./channel-options";
+import { useChannelErrorText } from "./use-channel-error-text";
 import { TeamMembers } from "./team-members";
 
 interface Props {
@@ -26,6 +28,8 @@ export function TeamRow({ team, members, channels, taken, onSaved }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const archived = !team.isActive;
+  const t = useTranslations("admin.teams");
+  const channelErrorText = useChannelErrorText();
 
   function change(next: string | null) {
     if (next === value) return;
@@ -36,7 +40,7 @@ export function TeamRow({ team, members, channels, taken, onSaved }: Props) {
       if (res.ok) {
         setSaved(res.data.slackChannelId);
         const label = res.data.slackChannelId ? channelLabel(channels, res.data.slackChannelId) : null;
-        onSaved(label ? `@${team.handle} standups now post to ${label}.` : `@${team.handle} channel removed.`);
+        onSaved(label ? t("savedTo", { handle: team.handle, channel: label }) : t("removed", { handle: team.handle }));
       } else {
         setError("field" in res ? channelErrorText(res, findChannel(channels, next)?.name) : res.message);
       }
@@ -58,7 +62,7 @@ export function TeamRow({ team, members, channels, taken, onSaved }: Props) {
         ) : (
           <div className="flex flex-col gap-1.5">
             <label htmlFor={id} className="sr-only">
-              {`Slack channel for @${team.handle}`}
+              {t("channelFor", { handle: team.handle })}
             </label>
             <ChannelPicker
               id={id}
@@ -66,7 +70,7 @@ export function TeamRow({ team, members, channels, taken, onSaved }: Props) {
               value={value}
               onChange={change}
               taken={taken}
-              noneLabel="No channel"
+              noneLabel={t("noChannel")}
               disabled={pending}
               invalid={Boolean(error)}
               aria-describedby={error ? errorId : undefined}

@@ -1,6 +1,7 @@
 "use client";
 
 import { Plus } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { ProjectRef } from "./week-matrix";
 
@@ -12,6 +13,7 @@ interface Props {
 
 /** Last grid row: pick another active project to add an empty row for it. */
 export function AddProjectRow({ colSpan, options, onAdd }: Props) {
+  const t = useTranslations("myTime");
   if (options.length === 0) return null;
   return (
     <tr>
@@ -24,11 +26,11 @@ export function AddProjectRow({ colSpan, options, onAdd }: Props) {
           }}
         >
           <SelectTrigger
-            aria-label="Add a project row"
+            aria-label={t("addProjectRow")}
             className="hit-target w-[200px] border-transparent text-muted-foreground shadow-none hover:text-foreground"
           >
             <Plus aria-hidden />
-            <SelectValue placeholder="Add project" />
+            <SelectValue placeholder={t("addProject")} />
           </SelectTrigger>
           <SelectContent>
             {options.map((o) => (

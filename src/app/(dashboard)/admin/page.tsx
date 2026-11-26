@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import type { AppSettings, DirectoryUser, HolidayView, ProjectView, SlackChannelOption, TeamView } from "@/contracts";
 import { requireActor } from "@/server/auth/session";
 import { listDirectory } from "@/server/services/directory-service";
@@ -18,7 +19,9 @@ import { SettingsPanel } from "@/components/admin/settings-panel";
 import { TeamsPanel } from "@/components/admin/teams-panel";
 import { loadSlackChannels } from "./load-channels";
 
-export const metadata: Metadata = { title: "Admin" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getTranslations("metadata"))("admin") };
+}
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -29,9 +32,9 @@ function parseYear(value: unknown, fallback: number): number {
 
 export default async function AdminPage({ searchParams }: { searchParams: SearchParams }) {
   const actor = await requireActor();
-  if (actor.role !== "admin") return <NoAccessPanel area="Admin" />;
+  if (actor.role !== "admin") return <NoAccessPanel area="admin" />;
 
-  const [params, profile] = await Promise.all([searchParams, getCurrentProfile()]);
+  const [params, profile, t] = await Promise.all([searchParams, getCurrentProfile(), getTranslations("admin")]);
   const tab = parseAdminTab(params.tab);
   const currentYear = Number(todayIn(profile.timezone).slice(0, 4));
   const year = parseYear(params.year, currentYear);
@@ -54,7 +57,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold tracking-[-0.01em]">Admin</h1>
+      <h1 className="text-2xl font-semibold tracking-[-0.01em]">{t("title")}</h1>
       <AdminTabs
         tab={tab}
         year={year}

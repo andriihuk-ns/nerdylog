@@ -111,47 +111,54 @@ export function lastDayOfMonth(month: string): IsoDate {
   return fromUtcMs(Date.UTC(y, m, 0));
 }
 
-const fmt = (opts: Intl.DateTimeFormatOptions) =>
-  new Intl.DateTimeFormat("en-US", { timeZone: "UTC", ...opts });
-const monthShort = fmt({ month: "short" });
-const monthLong = fmt({ month: "long", year: "numeric" });
-const weekdayShort = fmt({ weekday: "short" });
+/*
+ * A14: labels use Intl with the active locale ("en" | "uk"). Dates are UTC midnights, so the
+ * formatter runs in UTC. ICU puts thin spaces around range dashes; they are normalised so server
+ * and browser output match.
+ */
+const dateFormats = new Map<string, Intl.DateTimeFormat>();
 
-function parts(date: IsoDate) {
-  const d = new Date(toUtcMs(date));
-  return { d, day: d.getUTCDate(), year: d.getUTCFullYear(), mon: monthShort.format(d) };
+function fmt(locale: string, opts: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+  const key = `${locale}:${JSON.stringify(opts)}`;
+  let df = dateFormats.get(key);
+  if (!df) {
+    df = new Intl.DateTimeFormat(locale, { timeZone: "UTC", ...opts });
+    dateFormats.set(key, df);
+  }
+  return df;
 }
 
-/** "Nov 23 – 29, 2026", "Nov 30 – Dec 6, 2026", "Dec 28, 2026 – Jan 3, 2027". */
-export function formatWeekRange(start: IsoDate, end: IsoDate): string {
-  const a = parts(start);
-  const b = parts(end);
-  if (a.year !== b.year) return `${a.mon} ${a.day}, ${a.year} – ${b.mon} ${b.day}, ${b.year}`;
-  if (a.mon !== b.mon) return `${a.mon} ${a.day} – ${b.mon} ${b.day}, ${b.year}`;
-  return `${a.mon} ${a.day} – ${b.day}, ${b.year}`;
+const utc = (date: IsoDate) => new Date(toUtcMs(date));
+const capitalize = (s: string) => s.charAt(0).toLocaleUpperCase() + s.slice(1);
+const SHORT_DATE: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
+
+/** en "Nov 23 – 29, 2026", "Nov 30 – Dec 6, 2026"; uk "23–29 лист. 2026 р.". */
+export function formatWeekRange(start: IsoDate, end: IsoDate, locale = "en"): string {
+  return fmt(locale, { ...SHORT_DATE, year: "numeric" })
+    .formatRange(utc(start), utc(end))
+    .replace(/\u2009/g, " ");
 }
 
-/** Month-week caption: "Nov 1–2", "Nov 30". */
-export function formatShortRange(start: IsoDate, end: IsoDate): string {
-  const a = parts(start);
-  const b = parts(end);
-  if (start === end) return `${a.mon} ${a.day}`;
-  return a.mon === b.mon ? `${a.mon} ${a.day}–${b.day}` : `${a.mon} ${a.day}–${b.mon} ${b.day}`;
+/** Month-week caption: en "Nov 1–2", "Nov 30"; uk "1–2 лист.". */
+export function formatShortRange(start: IsoDate, end: IsoDate, locale = "en"): string {
+  const f = fmt(locale, SHORT_DATE);
+  if (start === end) return f.format(utc(start));
+  return f.formatRange(utc(start), utc(end)).replace(/\u2009/g, "");
 }
 
-/** "November 2026". */
-export function formatMonth(month: string): string {
-  return monthLong.format(new Date(`${month}-01T00:00:00Z`));
+/** en "November 2026", uk "Листопад 2026" (stand-alone month name, no "р."). */
+export function formatMonth(month: string, locale = "en"): string {
+  const d = new Date(`${month}-01T00:00:00Z`);
+  return `${capitalize(fmt(locale, { month: "long" }).format(d))} ${d.getUTCFullYear()}`;
 }
 
-/** Column head parts: { weekday: "Mon", day: 23 }. */
-export function dayHead(date: IsoDate): { weekday: string; day: number } {
-  const { d, day } = parts(date);
-  return { weekday: weekdayShort.format(d), day };
+/** Column head parts: en { weekday: "Mon", day: 23 }, uk { weekday: "Пн", day: 23 }. */
+export function dayHead(date: IsoDate, locale = "en"): { weekday: string; day: number } {
+  const d = utc(date);
+  return { weekday: capitalize(fmt(locale, { weekday: "short" }).format(d)), day: d.getUTCDate() };
 }
 
-/** "Tue, Nov 24". */
-export function formatDayLong(date: IsoDate): string {
-  const { d, day, mon } = parts(date);
-  return `${weekdayShort.format(d)}, ${mon} ${day}`;
+/** en "Tue, Nov 24", uk "Вт, 24 лист.". */
+export function formatDayLong(date: IsoDate, locale = "en"): string {
+  return capitalize(fmt(locale, { weekday: "short", ...SHORT_DATE }).format(utc(date)));
 }

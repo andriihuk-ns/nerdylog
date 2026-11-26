@@ -1,9 +1,10 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { IsoDate, MonthWeek, UserMonthRollup } from "@/contracts";
 import { cn } from "@/lib/utils";
 import { useGridNavigation } from "@/hooks/use-grid-navigation";
-import { formatShortRange } from "@/components/lib/dates";
+import { useFormat } from "@/hooks/use-format";
 import { initials } from "@/components/lib/format";
 import { SummaryCell } from "./summary-cell";
 import { bucketValues, SUB_COLUMNS, teamTotals } from "./team-summary";
@@ -22,14 +23,16 @@ export function SummaryGrid({ rows, weeks, today }: Props) {
   const cols = (weeks.length + 1) * SUB_COLUMNS.length;
   const { gridRef, cellProps, handleNavKey } = useGridNavigation({ rows: rows.length, cols });
   const totals = teamTotals(rows, weeks.length);
+  const t = useTranslations("team.grid");
+  const f = useFormat();
 
   return (
     <div className="overflow-x-auto rounded-lg border bg-card">
-      <table ref={gridRef} role="grid" aria-readonly aria-label="Team summary by month-week" className="w-full border-collapse">
+      <table ref={gridRef} role="grid" aria-readonly aria-label={t("label")} className="w-full border-collapse">
         <thead>
           <tr>
             <th scope="col" rowSpan={2} className={cn(STICKY, "border-b px-4 text-xs font-medium text-muted-foreground")}>
-              Teammate
+              {t("teammate")}
             </th>
             {weeks.map((w) => (
               <th
@@ -38,21 +41,21 @@ export function SummaryGrid({ rows, weeks, today }: Props) {
                 colSpan={4}
                 className={cn("border-b border-l px-3 pt-2 text-left font-medium", w.start > today && "text-muted-foreground")}
               >
-                <span className="block text-xs">Week {w.weekIndex}</span>
+                <span className="block text-xs">{t("week", { n: w.weekIndex })}</span>
                 <span className="tabular block text-xs font-normal text-muted-foreground">
-                  {formatShortRange(w.start, w.end)}
+                  {f.shortRange(w.start, w.end)}
                 </span>
               </th>
             ))}
             <th scope="colgroup" colSpan={4} className="border-b border-l border-l-foreground/20 px-3 text-left text-xs font-semibold">
-              Monthly total
+              {t("monthlyTotal")}
             </th>
           </tr>
           <tr className="text-xs font-medium text-muted-foreground">
             {[...weeks, null].flatMap((w, g) =>
-              SUB_COLUMNS.map((label, s) => (
+              SUB_COLUMNS.map((sub, s) => (
                 <th
-                  key={`${g}-${label}`}
+                  key={`${g}-${sub}`}
                   scope="col"
                   className={cn(
                     "h-8 border-b px-3 text-right font-medium whitespace-nowrap",
@@ -60,7 +63,7 @@ export function SummaryGrid({ rows, weeks, today }: Props) {
                     s === 0 && w === null && "border-l-foreground/20",
                   )}
                 >
-                  {label}
+                  {t(`sub.${sub}`)}
                 </th>
               )),
             )}
@@ -85,7 +88,7 @@ export function SummaryGrid({ rows, weeks, today }: Props) {
                     key={`${g}-${s}`}
                     value={values[s]}
                     sub={s}
-                    context={`${row.fullName}, ${isTotal ? "month" : `week ${g + 1}`}`}
+                    context={isTotal ? t("contextMonth", { name: row.fullName }) : t("contextWeek", { name: row.fullName, n: g + 1 })}
                     groupStart={s === 0}
                     total={isTotal}
                     navProps={cellProps(r, g * 4 + s)}
@@ -99,7 +102,7 @@ export function SummaryGrid({ rows, weeks, today }: Props) {
         <tfoot>
           <tr>
             <th scope="row" className={cn(STICKY, "h-11 px-4 font-semibold")}>
-              Team total
+              {t("teamTotal")}
             </th>
             {[...totals.weeks, totals.total].flatMap((bucket, g) => {
               const values = bucketValues(bucket);
@@ -108,7 +111,7 @@ export function SummaryGrid({ rows, weeks, today }: Props) {
                   key={`${g}-${s}`}
                   value={values[s]}
                   sub={s}
-                  context={`Team, ${g === weeks.length ? "month" : `week ${g + 1}`}`}
+                  context={g === weeks.length ? t("contextMonth", { name: t("team") }) : t("contextWeek", { name: t("team"), n: g + 1 })}
                   groupStart={s === 0}
                   total
                 />

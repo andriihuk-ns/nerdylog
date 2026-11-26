@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { SlackChannelOption } from "@/contracts";
-import { channelErrorText, channelLabel, filterChannels, findChannel, takenChannelMap } from "./channel-options";
+import { channelErrorCopy, channelLabel, filterChannels, findChannel, takenChannelMap } from "./channel-options";
 
 const ch = (id: string, name: string, extra: Partial<SlackChannelOption> = {}): SlackChannelOption => ({
   id,
@@ -54,17 +54,19 @@ describe("findChannel / channelLabel", () => {
   });
 });
 
-describe("channelErrorText", () => {
+describe("channelErrorCopy", () => {
   it("names the invite fix for private channels", () => {
-    expect(channelErrorText({ reason: "private_needs_invite", message: "x" }, "team-dog")).toBe(
-      "Private channel: run /invite @nerdylog in #team-dog, then pick it again",
-    );
+    expect(channelErrorCopy({ reason: "private_needs_invite", message: "x" }, "team-dog")).toEqual({
+      kind: "privateInvite",
+      channel: "team-dog",
+    });
   });
 
-  it("passes other messages through", () => {
-    expect(channelErrorText({ reason: "not_found", message: "Channel not found" }, "x")).toBe("Channel not found");
-    expect(channelErrorText({ message: "This channel is already linked to another project" }, undefined)).toBe(
-      "This channel is already linked to another project",
-    );
+  it("translates not-found and passes other messages through", () => {
+    expect(channelErrorCopy({ reason: "not_found", message: "Channel not found" }, "x")).toEqual({ kind: "notFound" });
+    expect(channelErrorCopy({ message: "This channel is already linked to another project" }, undefined)).toEqual({
+      kind: "message",
+      message: "This channel is already linked to another project",
+    });
   });
 });

@@ -1,9 +1,10 @@
 "use client";
 
 import type { KeyboardEvent } from "react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
-import { formatHours } from "@/components/lib/format";
+import { useFormat } from "@/hooks/use-format";
 import { CellEditor, type CommitMove } from "./cell-editor";
 import { CellNoteForm } from "./cell-note-form";
 import type { MatrixCell } from "./week-matrix";
@@ -11,6 +12,7 @@ import type { MatrixCell } from "./week-matrix";
 export interface HoursCellProps {
   cell: MatrixCell;
   label: string; // "DogTeamPro, Tue, Nov 24"
+  title: string; // "DogTeamPro · Tue, Nov 24" (note popover heading)
   readOnly: boolean; // PTO day
   weekend: boolean;
   columnTint: string;
@@ -29,7 +31,9 @@ export interface HoursCellProps {
 const DRAFT_KEY = /^[0-9.,]$/;
 
 export function HoursCell(p: HoursCellProps) {
-  const current = p.cell.hours > 0 ? formatHours(p.cell.hours) : "";
+  const t = useTranslations("myTime.cell");
+  const f = useFormat();
+  const current = p.cell.hours > 0 ? f.hours(p.cell.hours) : "";
 
   function onKeyDown(e: KeyboardEvent<HTMLTableCellElement>) {
     if (p.editing !== null || p.noteDraft !== null || e.target !== e.currentTarget) return;
@@ -50,9 +54,12 @@ export function HoursCell(p: HoursCellProps) {
     }
   }
 
+  const hours = f.hours(p.cell.hours);
   const spoken = p.readOnly
-    ? "time off"
-    : `${formatHours(p.cell.hours)} hours${p.cell.notes.length > 0 ? `, note: ${p.cell.notes.join("; ")}` : ""}`;
+    ? t("timeOff")
+    : p.cell.notes.length > 0
+      ? t("spokenWithNote", { hours, notes: p.cell.notes.join("; ") })
+      : t("spoken", { hours });
 
   return (
     <td
@@ -79,7 +86,7 @@ export function HoursCell(p: HoursCellProps) {
             {p.editing !== null ? (
               <CellEditor
                 initial={p.editing}
-                label={`${p.label}, hours`}
+                label={t("hoursInput", { label: p.label })}
                 onCommit={(h, move) => p.onCommit(h, move)}
                 onCancel={p.onCancel}
                 onOpenNote={p.onOpenNote}
@@ -92,9 +99,9 @@ export function HoursCell(p: HoursCellProps) {
                 )}
               >
                 {p.cell.notes.length > 0 ? (
-                  <span aria-hidden className="size-1 rounded-full bg-muted-foreground/60" title="Has a task note" />
+                  <span aria-hidden className="size-1 rounded-full bg-muted-foreground/60" title={t("hasNote")} />
                 ) : null}
-                {p.readOnly ? "—" : p.cell.hours > 0 ? formatHours(p.cell.hours) : "·"}
+                {p.readOnly ? "—" : p.cell.hours > 0 ? hours : "·"}
               </span>
             )}
           </div>
@@ -102,7 +109,7 @@ export function HoursCell(p: HoursCellProps) {
         <PopoverContent align="end" className="w-80">
           {p.noteDraft !== null ? (
             <CellNoteForm
-              title={p.label.replace(", ", " · ")}
+              title={p.title}
               hoursDraft={p.noteDraft}
               notes={p.cell.notes}
               entryCount={p.cell.entryCount}

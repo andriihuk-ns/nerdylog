@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useRef, useState, type KeyboardEvent } from "react";
+import { useTranslations } from "next-intl";
 import { parseHoursInput } from "@/components/lib/format";
 
 export type CommitMove = "down" | "right" | "left" | "none";
@@ -22,12 +23,13 @@ export function CellEditor({ initial, label, onCommit, onCancel, onOpenNote }: P
   const [error, setError] = useState<string | null>(null);
   const done = useRef(false);
   const errorId = useId();
+  const t = useTranslations("myTime.input");
 
   function commit(move: CommitMove) {
     if (done.current) return;
     const parsed = parseHoursInput(value);
     if (!parsed.ok) {
-      setError(parsed.message);
+      setError(t(parsed.error));
       return;
     }
     done.current = true;

@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import type { ToastState } from "@/hooks/use-toast";
@@ -11,6 +12,7 @@ import type { ToastState } from "@/hooks/use-toast";
  * Esc dismisses; Retry re-sends the failed action.
  */
 export function Toast({ toast, onDismiss }: { toast: ToastState | null; onDismiss: () => void }) {
+  const t = useTranslations("common");
   useEffect(() => {
     if (!toast) return;
     const onKey = (e: KeyboardEvent) => {
@@ -41,10 +43,10 @@ export function Toast({ toast, onDismiss }: { toast: ToastState | null; onDismis
                 onDismiss();
               }}
             >
-              Retry
+              {t("retry")}
             </Button>
           ) : null}
-          <Button variant="ghost" size="icon" className="hit-target" onClick={onDismiss} aria-label="Dismiss">
+          <Button variant="ghost" size="icon" className="hit-target" onClick={onDismiss} aria-label={t("dismiss")}>
             <X aria-hidden />
           </Button>
         </div>

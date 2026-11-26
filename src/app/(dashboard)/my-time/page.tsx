@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import type { ProjectView } from "@/contracts";
 import { requireActor } from "@/server/auth/session";
 import { listWeekEntries } from "@/server/services/time-entry-service";
@@ -12,13 +13,15 @@ import { PtoBalanceCard } from "@/components/my-time/pto-balance-card";
 import { ExportLinks, exportHref } from "@/components/shell/export-links";
 import { getCurrentProfile } from "@/components/shell/profile";
 
-export const metadata: Metadata = { title: "My time" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getTranslations("metadata"))("myTime") };
+}
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 export default async function MyTimePage({ searchParams }: { searchParams: SearchParams }) {
   const actor = await requireActor();
-  const [params, profile] = await Promise.all([searchParams, getCurrentProfile()]);
+  const [params, profile, t] = await Promise.all([searchParams, getCurrentProfile(), getTranslations("myTime.exports")]);
   const today = todayIn(profile.timezone); // A12: the actor's own timezone
   const weekStart = parseWeekParam(params.week, today);
   const weekEnd = addDays(weekStart, 6);
@@ -43,10 +46,10 @@ export default async function MyTimePage({ searchParams }: { searchParams: Searc
       </div>
       <ExportLinks
         links={[
-          { label: "Week CSV", href: exportHref("/api/export/ledger.csv", week) },
-          { label: "Week PDF", href: exportHref("/api/export/report.pdf", week) },
-          { label: "Month CSV", href: exportHref("/api/export/ledger.csv", monthRange) },
-          { label: "Month PDF", href: exportHref("/api/export/report.pdf", monthRange) },
+          { label: t("weekCsv"), href: exportHref("/api/export/ledger.csv", week) },
+          { label: t("weekPdf"), href: exportHref("/api/export/report.pdf", week) },
+          { label: t("monthCsv"), href: exportHref("/api/export/ledger.csv", monthRange) },
+          { label: t("monthPdf"), href: exportHref("/api/export/report.pdf", monthRange) },
         ]}
       />
     </div>

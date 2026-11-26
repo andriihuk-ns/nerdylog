@@ -85,5 +85,16 @@ describe("dates", () => {
     expect(formatMonth("2026-11")).toBe("November 2026");
     expect(dayHead("2026-11-24")).toEqual({ weekday: "Tue", day: 24 });
     expect(formatDayLong("2026-11-24")).toBe("Tue, Nov 24");
+    expect(formatShortRange("2026-11-30", "2026-12-01")).toBe("Nov 30–Dec 1");
+  });
+
+  it("formats labels in Ukrainian (A14)", () => {
+    expect(dayHead("2026-11-23", "uk")).toEqual({ weekday: "Пн", day: 23 });
+    expect(dayHead("2026-11-29", "uk")).toEqual({ weekday: "Нд", day: 29 });
+    expect(formatMonth("2026-11", "uk")).toBe("Листопад 2026");
+    expect(formatMonth("2027-01", "uk")).toBe("Січень 2027");
+    expect(formatDayLong("2026-11-24", "uk")).toBe("Вт, 24 лист.");
+    expect(formatWeekRange("2026-11-23", "2026-11-29", "uk")).toBe("23–29 лист. 2026 р.");
+    expect(formatShortRange("2026-11-02", "2026-11-08", "uk")).toBe("2–8 лист.");
   });
 });

@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { RefreshCw } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { DirectoryUser, TeamView } from "@/contracts";
 import { cn } from "@/lib/utils";
 import { syncFromSlackAction } from "@/app/(dashboard)/admin/actions";
@@ -13,6 +14,7 @@ import { syncSummary, teamHandlesByUser } from "./team-helpers";
 
 /** FR-WEB-06 Team Directory: Sync from Slack (people + teams, A13), title (A12) and teams (A13) read-only, role, daily norm, PTO allowance (A9), active. */
 export function DirectoryPanel({ users, teams }: { users: DirectoryUser[]; teams: TeamView[] }) {
+  const t = useTranslations("admin.directory");
   const { toast, show, dismiss } = useToast();
   const [syncing, startSync] = useTransition();
   const handles = teamHandlesByUser(teams);
@@ -21,9 +23,10 @@ export function DirectoryPanel({ users, teams }: { users: DirectoryUser[]; teams
   function sync() {
     startSync(async () => {
       const res = await syncFromSlackAction();
-      if (!res.ok) show(`Sync failed. ${res.message}`, { tone: "error", onRetry: sync });
-      else if (res.data.teamsError) show(`${syncSummary(res.data)} ${res.data.teamsError}`, { tone: "error", onRetry: sync });
-      else show(syncSummary(res.data));
+      if (!res.ok) show(t("syncFailed", { reason: res.message }), { tone: "error", onRetry: sync });
+      else if (res.data.teamsError) {
+        show(`${syncSummary(res.data, t)} ${t(`teamsError.${res.data.teamsError}`)}`, { tone: "error", onRetry: sync });
+      } else show(syncSummary(res.data, t));
     });
   }
 
@@ -32,21 +35,24 @@ export function DirectoryPanel({ users, teams }: { users: DirectoryUser[]; teams
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 id="directory-title" className="text-lg font-semibold">
-            Team directory
+            {t("title")}
           </h2>
           <p className="text-muted-foreground">
-            <span className="tabular">{users.filter((u) => u.isActive).length}</span> active ·{" "}
-            <span className="tabular">{users.filter((u) => !u.isActive).length}</span> archived
+            {t.rich("counts", {
+              active: users.filter((u) => u.isActive).length,
+              archived: users.filter((u) => !u.isActive).length,
+              n: (chunks) => <span className="tabular">{chunks}</span>,
+            })}
           </p>
         </div>
         <Button onClick={sync} disabled={syncing} className="hit-target">
           <RefreshCw aria-hidden className={cn(syncing && "animate-spin")} />
-          {syncing ? "Syncing…" : "Sync from Slack"}
+          {syncing ? t("syncing") : t("sync")}
         </Button>
       </div>
       {sorted.length === 0 ? (
         <p className="rounded-lg border bg-card p-6 text-muted-foreground">
-          No teammates yet. Use “Sync from Slack” to import your workspace.
+          {t("empty")}
         </p>
       ) : (
         <div className="overflow-x-auto rounded-lg border bg-card">
@@ -54,25 +60,25 @@ export function DirectoryPanel({ users, teams }: { users: DirectoryUser[]; teams
             <thead>
               <tr className="border-b text-xs font-medium text-muted-foreground">
                 <th scope="col" className="h-10 px-4 text-left font-medium">
-                  Name
+                  {t("columns.name")}
                 </th>
                 <th scope="col" className="px-2 text-left font-medium">
-                  Title
+                  {t("columns.title")}
                 </th>
                 <th scope="col" className="px-2 text-left font-medium">
-                  Teams
+                  {t("columns.teams")}
                 </th>
                 <th scope="col" className="px-2 text-left font-medium">
-                  Role
+                  {t("columns.role")}
                 </th>
                 <th scope="col" className="px-2 text-right font-medium">
-                  Daily norm (h)
+                  {t("columns.dailyNorm")}
                 </th>
                 <th scope="col" className="px-2 text-right font-medium">
-                  Vacation days / year
+                  {t("columns.allowance")}
                 </th>
                 <th scope="col" className="px-4 text-left font-medium">
-                  Status
+                  {t("columns.status")}
                 </th>
               </tr>
             </thead>

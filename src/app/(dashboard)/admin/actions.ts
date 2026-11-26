@@ -1,6 +1,7 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 import {
   isoDateSchema,
@@ -23,9 +24,9 @@ import { fetchSlackDirectory } from "@/server/slack/directory";
 import { joinSlackChannel } from "@/server/slack/channels";
 import { fetchSlackUsergroups } from "@/server/slack/usergroups";
 import { listTeams, syncTeamsFromSlack, updateTeamChannel } from "@/server/services/team-service";
-import { actionError, ok, type ActionResult } from "../action-result";
+import { actionError, fail, ok, type ActionResult } from "../action-result";
 import { channelFailure, channelFieldError, fromJoinResult, type ChannelActionResult, type ChannelFailure } from "./channel-result";
-import { teamsErrorText, type SlackSyncResult, type TeamSyncCounts } from "./sync-result";
+import { teamsErrorCode, type SlackSyncResult, type TeamSyncCounts, type TeamsErrorCode } from "./sync-result";
 
 const ADMIN = ["admin"] as const;
 
@@ -45,7 +46,7 @@ export async function updateDirectoryUserAction(userId: string, patch: Directory
     const actor = await requireActor(ADMIN);
     const parsed = directoryPatchSchema.safeParse(patch);
     if (!parsed.success || !z.uuid().safeParse(userId).success) {
-      return { ok: false, message: "Daily norm must be 0.25–24h; allowance 0–366 days in half days." };
+      return fail((await serverCopy())("directoryInvalid"));
     }
     const user: DirectoryUser = await updateDirectoryUser(actor, userId, parsed.data);
     refresh();
@@ -62,13 +63,13 @@ export async function syncFromSlackAction(): Promise<ActionResult<SlackSyncResul
     const members = await fetchSlackDirectory();
     const people: { created: number; updated: number } = await syncDirectoryFromSlack(actor, members);
     let teams: TeamSyncCounts | null = null;
-    let teamsError: string | null = null;
+    let teamsError: TeamsErrorCode | null = null;
     try {
       const groups: SlackUsergroup[] = await fetchSlackUsergroups();
       teams = await syncTeamsFromSlack(actor, groups);
     } catch (err) {
       console.warn("team sync failed", err instanceof Error ? err.message : err);
-      teamsError = teamsErrorText(err);
+      teamsError = teamsErrorCode(err);
     }
     refresh();
     return ok({ people, teams, teamsError });
@@ -77,7 +78,10 @@ export async function syncFromSlackAction(): Promise<ActionResult<SlackSyncResul
   }
 }
 
-const channelIdSchema = z.string().regex(SLACK_CHANNEL_ID_PATTERN, "Not a valid Slack channel").nullable();
+const channelIdSchema = z.string().regex(SLACK_CHANNEL_ID_PATTERN).nullable();
+
+/** A14: action copy in the request locale (`admin.server.*`). */
+const serverCopy = () => getTranslations("admin.server");
 
 /** A11: make sure the bot is in the channel before saving it. Slack not configured → inline error. */
 async function ensureBotInChannel(channelId: string): Promise<ChannelFailure | null> {
@@ -85,14 +89,14 @@ async function ensureBotInChannel(channelId: string): Promise<ChannelFailure | n
   try {
     result = await joinSlackChannel(channelId);
   } catch {
-    return channelFailure("Connect the Slack app to choose channels.", "error");
+    return channelFailure((await getTranslations("admin.channel"))("connect"), "error");
   }
   return fromJoinResult(result);
 }
 
 const projectSchema = z.object({
   id: z.uuid().optional(),
-  name: z.string().trim().min(1, "Name is required").max(120),
+  name: z.string().trim().min(1).max(120),
   code: z.string().trim().max(32).nullable(),
   monthlyHourCap: z.number().positive().max(10000).nullable(),
   isBillable: z.boolean(),
@@ -105,17 +109,18 @@ export type ProjectInput = z.input<typeof projectSchema>;
 export async function upsertProjectAction(input: ProjectInput): Promise<ChannelActionResult<ProjectView>> {
   try {
     const actor = await requireActor(ADMIN);
+    const t = await serverCopy();
     const parsed = projectSchema.safeParse(input);
     if (!parsed.success) {
-      const issue = parsed.error.issues[0];
-      if (issue?.path[0] === "slackChannelId") return channelFailure(issue.message);
-      return { ok: false, message: issue?.message ?? "Check the project fields." };
+      const field = parsed.error.issues[0]?.path[0];
+      if (field === "slackChannelId") return channelFailure(t("invalidChannel"));
+      return fail(field === "name" ? t("nameRequired") : t("projectInvalid"));
     }
     const { slackChannelId } = parsed.data;
     if (slackChannelId) {
       const projects: ProjectView[] = await listProjects(actor, { includeArchived: true });
       const owner = projects.find((p) => p.slackChannelId === slackChannelId && p.id !== parsed.data.id);
-      if (owner) return channelFailure(`Already linked to ${owner.name}`);
+      if (owner) return channelFailure(t("alreadyLinkedProject", { name: owner.name }));
       const current = projects.find((p) => p.id === parsed.data.id);
       if (current?.slackChannelId !== slackChannelId) {
         const failure = await ensureBotInChannel(slackChannelId);
@@ -135,7 +140,7 @@ export async function updateStandupChannelAction(channelId: string | null): Prom
   try {
     const actor = await requireActor(ADMIN);
     const parsed = channelIdSchema.safeParse(channelId);
-    if (!parsed.success) return channelFailure("Not a valid Slack channel");
+    if (!parsed.success) return channelFailure((await serverCopy())("invalidChannel"));
     const current: AppSettings = await getAppSettings(actor);
     if (parsed.data && parsed.data !== current.standupChannelId) {
       const failure = await ensureBotInChannel(parsed.data);
@@ -153,13 +158,14 @@ export async function updateStandupChannelAction(channelId: string | null): Prom
 export async function updateTeamChannelAction(teamId: string, channelId: string | null): Promise<ChannelActionResult<TeamView>> {
   try {
     const actor = await requireActor(ADMIN);
-    if (!z.uuid().safeParse(teamId).success) return { ok: false, message: "Unknown team." };
+    const t = await serverCopy();
+    if (!z.uuid().safeParse(teamId).success) return fail(t("unknownTeam"));
     const parsed = channelIdSchema.safeParse(channelId);
-    if (!parsed.success) return channelFailure("Not a valid Slack channel");
+    if (!parsed.success) return channelFailure(t("invalidChannel"));
     if (parsed.data) {
       const teams: TeamView[] = await listTeams(actor, { includeArchived: true });
       const owner = teams.find((t) => t.slackChannelId === parsed.data && t.id !== teamId);
-      if (owner) return channelFailure(`Already linked to @${owner.handle}`);
+      if (owner) return channelFailure(t("alreadyLinkedTeam", { handle: owner.handle }));
       const current = teams.find((t) => t.id === teamId);
       if (current?.slackChannelId !== parsed.data) {
         const failure = await ensureBotInChannel(parsed.data);
@@ -176,14 +182,17 @@ export async function updateTeamChannelAction(teamId: string, channelId: string 
 
 const holidaySchema = z.object({
   holidayDate: isoDateSchema,
-  name: z.string().trim().min(1, "Name is required").max(120),
+  name: z.string().trim().min(1).max(120),
 });
 
 export async function addHolidayAction(input: z.input<typeof holidaySchema>): Promise<ActionResult<HolidayView>> {
   try {
     const actor = await requireActor(ADMIN);
     const parsed = holidaySchema.safeParse(input);
-    if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? "Check the holiday fields." };
+    if (!parsed.success) {
+      const t = await serverCopy();
+      return fail(parsed.error.issues[0]?.path[0] === "name" ? t("nameRequired") : t("holidayInvalid"));
+    }
     const holiday: HolidayView = await addHoliday(actor, parsed.data);
     refresh();
     return ok(holiday);
@@ -195,7 +204,7 @@ export async function addHolidayAction(input: z.input<typeof holidaySchema>): Pr
 export async function removeHolidayAction(id: string): Promise<ActionResult> {
   try {
     const actor = await requireActor(ADMIN);
-    if (!z.uuid().safeParse(id).success) return { ok: false, message: "Unknown holiday." };
+    if (!z.uuid().safeParse(id).success) return fail((await serverCopy())("unknownHoliday"));
     await removeHoliday(actor, id);
     refresh();
     return ok();

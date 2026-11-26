@@ -48,7 +48,6 @@ describe("planCellSave", () => {
       ops: [{ op: "update", id: "a", hours: 3.5 }],
     });
     expect(planCellSave([e("a", 2), e("b", 1.5)], 1.5)).toEqual({ ok: true, ops: [{ op: "delete", id: "a" }] });
-    const below = planCellSave([e("a", 2), e("b", 1.5)], 1);
-    expect(below.ok).toBe(false);
+    expect(planCellSave([e("a", 2), e("b", 1.5)], 1)).toEqual({ ok: false, reason: "below", entryCount: 2, minHours: 1.5 });
   });
 });

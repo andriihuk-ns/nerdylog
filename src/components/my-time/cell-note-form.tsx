@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useTranslations } from "next-intl";
 import { extractTicketRefs } from "@/contracts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,11 +24,13 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
   const [note, setNote] = useState(notes[0] ?? "");
   const [error, setError] = useState<string | null>(null);
   const refs = extractTicketRefs(note);
+  const t = useTranslations("myTime");
+  const tc = useTranslations("common");
 
   function submit(e: FormEvent) {
     e.preventDefault();
     const parsed = parseHoursInput(hours);
-    if (!parsed.ok) return setError(parsed.message);
+    if (!parsed.ok) return setError(t(`input.${parsed.error}`));
     onSave(parsed.value, note.trim());
   }
 
@@ -35,7 +38,7 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
     <form onSubmit={submit} className="flex flex-col gap-3" onKeyDown={(e) => e.key === "Escape" && onCancel()}>
       <p className="text-sm font-semibold">{title}</p>
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="cell-hours">Hours</Label>
+        <Label htmlFor="cell-hours">{t("note.hours")}</Label>
         <Input
           id="cell-hours"
           inputMode="decimal"
@@ -55,7 +58,7 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
         ) : null}
       </div>
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="cell-note">{entryCount > 1 ? "Task note (first entry)" : "Task note"}</Label>
+        <Label htmlFor="cell-note">{entryCount > 1 ? t("note.taskNoteFirst") : t("note.taskNote")}</Label>
         <Textarea
           id="cell-note"
           autoFocus
@@ -63,10 +66,10 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
           value={note}
           maxLength={2000}
           onChange={(e) => setNote(e.target.value)}
-          placeholder="What did you do? Ticket IDs like DOG-1364 are picked up."
+          placeholder={t("note.placeholder")}
         />
         {refs.length > 0 ? (
-          <ul className="flex flex-wrap gap-1" aria-label="Detected tickets">
+          <ul className="flex flex-wrap gap-1" aria-label={t("note.detected")}>
             {refs.map((r) => (
               <li key={r} className="rounded-sm bg-muted px-1.5 py-0.5 font-mono text-xs">
                 {r}
@@ -86,10 +89,10 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
       </div>
       <div className="flex justify-end gap-2">
         <Button type="button" variant="ghost" className="hit-target" onClick={onCancel}>
-          Cancel
+          {tc("cancel")}
         </Button>
         <Button type="submit" className="hit-target">
-          Save
+          {tc("save")}
         </Button>
       </div>
     </form>

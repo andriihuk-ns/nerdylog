@@ -1,8 +1,6 @@
 import type { DirectoryUser, TeamView } from "@/contracts";
 import type { SlackSyncResult } from "@/app/(dashboard)/admin/sync-result";
 
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
-
 const byHandle = (a: TeamView, b: TeamView) => a.handle.localeCompare(b.handle);
 
 /** Active teams first list; archived (disabled or gone in Slack) separately. Both by handle. */
@@ -44,12 +42,14 @@ export function takenTeamChannels(teams: Pick<TeamView, "id" | "handle" | "slack
   return taken;
 }
 
-/** Toast copy: "Synced from Slack: 12 people (2 new) · 4 teams (1 archived)." */
-export function syncSummary({ people, teams }: SlackSyncResult): string {
-  const total = people.created + people.updated;
-  const peoplePart = `${total} ${total === 1 ? "person" : "people"}${people.created ? ` (${people.created} new)` : ""}`;
-  if (!teams) return `Synced from Slack: ${peoplePart}.`;
-  const teamTotal = teams.created + teams.updated;
-  const teamPart = `${plural(teamTotal, "team")}${teams.archived ? ` (${teams.archived} archived)` : ""}`;
-  return `Synced from Slack: ${peoplePart} · ${teamPart}.`;
+type SyncKey = "synced" | "syncedWithTeams" | "people" | "teams";
+/** The `admin.directory` translator (useTranslations / createTranslator). */
+export type SyncTranslate = (key: SyncKey, values: Record<string, string | number>) => string;
+
+/** Toast copy (plurals in messages/*.json): "Synced from Slack: 12 people (2 new) · 4 teams (1 archived)." */
+export function syncSummary({ people, teams }: SlackSyncResult, t: SyncTranslate): string {
+  const peoplePart = t("people", { count: people.created + people.updated, created: people.created });
+  if (!teams) return t("synced", { people: peoplePart });
+  const teamPart = t("teams", { count: teams.created + teams.updated, archived: teams.archived });
+  return t("syncedWithTeams", { people: peoplePart, teams: teamPart });
 }

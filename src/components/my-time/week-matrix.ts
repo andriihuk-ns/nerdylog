@@ -59,7 +59,7 @@ export function buildWeekMatrix(
   for (const e of entries) {
     const i = dayIndex.get(e.workDate);
     if (i === undefined || e.entryType !== "work" || !e.projectId) continue;
-    const cell = ensureRow(e.projectId, e.projectName ?? "Unknown project").cells[i];
+    const cell = ensureRow(e.projectId, e.projectName ?? "" /* the grid shows myTime.unknownProject */).cells[i];
     cell.hours = round2(cell.hours + e.hours);
     cell.entryCount += 1;
     if (e.taskSummary.trim()) cell.notes.push(e.taskSummary.trim());

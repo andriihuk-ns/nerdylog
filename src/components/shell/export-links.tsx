@@ -1,4 +1,5 @@
 import { Download } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 
 export interface ExportLink {
@@ -8,8 +9,9 @@ export interface ExportLink {
 
 /** Plain download links to /api/export/** route handlers (Backend-owned). */
 export function ExportLinks({ links }: { links: ExportLink[] }) {
+  const t = useTranslations("common");
   return (
-    <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Export">
+    <div className="flex flex-wrap items-center gap-2" role="group" aria-label={t("export")}>
       {links.map((l) => (
         <Button key={l.href} asChild variant="outline" className="hit-target">
           <a href={l.href} download>

@@ -4,10 +4,12 @@ import { useEffect, useRef, type KeyboardEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { IsoDate } from "@/contracts";
 import { Button } from "@/components/ui/button";
 import { isTypingTarget } from "@/hooks/use-hotkeys";
-import { addDays, formatDayLong, isIsoDate } from "@/components/lib/dates";
+import { addDays, isIsoDate } from "@/components/lib/dates";
+import { useFormat } from "@/hooks/use-format";
 import { STANDUPS_TOGGLE_ID } from "./team-header";
 import { teamHref } from "./team-summary";
 
@@ -25,6 +27,8 @@ interface Props {
 export function DrawerShell({ date, month, children }: Props) {
   const router = useRouter();
   const titleRef = useRef<HTMLHeadingElement>(null);
+  const t = useTranslations("standups");
+  const f = useFormat();
   const hrefFor = (d: IsoDate) => teamHref(month, d);
 
   useEffect(() => {
@@ -66,20 +70,20 @@ export function DrawerShell({ date, month, children }: Props) {
       <div className="sticky top-0 z-10 flex flex-col gap-2 border-b bg-popover px-4 py-3">
         <div className="flex items-center justify-between gap-2">
           <h2 id="standup-title" ref={titleRef} tabIndex={-1} className="text-lg font-semibold outline-none">
-            Standups
+            {t("title")}
           </h2>
-          <Button variant="ghost" size="icon" className="hit-target" onClick={close} aria-label="Close standups">
+          <Button variant="ghost" size="icon" className="hit-target" onClick={close} aria-label={t("close")}>
             <X aria-hidden />
           </Button>
         </div>
         <div className="flex items-center gap-1">
           <Button asChild variant="ghost" size="icon" className="hit-target">
-            <Link href={hrefFor(addDays(date, -1))} scroll={false} aria-label="Previous day">
+            <Link href={hrefFor(addDays(date, -1))} scroll={false} aria-label={t("previousDay")}>
               <ChevronLeft aria-hidden />
             </Link>
           </Button>
           <label className="sr-only" htmlFor="standup-date">
-            Standup date
+            {t("date")}
           </label>
           <input
             id="standup-date"
@@ -89,13 +93,13 @@ export function DrawerShell({ date, month, children }: Props) {
             className="tabular h-11 flex-1 rounded-md border border-input bg-card px-3"
           />
           <Button asChild variant="ghost" size="icon" className="hit-target">
-            <Link href={hrefFor(addDays(date, 1))} scroll={false} aria-label="Next day">
+            <Link href={hrefFor(addDays(date, 1))} scroll={false} aria-label={t("nextDay")}>
               <ChevronRight aria-hidden />
             </Link>
           </Button>
         </div>
         <p className="text-xs text-muted-foreground">
-          {formatDayLong(date)} · plans and blockers only, never counted as hours
+          {t("caption", { day: f.dayLong(date) })}
         </p>
       </div>
       <div className="flex flex-col gap-6 p-4">{children}</div>

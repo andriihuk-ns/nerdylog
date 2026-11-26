@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import type { UserMonthRollup } from "@/contracts";
 import { requireActor } from "@/server/auth/session";
@@ -13,15 +14,17 @@ import { SummaryGrid } from "@/components/team/summary-grid";
 import { DrawerShell } from "@/components/team/drawer-shell";
 import { StandupList, StandupListSkeleton } from "@/components/team/standup-list";
 
-export const metadata: Metadata = { title: "Team" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getTranslations("metadata"))("team") };
+}
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 export default async function TeamPage({ searchParams }: { searchParams: SearchParams }) {
   const actor = await requireActor();
-  if (actor.role === "member") return <NoAccessPanel area="Team" />;
+  if (actor.role === "member") return <NoAccessPanel area="team" />;
 
-  const [params, profile] = await Promise.all([searchParams, getCurrentProfile()]);
+  const [params, profile, t] = await Promise.all([searchParams, getCurrentProfile(), getTranslations("team")]);
   const today = todayIn(profile.timezone); // A12: the actor's own timezone
   const month = parseMonthParam(params.month, today);
   const drawerDate = parseDateParam(params.date); // drawer open iff ?date=
@@ -37,17 +40,15 @@ export default async function TeamPage({ searchParams }: { searchParams: SearchP
         today={today}
         drawerDate={drawerDate}
         exports={[
-          { label: "Summary CSV", href: exportHref("/api/export/summary.csv", { month }) },
-          { label: "Ledger CSV", href: exportHref("/api/export/ledger.csv", range) },
-          { label: "PDF", href: exportHref("/api/export/report.pdf", range) },
+          { label: t("exports.summaryCsv"), href: exportHref("/api/export/summary.csv", { month }) },
+          { label: t("exports.ledgerCsv"), href: exportHref("/api/export/ledger.csv", range) },
+          { label: t("exports.pdf"), href: exportHref("/api/export/report.pdf", range) },
         ]}
       />
       <div className="flex items-start gap-6">
         <div className="min-w-0 flex-1">
           {rows.length === 0 ? (
-            <p className="rounded-lg border bg-card p-6 text-muted-foreground">
-              No teammates in this view. Admins can sync from Slack in Admin.
-            </p>
+            <p className="rounded-lg border bg-card p-6 text-muted-foreground">{t("empty")}</p>
           ) : (
             <SummaryGrid rows={rows} weeks={weeks} today={today} />
           )}

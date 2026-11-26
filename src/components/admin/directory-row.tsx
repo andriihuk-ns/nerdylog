@@ -1,16 +1,16 @@
 "use client";
 
 import { useOptimistic, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { ROLES, type DirectoryUser, type Role } from "@/contracts";
 import { cn } from "@/lib/utils";
 import { updateDirectoryUserAction, type DirectoryPatch } from "@/app/(dashboard)/admin/actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { formatCount, formatHours, initials } from "@/components/lib/format";
+import { initials } from "@/components/lib/format";
+import { useFormat } from "@/hooks/use-format";
 import { NumberCommitInput } from "./number-commit-input";
-
-const ROLE_LABEL: Record<Role, string> = { admin: "Admin", manager: "Manager", member: "Member" };
 
 interface Props {
   user: DirectoryUser;
@@ -23,12 +23,16 @@ interface Props {
 export function DirectoryRow({ user, teamHandles, onError }: Props) {
   const [view, applyPatch] = useOptimistic(user, (u: DirectoryUser, patch: DirectoryPatch) => ({ ...u, ...patch }));
   const [pending, startTransition] = useTransition();
+  const t = useTranslations("admin.directory");
+  const tc = useTranslations("common");
+  const tRole = useTranslations("roles");
+  const f = useFormat();
 
   function update(patch: DirectoryPatch) {
     startTransition(async () => {
       applyPatch(patch);
       const res = await updateDirectoryUserAction(user.id, patch);
-      if (!res.ok) onError(`Couldn't update ${user.fullName}. ${res.message}`);
+      if (!res.ok) onError(t("updateFailed", { name: user.fullName, reason: res.message }));
     });
   }
 
@@ -54,7 +58,7 @@ export function DirectoryRow({ user, teamHandles, onError }: Props) {
         ) : (
           <span className="text-muted-foreground">
             <span aria-hidden>—</span>
-            <span className="sr-only">No title in Slack</span>
+            <span className="sr-only">{t("noTitle")}</span>
           </span>
         )}
       </td>
@@ -63,13 +67,13 @@ export function DirectoryRow({ user, teamHandles, onError }: Props) {
       </td>
       <td className="px-2 py-2">
         <Select value={view.role} onValueChange={(role) => update({ role: role as Role })}>
-          <SelectTrigger aria-label={`Role for ${view.fullName}`} className="hit-target w-32">
+          <SelectTrigger aria-label={t("roleFor", { name: view.fullName })} className="hit-target w-32">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {ROLES.map((r) => (
               <SelectItem key={r} value={r}>
-                {ROLE_LABEL[r]}
+                {tRole(r)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -79,11 +83,11 @@ export function DirectoryRow({ user, teamHandles, onError }: Props) {
         <NumberCommitInput
           key={view.dailyNormHours}
           value={view.dailyNormHours}
-          label={`Daily norm hours for ${view.fullName}`}
+          label={t("normFor", { name: view.fullName })}
           min={0.25}
           max={24}
           step={0.25}
-          format={formatHours}
+          format={f.hours}
           onCommit={(n) => n !== null && update({ dailyNormHours: n })}
         />
       </td>
@@ -91,12 +95,12 @@ export function DirectoryRow({ user, teamHandles, onError }: Props) {
         <NumberCommitInput
           key={view.ptoAllowanceDays ?? "none"}
           value={view.ptoAllowanceDays}
-          label={`Yearly vacation allowance in days for ${view.fullName}`}
+          label={t("allowanceFor", { name: view.fullName })}
           min={0}
           max={366}
           step={0.5}
           allowEmpty
-          format={formatCount}
+          format={f.count}
           onCommit={(n) => update({ ptoAllowanceDays: n })}
         />
       </td>
@@ -105,9 +109,9 @@ export function DirectoryRow({ user, teamHandles, onError }: Props) {
           <Switch
             checked={view.isActive}
             onCheckedChange={(isActive) => update({ isActive })}
-            aria-label={`${view.fullName} active`}
+            aria-label={t("activeFor", { name: view.fullName })}
           />
-          <span className="text-xs">{view.isActive ? "Active" : "Archived"}</span>
+          <span className="text-xs">{view.isActive ? tc("active") : tc("archived")}</span>
         </span>
       </td>
     </tr>
@@ -115,16 +119,17 @@ export function DirectoryRow({ user, teamHandles, onError }: Props) {
 }
 
 function TeamChips({ handles }: { handles: string[] }) {
+  const t = useTranslations("admin.directory");
   if (handles.length === 0) {
     return (
       <span className="text-muted-foreground">
         <span aria-hidden>—</span>
-        <span className="sr-only">No team</span>
+        <span className="sr-only">{t("noTeam")}</span>
       </span>
     );
   }
   return (
-    <ul className="flex flex-wrap gap-1" aria-label="Teams">
+    <ul className="flex flex-wrap gap-1" aria-label={t("teamsLabel")}>
       {handles.map((h) => (
         <li key={h} className="rounded-full border bg-muted px-2 py-0.5 font-mono text-xs text-muted-foreground">
           @{h}

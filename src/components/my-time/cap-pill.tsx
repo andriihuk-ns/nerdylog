@@ -1,6 +1,7 @@
+import { useTranslations } from "next-intl";
 import { capStatus, type CapStatus, type ProjectCapUsage } from "@/contracts";
 import { cn } from "@/lib/utils";
-import { formatHours, formatPercent } from "@/components/lib/format";
+import { useFormat } from "@/hooks/use-format";
 
 const TRACK: Record<CapStatus, string> = {
   neutral: "bg-muted",
@@ -17,22 +18,18 @@ const TEXT: Record<CapStatus, string> = {
   warning: "text-warning",
   over: "text-pto",
 };
-const SPOKEN: Record<CapStatus, string> = {
-  neutral: "within cap",
-  warning: "near cap",
-  over: "over cap",
-};
-
 /** docs/05 §6.1 cap telemetry: `DogTeamPro  32.0h / 40.0h · 80%` + 4px bar. Status via capStatus(). */
 export function CapPill({ usage }: { usage: ProjectCapUsage }) {
   const { projectName, usedHours, capHours } = usage;
   const status = capStatus(usedHours, capHours);
+  const t = useTranslations("caps");
+  const f = useFormat();
 
   if (capHours === null || capHours <= 0) {
     return (
-      <div className="flex items-baseline justify-between gap-3" aria-label={`${projectName}, ${usedHours} hours, no cap`}>
+      <div className="flex items-baseline justify-between gap-3" aria-label={t("spokenNoCap", { project: projectName, hours: f.hours(usedHours) })}>
         <span className="truncate font-medium">{projectName}</span>
-        <span className="tabular font-medium text-muted-foreground">{formatHours(usedHours)}h · no cap</span>
+        <span className="tabular font-medium text-muted-foreground">{t("noCap", { hours: f.hours(usedHours) })}</span>
       </div>
     );
   }
@@ -42,13 +39,19 @@ export function CapPill({ usage }: { usage: ProjectCapUsage }) {
   return (
     <div
       role="group"
-      aria-label={`${projectName}, ${usedHours} of ${capHours} hours, ${Math.round(ratio * 100)} percent, ${SPOKEN[status]}`}
+      aria-label={t("spoken", {
+        project: projectName,
+        used: f.hours(usedHours),
+        cap: f.hours(capHours),
+        percent: Math.round(ratio * 100),
+        status: t(`status.${status}`),
+      })}
       className="flex flex-col gap-1.5"
     >
       <div className="flex items-baseline justify-between gap-3">
         <span className="truncate font-medium">{projectName}</span>
         <span className={cn("tabular font-medium whitespace-nowrap", TEXT[status])}>
-          {formatHours(usedHours)}h / {formatHours(capHours)}h · {formatPercent(ratio)}
+          {t("usage", { used: f.hours(usedHours), cap: f.hours(capHours), percent: f.percent(ratio) })}
         </span>
       </div>
       <div className={cn("h-1 w-full overflow-hidden rounded-full", TRACK[status])} aria-hidden>
@@ -58,7 +61,7 @@ export function CapPill({ usage }: { usage: ProjectCapUsage }) {
         />
       </div>
       {status === "over" && over > 0 ? (
-        <span className="tabular text-xs font-medium text-pto">+{formatHours(over)}h over</span>
+        <span className="tabular text-xs font-medium text-pto">{t("over", { hours: f.hours(over) })}</span>
       ) : null}
     </div>
   );

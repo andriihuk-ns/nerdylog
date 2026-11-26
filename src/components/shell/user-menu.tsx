@@ -2,6 +2,7 @@
 
 import { useId } from "react";
 import { LogOut, Monitor, Moon, Sun, type LucideIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { MyProfile } from "@/contracts";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -18,20 +19,23 @@ import {
 import { initials } from "@/components/lib/format";
 import { signOutAction } from "@/app/(dashboard)/sign-out-action";
 import { profileDisplayName, profileSubtitle } from "./profile-label";
-import { parseThemePref, THEME_LABEL, THEME_ORDER, type ThemePref } from "./theme";
+import { LocaleMenuGroup } from "./locale-menu-group";
+import { parseThemePref, THEME_ORDER, type ThemePref } from "./theme";
 import { useTheme } from "./use-theme";
 
 const THEME_ICON: Record<ThemePref, LucideIcon> = { system: Monitor, light: Sun, dark: Moon };
 
 export function UserMenu({ profile }: { profile: MyProfile }) {
-  const name = profileDisplayName(profile);
+  const t = useTranslations("userMenu");
+  const tRole = useTranslations("roles");
+  const name = profileDisplayName(profile, t("signedIn"));
   const { choice, setChoice } = useTheme();
   const themeLabelId = useId();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
         className="hit-target inline-flex items-center justify-center rounded-full"
-        aria-label={`Account menu for ${name}`}
+        aria-label={t("accountFor", { name })}
       >
         <Avatar>
           {profile.avatarUrl ? <AvatarImage src={profile.avatarUrl} alt="" /> : null}
@@ -41,13 +45,13 @@ export function UserMenu({ profile }: { profile: MyProfile }) {
       <DropdownMenuContent align="end" className="min-w-56">
         <DropdownMenuLabel className="flex flex-col gap-0.5">
           <span className="text-sm font-medium text-foreground">{name}</span>
-          <span className="text-xs text-muted-foreground">{profileSubtitle(profile)}</span>
+          <span className="text-xs text-muted-foreground">{profileSubtitle(profile, tRole(profile.role))}</span>
           {profile.email ? <span className="truncate text-xs text-muted-foreground">{profile.email}</span> : null}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuLabel id={themeLabelId} className="text-xs font-medium text-muted-foreground">
-            Theme
+            {t("theme")}
           </DropdownMenuLabel>
           <DropdownMenuRadioGroup
             aria-labelledby={themeLabelId}
@@ -59,18 +63,20 @@ export function UserMenu({ profile }: { profile: MyProfile }) {
               return (
                 <DropdownMenuRadioItem key={pref} value={pref} className="min-h-11">
                   <Icon aria-hidden />
-                  {THEME_LABEL[pref]}
+                  {t(`themes.${pref}`)}
                 </DropdownMenuRadioItem>
               );
             })}
           </DropdownMenuRadioGroup>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
+        <LocaleMenuGroup />
+        <DropdownMenuSeparator />
         <form action={signOutAction}>
           <DropdownMenuItem asChild className="min-h-11">
             <button type="submit" className="w-full">
               <LogOut aria-hidden />
-              Sign out
+              {t("signOut")}
             </button>
           </DropdownMenuItem>
         </form>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 
 interface Props {
@@ -12,11 +13,12 @@ interface Props {
 }
 
 /** `‹  Nov 23 – 29, 2026  ›  Today`. Keyboard: `[` / `]` / `T` are wired by the page. */
-export function PeriodSwitcher({ label, unit, prevHref, nextHref, todayHref, todayLabel = "Today" }: Props) {
+export function PeriodSwitcher({ label, unit, prevHref, nextHref, todayHref, todayLabel }: Props) {
+  const t = useTranslations("period");
   return (
     <div className="flex items-center gap-1">
       <Button asChild variant="ghost" size="icon" className="hit-target">
-        <Link href={prevHref} aria-label={`Previous ${unit}`} aria-keyshortcuts="[">
+        <Link href={prevHref} aria-label={t("previous", { unit })} aria-keyshortcuts="[">
           <ChevronLeft aria-hidden />
         </Link>
       </Button>
@@ -24,14 +26,14 @@ export function PeriodSwitcher({ label, unit, prevHref, nextHref, todayHref, tod
         {label}
       </p>
       <Button asChild variant="ghost" size="icon" className="hit-target">
-        <Link href={nextHref} aria-label={`Next ${unit}`} aria-keyshortcuts="]">
+        <Link href={nextHref} aria-label={t("next", { unit })} aria-keyshortcuts="]">
           <ChevronRight aria-hidden />
         </Link>
       </Button>
       {todayHref ? (
         <Button asChild variant="outline" className="hit-target ml-1">
           <Link href={todayHref} aria-keyshortcuts="T">
-            {todayLabel}
+            {todayLabel ?? t("today")}
           </Link>
         </Button>
       ) : null}

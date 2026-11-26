@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseThemePref, resolveDark, THEME_INIT_SCRIPT, THEME_LABEL, THEME_ORDER, THEME_STORAGE_KEY } from "./theme";
+import { parseThemePref, resolveDark, THEME_INIT_SCRIPT, THEME_ORDER, THEME_STORAGE_KEY } from "./theme";
 
 describe("theme", () => {
   it("parses stored values", () => {
@@ -16,9 +16,8 @@ describe("theme", () => {
     expect(resolveDark("dark", false)).toBe(true);
   });
 
-  it("lists system, light, dark in menu order with labels", () => {
+  it("lists system, light, dark in menu order", () => {
     expect(THEME_ORDER).toEqual(["system", "light", "dark"]);
-    expect(THEME_ORDER.map((p) => THEME_LABEL[p])).toEqual(["System", "Light", "Dark"]);
   });
 
   it("round-trips every choice through parseThemePref", () => {

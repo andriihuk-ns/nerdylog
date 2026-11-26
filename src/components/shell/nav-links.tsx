@@ -9,10 +9,10 @@ export interface NavItem {
   label: string;
 }
 
-export function NavLinks({ items }: { items: NavItem[] }) {
+export function NavLinks({ items, label }: { items: NavItem[]; label: string }) {
   const pathname = usePathname();
   return (
-    <nav aria-label="Main" className="flex items-center gap-1">
+    <nav aria-label={label} className="flex items-center gap-1">
       {items.map((item) => {
         const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
         return (

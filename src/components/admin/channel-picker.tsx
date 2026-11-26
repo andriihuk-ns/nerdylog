@@ -2,6 +2,7 @@
 
 import { useId, useState, type KeyboardEvent } from "react";
 import { Check, ChevronsUpDown, Lock } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { SlackChannelOption } from "@/contracts";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ interface Row {
 /** A11 searchable Slack channel combobox: `#name`, lock for private, bot-membership hint. */
 export function ChannelPicker({ channels, value, onChange, taken, noneLabel, disabled, invalid, id, ...aria }: Props) {
   const listId = useId();
+  const t = useTranslations("admin.channel");
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
@@ -96,11 +98,11 @@ export function ChannelPicker({ channels, value, onChange, taken, noneLabel, dis
           <span className="flex min-w-0 items-center gap-1.5">
             {value ? (
               <>
-                {selected?.isPrivate ? <Lock aria-label="Private" className="size-3.5" /> : null}
+                {selected?.isPrivate ? <Lock aria-label={t("private")} className="size-3.5" /> : null}
                 <span className="truncate">{channelLabel(channels, value)}</span>
               </>
             ) : (
-              <span className="text-muted-foreground">{unavailable ? "Slack not connected" : noneLabel}</span>
+              <span className="text-muted-foreground">{unavailable ? t("notConnected") : noneLabel}</span>
             )}
           </span>
           <ChevronsUpDown aria-hidden className="size-4 opacity-60" />
@@ -113,15 +115,15 @@ export function ChannelPicker({ channels, value, onChange, taken, noneLabel, dis
             setQuery(e.target.value);
             setActive(0);
           }}
-          placeholder="Search channels"
-          aria-label="Search channels"
+          placeholder={t("search")}
+          aria-label={t("search")}
           aria-controls={listId}
           aria-activedescendant={rows[active] ? `${listId}-${active}` : undefined}
           autoFocus
           className="h-10"
         />
-        <ul id={listId} role="listbox" aria-label="Slack channels" className="max-h-72 overflow-y-auto">
-          {rows.length === 0 ? <li className="px-2 py-3 text-muted-foreground">No channels match.</li> : null}
+        <ul id={listId} role="listbox" aria-label={t("list")} className="max-h-72 overflow-y-auto">
+          {rows.length === 0 ? <li className="px-2 py-3 text-muted-foreground">{t("noMatch")}</li> : null}
           {rows.map((row, i) => (
             <li
               key={row.id ?? "none"}
@@ -149,18 +151,19 @@ export function ChannelPicker({ channels, value, onChange, taken, noneLabel, dis
 }
 
 function OptionBody({ row, noneLabel }: { row: Row; noneLabel: string }) {
+  const t = useTranslations("admin.channel");
   if (!row.channel) return <span>{noneLabel}</span>;
   const { name, isPrivate, isMember } = row.channel;
   return (
     <span className="flex min-w-0 flex-1 flex-col">
       <span className="flex items-center gap-1">
-        {isPrivate ? <Lock aria-label="Private" className="size-3.5 shrink-0" /> : null}
+        {isPrivate ? <Lock aria-label={t("private")} className="size-3.5 shrink-0" /> : null}
         <span className="truncate">#{name}</span>
       </span>
       {row.takenBy ? (
-        <span className="text-xs text-muted-foreground">Linked to {row.takenBy}</span>
+        <span className="text-xs text-muted-foreground">{t("linkedTo", { owner: row.takenBy })}</span>
       ) : !isMember ? (
-        <span className="text-xs text-muted-foreground">Bot not in channel{isPrivate ? " (invite needed)" : " (joins on save)"}</span>
+        <span className="text-xs text-muted-foreground">{isPrivate ? t("botNotInPrivate") : t("botNotIn")}</span>
       ) : null}
     </span>
   );

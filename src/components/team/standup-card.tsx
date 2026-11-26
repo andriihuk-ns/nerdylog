@@ -1,4 +1,5 @@
 import { AlertTriangle } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { extractTicketRefs, type CheckinView } from "@/contracts";
 import { cn } from "@/lib/utils";
 import { initials } from "@/components/lib/format";
@@ -7,11 +8,12 @@ import { initials } from "@/components/lib/format";
 export function StandupCard({ checkin, variant }: { checkin: CheckinView; variant: "plan" | "blocker" }) {
   const text = variant === "blocker" ? checkin.blockers : checkin.plannedToday;
   const refs = extractTicketRefs(text);
+  const t = useTranslations("standups");
   return (
     <article
       data-standup-card
       tabIndex={0}
-      aria-label={`${checkin.fullName}, ${variant === "blocker" ? "blocker" : "plan"}`}
+      aria-label={t(variant === "blocker" ? "cardBlocker" : "cardPlan", { name: checkin.fullName })}
       className={cn(
         "flex flex-col gap-2 rounded-lg border p-4 outline-none focus-visible:ring-2 focus-visible:ring-ring",
         variant === "blocker" ? "border-l-2 border-l-warning bg-warning-subtle" : "bg-card",
@@ -31,15 +33,15 @@ export function StandupCard({ checkin, variant }: { checkin: CheckinView; varian
         {variant === "blocker" ? (
           <span className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-warning">
             <AlertTriangle className="size-3.5" aria-hidden />
-            Blocker
+            {t("blocker")}
           </span>
         ) : null}
       </header>
       <p className={cn("text-[15px] leading-[22px] whitespace-pre-line", variant === "blocker" && "text-warning")}>
-        {text.trim() || <span className="text-muted-foreground">No plan written.</span>}
+        {text.trim() || <span className="text-muted-foreground">{t("noPlan")}</span>}
       </p>
       {refs.length > 0 ? (
-        <ul className="flex flex-wrap gap-1" aria-label="Tickets">
+        <ul className="flex flex-wrap gap-1" aria-label={t("tickets")}>
           {refs.map((r) => (
             <li key={r} className="rounded-sm bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground">
               {r}

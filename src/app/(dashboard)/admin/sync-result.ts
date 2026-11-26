@@ -9,12 +9,11 @@ export interface TeamSyncCounts {
 export interface SlackSyncResult {
   people: { created: number; updated: number };
   teams: TeamSyncCounts | null;
-  /** Set when the team step failed; the people result still stands. */
-  teamsError: string | null;
+  /** Set when the team step failed; the people result still stands. Key under `admin.directory.teamsError`. */
+  teamsError: TeamsErrorCode | null;
 }
 
-export const USERGROUPS_SCOPE_MESSAGE =
-  "Teams need the usergroups:read permission — update the Slack app and reinstall.";
+export type TeamsErrorCode = "missingScope" | "failed";
 
 /** @slack/web-api platform error `missing_scope` (in `data.error` or, when wrapped, in the message). */
 export function isMissingScopeError(err: unknown): boolean {
@@ -23,7 +22,7 @@ export function isMissingScopeError(err: unknown): boolean {
   return err instanceof Error && err.message.includes("missing_scope");
 }
 
-/** Team-step failure → copy for the toast. Missing scope names the exact fix. */
-export function teamsErrorText(err: unknown): string {
-  return isMissingScopeError(err) ? USERGROUPS_SCOPE_MESSAGE : "Teams couldn't be synced. Try again.";
+/** Team-step failure → message code for the toast. Missing scope names the exact fix. */
+export function teamsErrorCode(err: unknown): TeamsErrorCode {
+  return isMissingScopeError(err) ? "missingScope" : "failed";
 }

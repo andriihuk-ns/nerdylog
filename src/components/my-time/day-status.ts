@@ -1,19 +1,6 @@
 import type { EntryType } from "@/contracts";
 
-/** Short pill labels (docs/05 §6.2) and long menu labels (PRD FR-WEB-02). */
-export const DAY_STATUS_SHORT: Record<EntryType, string> = {
-  work: "Work",
-  vacation: "Vac",
-  sick: "Sick",
-  holiday: "Hol",
-};
-
-export const DAY_STATUS_LONG: Record<EntryType, string> = {
-  work: "Work",
-  vacation: "Vacation",
-  sick: "Sick day",
-  holiday: "Public holiday",
-};
+/* Short pill labels (docs/05 §6.2) and long menu labels (PRD FR-WEB-02) live in messages/*.json under `dayStatus`. */
 
 /** Pill colours: work neutral, vacation/sick coral, holiday blue-gray. */
 export const DAY_STATUS_PILL: Record<EntryType, string> = {

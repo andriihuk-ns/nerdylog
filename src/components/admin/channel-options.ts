@@ -39,13 +39,20 @@ export function channelLabel(channels: SlackChannelOption[] | null, id: string):
   return c ? `#${c.name}` : id;
 }
 
-/** Inline copy for a failed channel save. The private-channel case names the exact fix. */
-export function channelErrorText(
+export type ChannelErrorCopy =
+  | { kind: "privateInvite"; channel: string | undefined }
+  | { kind: "notFound" }
+  | { kind: "message"; message: string };
+
+/**
+ * Which copy a failed channel save shows inline. The private-channel case names the exact fix;
+ * other messages already come translated from the action (A14) and pass through.
+ */
+export function channelErrorCopy(
   failure: { message: string; reason?: JoinFailureReason },
   channelName: string | undefined,
-): string {
-  if (failure.reason === "private_needs_invite") {
-    return `Private channel: run /invite @nerdylog in #${channelName ?? "the channel"}, then pick it again`;
-  }
-  return failure.message;
+): ChannelErrorCopy {
+  if (failure.reason === "private_needs_invite") return { kind: "privateInvite", channel: channelName };
+  if (failure.reason === "not_found") return { kind: "notFound" };
+  return { kind: "message", message: failure.message };
 }

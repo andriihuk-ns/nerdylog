@@ -1,27 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { loginErrorMessage, signInHref } from "./login-errors";
+import en from "../../../messages/en.json";
+import uk from "../../../messages/uk.json";
+import { LOGIN_ERROR_CODES, loginErrorKey, signInHref } from "./login-errors";
 
 describe("login helpers", () => {
-  it("maps every known error code", () => {
-    for (const code of [
-      "oauth_denied",
-      "exchange_failed",
-      "missing_slack_identity",
-      "user_link_failed",
-      "oauth_start",
-      "inactive_user",
-      "wrong_workspace",
-    ]) {
-      const msg = loginErrorMessage(code);
-      expect(msg).toBeTruthy();
-      expect(msg).not.toBe("Sign-in failed. Please try again.");
+  it("maps every known error code to its own message in both languages", () => {
+    for (const code of LOGIN_ERROR_CODES) {
+      expect(loginErrorKey(code)).toBe(code);
+      expect(en.login.errors[code]).toBeTruthy();
+      expect(uk.login.errors[code]).toBeTruthy();
     }
   });
 
   it("falls back for unknown codes and ignores missing ones", () => {
-    expect(loginErrorMessage("weird")).toBe("Sign-in failed. Please try again.");
-    expect(loginErrorMessage(undefined)).toBeNull();
-    expect(loginErrorMessage(["a", "b"])).toBeNull();
+    expect(loginErrorKey("weird")).toBe("unknown");
+    expect(en.login.errors.unknown).toBe("Sign-in failed. Please try again.");
+    expect(loginErrorKey(undefined)).toBeNull();
+    expect(loginErrorKey(["a", "b"])).toBeNull();
   });
 
   it("builds the sign-in link with a safe next path", () => {

@@ -2,7 +2,9 @@ import type { CheckinView, IsoDate, RollupTotals, UserMonthRollup } from "@/cont
 
 /** Pure helpers for the /team Summary matrix (amendment A2) and the Standup drawer (Stream B). */
 
-export const SUB_COLUMNS = ["Hours", "Days", "Vac/Sick", "Holidays"] as const;
+/** Sub-column keys; labels live under `team.grid.sub` in messages/*.json. */
+export const SUB_COLUMNS = ["hours", "days", "vacSick", "holidays"] as const;
+export type SubColumn = (typeof SUB_COLUMNS)[number];
 
 const zero = (): RollupTotals => ({ hours: 0, days: 0, vacSick: 0, holidays: 0 });
 const round2 = (n: number) => Math.round(n * 100) / 100;

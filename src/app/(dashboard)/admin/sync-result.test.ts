@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isMissingScopeError, teamsErrorText, USERGROUPS_SCOPE_MESSAGE } from "./sync-result";
+import { isMissingScopeError, teamsErrorCode } from "./sync-result";
 
 describe("isMissingScopeError", () => {
   it("detects a Slack platform error", () => {
@@ -18,12 +18,12 @@ describe("isMissingScopeError", () => {
   });
 });
 
-describe("teamsErrorText", () => {
+describe("teamsErrorCode", () => {
   it("names the permission fix for missing scope", () => {
-    expect(teamsErrorText({ data: { error: "missing_scope" } })).toBe(USERGROUPS_SCOPE_MESSAGE);
+    expect(teamsErrorCode({ data: { error: "missing_scope" } })).toBe("missingScope");
   });
 
-  it("falls back to a generic message", () => {
-    expect(teamsErrorText(new Error("boom"))).toBe("Teams couldn't be synced. Try again.");
+  it("falls back to a generic code", () => {
+    expect(teamsErrorCode(new Error("boom"))).toBe("failed");
   });
 });

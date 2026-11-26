@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { createTranslator } from "next-intl";
+import en from "../../../messages/en.json";
+import uk from "../../../messages/uk.json";
 import type { DirectoryUser, TeamView } from "@/contracts";
 import { resolveMembers, splitTeams, syncSummary, takenTeamChannels, teamHandlesByUser } from "./team-helpers";
 
@@ -69,17 +72,22 @@ describe("takenTeamChannels", () => {
 });
 
 describe("syncSummary", () => {
+  const tEn = createTranslator({ locale: "en", messages: en, namespace: "admin.directory" });
+  const tUk = createTranslator({ locale: "uk", messages: uk, namespace: "admin.directory" });
+  const full = {
+    people: { created: 2, updated: 10 },
+    teams: { created: 1, updated: 3, archived: 1, skippedMembers: 0 },
+    teamsError: null,
+  };
+
   it("shows people and teams", () => {
-    expect(
-      syncSummary({
-        people: { created: 2, updated: 10 },
-        teams: { created: 1, updated: 3, archived: 1, skippedMembers: 0 },
-        teamsError: null,
-      }),
-    ).toBe("Synced from Slack: 12 people (2 new) · 4 teams (1 archived).");
+    expect(syncSummary(full, tEn)).toBe("Synced from Slack: 12 people (2 new) · 4 teams (1 archived).");
+    expect(syncSummary(full, tUk)).toBe("Синхронізовано зі Slack: 12 людей (нових: 2) · 4 команди (в архіві: 1).");
   });
 
   it("shows people only when the team step failed", () => {
-    expect(syncSummary({ people: { created: 0, updated: 1 }, teams: null, teamsError: "x" })).toBe("Synced from Slack: 1 person.");
+    const partial = { people: { created: 0, updated: 1 }, teams: null, teamsError: "failed" as const };
+    expect(syncSummary(partial, tEn)).toBe("Synced from Slack: 1 person.");
+    expect(syncSummary(partial, tUk)).toBe("Синхронізовано зі Slack: 1 людина.");
   });
 });
