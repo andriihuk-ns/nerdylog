@@ -13,9 +13,8 @@ Validated at runtime by `src/lib/env.ts`. Template: `.env.example`.
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → API keys → **publishable** key (`sb_publishable_…`) or legacy **anon** key (`supabase start` prints it) | Auth |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → API keys → **secret** key (`sb_secret_…`) or legacy **service_role** key. Server only, never `NEXT_PUBLIC_` | Server tasks |
 | `SLACK_SIGNING_SECRET` | Slack app → Basic Information → App Credentials | `/api/slack/*` HMAC check |
-| `SLACK_BOT_TOKEN` | Slack app → OAuth & Permissions → Bot User OAuth Token (`xoxb-…`) | DMs, broadcast, `users.list` |
+| `SLACK_BOT_TOKEN` | Slack app → OAuth & Permissions → Bot User OAuth Token (`xoxb-…`) | DMs, channel posts, `users.list`, `conversations.list` / `conversations.join` |
 | `SLACK_CLIENT_ID`, `SLACK_CLIENT_SECRET` | Slack app → Basic Information | Supabase Slack OIDC provider (`supabase/config.toml` reads them via `env(...)`) |
-| `SLACK_STANDUP_CHANNEL_ID` | Channel details → channel ID (`C…`). Optional | FR-SLACK-03 broadcast |
 | `APP_BASE_URL` | Public origin, e.g. `https://tempo.example.com` | Deep links, redirects |
 | `CRON_SECRET` | `openssl rand -hex 32` (≥ 16 chars). The same value goes into Supabase Vault as `tempo_cron_secret` (section 5a) | `/api/cron/*` rejects requests without `Authorization: Bearer $CRON_SECRET` |
 
@@ -23,7 +22,7 @@ Validated at runtime by `src/lib/env.ts`. Template: `.env.example`.
 
 1. `npm ci`, then `cp .env.example .env.local` and fill it in.
 2. `supabase start` (needs Docker). It reads `supabase/config.toml`, which enables `[auth.external.slack_oidc]` with `SLACK_CLIENT_ID` / `SLACK_CLIENT_SECRET` from the shell env, so export them first (or put them in `supabase/.env`, which is git-ignored).
-3. `npm run db:migrate` — applies `drizzle/0000_init.sql`, `0001_rls_policies.sql`, `0002_pto_allowance.sql` in order. `0001` needs Supabase (`auth.uid()`, role `authenticated`); it fails on plain Postgres.
+3. `npm run db:migrate` — applies `drizzle/0000_init.sql`, `0001_rls_policies.sql`, `0002_pto_allowance.sql`, `0003_project_channels.sql`, `0004_app_settings_rls.sql` in order. `0001` and `0004` need Supabase (`auth.uid()`, role `authenticated`); it fails on plain Postgres.
 4. `npm run dev` → http://localhost:3000. Slack cannot reach localhost: for Slack webhooks use a tunnel (ngrok / cloudflared) and put its origin into the Slack app URLs (section 4).
 
 Schema changes: edit `src/server/db/schema/*.ts`, run `npm run db:generate`, review the SQL in `drizzle/`, commit it, then `npm run db:migrate`.
@@ -58,7 +57,8 @@ URL-encode special characters in the database password inside connection strings
 3. **Install to Workspace**; copy the Bot User OAuth Token → `SLACK_BOT_TOKEN`.
 4. **Basic Information**: copy Signing Secret, Client ID, Client Secret → env vars above and the Supabase Slack OIDC provider.
 5. Confirm the request URLs verify: Event Subscriptions (`/api/slack/events`), Interactivity (`/api/slack/interactions`), slash commands `/log` and `/pto` (`/api/slack/commands`).
-6. Invite the bot to the standup channel: `/invite @Tempo` in `#daily-standup`, then set `SLACK_STANDUP_CHANNEL_ID`.
+6. Channels are picked in `/admin` (amendment A11), not in env vars: the general standup channel (full standup card) and one channel per project (only that project's lines). No channel set → nothing is posted. Public channels: the bot joins on pick. Private channels: `/invite @Tempo` in the channel first, then pick it.
+   Bot scopes required by A11: `channels:read`, `groups:read`, `channels:join`. An existing install must be **reinstalled** (OAuth & Permissions → Reinstall to Workspace) after the manifest gains these scopes; the bot token may change, so re-copy `SLACK_BOT_TOKEN` if it does.
 7. In `/admin`, click **Sync from Slack** to import members (new users start as active `member`s).
 
 ## 5. Vercel

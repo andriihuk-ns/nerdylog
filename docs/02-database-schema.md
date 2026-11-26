@@ -17,7 +17,7 @@ All `id` columns are `uuid` PK `default gen_random_uuid()`. Timestamps are `time
 
 **`users`** — `slack_user_id text unique not null`, `auth_user_id uuid unique null` (*addition, pending approval*: links `auth.users.id` for RLS), `full_name text not null default ''`, `email text`, `avatar_url text`, `role role not null default 'member'`, `timezone text not null default 'Europe/Kyiv'`, `daily_norm_hours numeric(3,1) not null default 8.0`, `pto_allowance_days numeric(4,1) null` (A9: yearly vacation allowance, null = not set; check `pto_allowance_days is null or pto_allowance_days between 0 and 365`, migration `0002_pto_allowance`), `is_active bool not null default true`, `created_at`.
 
-**`projects`** — `name text not null`, `code text unique` (nullable), `monthly_hour_cap numeric(5,1)` (null = no cap), `is_billable bool not null default true`, `is_active bool not null default true`.
+**`projects`** — `name text not null`, `code text unique` (nullable), `monthly_hour_cap numeric(5,1)` (null = no cap), `is_billable bool not null default true`, `is_active bool not null default true`, `slack_channel_id text unique` (A11: nullable; one channel = one project; constraint `projects_slack_channel_id_unique`, migration `0003_project_channels`).
 
 **`time_entries`** (Stream A) — `user_id → users` (restrict), `project_id → projects` (restrict, null for PTO), `work_date date not null`, `hours numeric(4,2) not null`, `entry_type not null`, `task_summary text not null default ''`, `ticket_refs text[] not null default '{}'`, `source not null`, `slack_view_id text` (**not unique**, A1), `updated_at` (auto-bumped by Drizzle `$onUpdate`).
 - Checks: `hours between 0 and 24`; `entry_type <> 'work' or project_id is not null`; `entry_type = 'work' or hours = 0` (mirrors `timeEntryInputSchema`).
@@ -30,6 +30,8 @@ All `id` columns are `uuid` PK `default gen_random_uuid()`. Timestamps are `time
 **`slack_submissions`** (A1) — `view_id text PK`, `user_id → users` (restrict), `kind slack_submission_kind not null`, `created_at`.
 
 **`daily_pings`** (A4) — PK `(user_id, ping_date)`, `user_id → users` (cascade), `ping_date date` (user-local date), `sent_at`.
+
+**`app_settings`** (A11) — `key text PK`, `value text not null`, `updated_at` (auto-bumped by `$onUpdate`). Known key: `standup_channel_id` (general channel for the full standup card). No row = not set → nothing posted. Migration `0003_project_channels`, RLS in `0004_app_settings_rls`.
 
 Users are archived (`is_active = false`), never deleted; `restrict` FKs protect history.
 
@@ -57,9 +59,10 @@ Drizzle connects as the table owner and bypasses RLS; services enforce RBAC. Pol
 | projects, company_holidays | any authenticated | admin |
 | time_entries | own; manager/admin all | own; manager/admin all (PRD §2 "edit on behalf") |
 | daily_checkins | own; manager/admin all | own only |
+| app_settings (A11, `0004`) | manager/admin | admin |
 | slack_submissions, daily_pings | none | none (server only) |
 
-`anon` has no policies → no access. Migration `0001` needs Supabase (`auth.uid()`, role `authenticated`); it will not apply on plain Postgres.
+`anon` has no policies → no access. Migrations `0001` and `0004` need Supabase (`auth.uid()`, role `authenticated`); it will not apply on plain Postgres.
 
 ## Rollup spec (Wave 1b, pure functions)
 
@@ -102,7 +105,8 @@ Signatures: `src/contracts/services-wave2.ts` (+ `GetActorBySlackUserId` in `ser
 | `time-entry-service.ts` | DB | `listWeekEntries` (weekStart must be a Monday, else `RangeError`; reads Mon–Sun). `createTimeEntry` (`timeEntryInputSchema`, source `web_ui`, `extractTicketRefs`). `updateTimeEntry` re-validates the merged row (work keeps a project, PTO stays 0h), re-extracts tickets, keeps the original `source`. `deleteTimeEntry`. `setDayStatus` in one transaction: `work` → delete that day's PTO rows; PTO → delete every row that day, insert one 0h row. RBAC: member own rows; manager/admin anyone (PRD §2). Queries: `queries/time-entry-views.ts`. |
 | `checkin-service.ts` | DB | Stream B only. `listCheckinsForDate`: manager/admin → all active users; member → own. `hasBlocker` (`checkin-view.ts`, pure) = trimmed text non-empty and not `none`/`no`/`-` (case-insensitive). `setCheckinChannelTs` (system): sets `channel_message_ts` for user+date; no row → no-op. |
 | `directory-service.ts` | DB | `listDirectory` (manager+, archived included). `updateDirectoryUser` (admin; Zod patch; an admin cannot demote or archive themselves). `syncDirectoryFromSlack` (admin; one transaction; pure plan in `directory-sync.ts`): new Slack ids → active `member`; existing → only name/email/avatar/timezone that Slack actually sent; never role, norm, allowance, `is_active`, `auth_user_id`. Returns `{ created, updated }`. |
-| `project-service.ts` | DB | `listProjects` (any user; archived on request). `upsertProject` (admin): blank code → null, duplicate code → `InvalidInputError` on `code`. |
+| `project-service.ts` | DB | `listProjects` (any user; archived on request). `upsertProject` (admin): blank code → null, duplicate code → `InvalidInputError` on `code`. A11 `slackChannelId`: blank → null, else must match `^[CG][A-Z0-9]{8,}$`; duplicate channel → `InvalidInputError` on `slackChannelId` ("This channel is already linked to another project"). |
+| `settings-service.ts` | DB | A11. `getAppSettings` (manager+) → `{ standupChannelId }`. `updateAppSettings` (admin; partial patch: omitted key untouched, null/blank deletes the row, else same channel-id check). System reads for the Slack layer (no actor): `getStandupChannelId` (null → do not post the general card), `listProjectChannels` (active projects with a non-null channel, by name). Project channels are written via `upsertProject`. Queries: `queries/settings.ts`, `queries/catalog.ts#listProjectChannelRows`. |
 | `holiday-service.ts` | DB | `listHolidays(year)` (any user). `addHoliday` / `removeHoliday` (admin). Adding a holiday does **not** create `holiday` time entries (follow-up for FR-WEB-06 pre-fill). |
 | `ping-service.ts` | DB | `claimMorningPings(now)` (A4 + A10, called by Supabase pg_cron every 15 min). Pure rules in `ping-decision.ts`: local time via `@date-fns/tz` (unknown zone → `Europe/Kyiv`), window `[09:30:00, 11:00:00)` (A10: wide so late runs catch up), local weekday, not a company holiday, no PTO row that local day. Then `insert into daily_pings … on conflict do nothing returning user_id`; only newly claimed users are returned, with `logDate = previousBusinessDay(localDate)`. A claimed ping is not released if the DM fails. |
 | `user-service.ts` | DB | adds `getActorBySlackUserId` (active users only, returns `SlackActorProfile`). |
