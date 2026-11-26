@@ -45,9 +45,13 @@ oauth_config:
       - email # email claim → users.email
       - profile # name, picture, https://slack.com/user_id claims → users row
     bot:
-      - chat:write # post the morning ping, confirmations and the standup broadcast as Tempo.
-      #   Standup channel: invite the bot (`/invite @Tempo` in SLACK_STANDUP_CHANNEL_ID) instead of
-      #   adding chat:write.public, so Tempo can only post where it was explicitly invited.
+      - chat:write # post the morning ping, confirmations, project lines and the standup card as Tempo.
+      #   Channels (general standup + one per project) are chosen in /admin (amendment A11). Tempo
+      #   joins public ones itself; private ones need `/invite @Tempo`. No chat:write.public, so
+      #   Tempo only posts in channels it is a member of.
+      - channels:read # /admin channel picker: list public channels (conversations.list/info)
+      - groups:read # /admin channel picker: list private channels Tempo was invited to
+      - channels:join # join a public channel when an admin picks it in /admin (conversations.join)
       - im:write # open a DM channel with a user (conversations.open) for the morning ping
       - users:read # "Sync from Slack": list members, read tz + avatar
       - users:read.email # "Sync from Slack": match members to Tempo users by email
