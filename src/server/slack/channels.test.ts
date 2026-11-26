@@ -38,8 +38,8 @@ describe("listSlackChannels", () => {
       { id: "C3", name: "dogteampro", isPrivate: false, isMember: false },
       { id: "C2", name: "zeta", isPrivate: false, isMember: true },
     ]);
-    expect(list).toHaveBeenNthCalledWith(1, { types: "public_channel,private_channel", exclude_archived: true, limit: 200 });
-    expect(list).toHaveBeenNthCalledWith(2, { types: "public_channel,private_channel", exclude_archived: true, limit: 200, cursor: "c2" });
+    expect(list).toHaveBeenNthCalledWith(1, { types: "public_channel,private_channel", exclude_archived: true, limit: 1000 });
+    expect(list).toHaveBeenNthCalledWith(2, { types: "public_channel,private_channel", exclude_archived: true, limit: 1000, cursor: "c2" });
   });
 });
 
