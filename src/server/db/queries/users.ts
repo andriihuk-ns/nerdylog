@@ -1,5 +1,5 @@
 import { and, asc, eq } from "drizzle-orm";
-import type { Actor } from "@/contracts";
+import type { Actor, SlackActorProfile } from "@/contracts";
 import { users, type UserInsert } from "../schema";
 import type { DbOrTx } from "./types";
 
@@ -27,6 +27,26 @@ export async function findActiveActorByAuthUserId(db: DbOrTx, authUserId: string
     .select({ userId: users.id, role: users.role })
     .from(users)
     .where(and(eq(users.authUserId, authUserId), eq(users.isActive, true)))
+    .limit(1);
+  return row;
+}
+
+/** Active user by Slack id with the profile fields the Slack layer needs, or undefined. */
+export async function findActiveProfileBySlackUserId(
+  db: DbOrTx,
+  slackUserId: string,
+): Promise<SlackActorProfile | undefined> {
+  const [row] = await db
+    .select({
+      userId: users.id,
+      role: users.role,
+      slackUserId: users.slackUserId,
+      fullName: users.fullName,
+      avatarUrl: users.avatarUrl,
+      timezone: users.timezone,
+    })
+    .from(users)
+    .where(and(eq(users.slackUserId, slackUserId), eq(users.isActive, true)))
     .limit(1);
   return row;
 }

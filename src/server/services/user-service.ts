@@ -1,6 +1,10 @@
-import type { GetActorByAuthUserId, UpsertUserFromSlack } from "@/contracts";
+import type { GetActorByAuthUserId, GetActorBySlackUserId, UpsertUserFromSlack } from "@/contracts";
 import { getDb } from "@/server/db/client";
-import { findActiveActorByAuthUserId, upsertUserBySlackId } from "@/server/db/queries/users";
+import {
+  findActiveActorByAuthUserId,
+  findActiveProfileBySlackUserId,
+  upsertUserBySlackId,
+} from "@/server/db/queries/users";
 import { buildUserUpsert } from "./user-mapping";
 
 /** Thrown when an archived (is_active = false) user signs in with Slack. */
@@ -22,6 +26,12 @@ export const upsertUserFromSlack: UpsertUserFromSlack = async (identity) => {
   const row = await upsertUserBySlackId(getDb(), insert, update);
   if (!row.isActive) throw new InactiveUserError(row.userId);
   return { userId: row.userId, role: row.role };
+};
+
+/** Contract GetActorBySlackUserId: active user's actor + Slack profile; null if unknown or archived. */
+export const getActorBySlackUserId: GetActorBySlackUserId = async (slackUserId) => {
+  if (slackUserId.trim() === "") return null;
+  return (await findActiveProfileBySlackUserId(getDb(), slackUserId)) ?? null;
 };
 
 /** Contract GetActorByAuthUserId: the active Tempo user for a Supabase auth id, else null. */

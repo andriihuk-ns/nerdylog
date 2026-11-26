@@ -42,6 +42,8 @@ export interface CheckinView extends DailyCheckinInput {
   avatarUrl: string | null;
   hasBlocker: boolean;
 }
+/** System call after the channel broadcast (no actor; Slack layer only). */
+export type SetCheckinChannelTs = (userId: string, checkinDate: IsoDate, ts: string) => Promise<void>;
 /** manager/admin: all active users' check-ins for the date; member: only own. */
 /** System call after the channel broadcast (no actor; Slack layer only). */
 export type SetCheckinChannelTs = (userId: string, checkinDate: IsoDate, ts: string) => Promise<void>;
