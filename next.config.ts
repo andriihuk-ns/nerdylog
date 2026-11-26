@@ -10,8 +10,9 @@ const nextConfig: NextConfig = {
     // Slack avatars (users.list / OIDC picture)
     remotePatterns: [{ protocol: "https", hostname: "*.slack-edge.com" }],
   },
-  cacheComponents: true,
-  partialPrefetching: true,
+  // cacheComponents / partialPrefetching are off: on Vercel the partial-prerender resume
+  // left dynamic Suspense boundaries unresolved (signed-in pages stuck on skeletons,
+  // response never closed). Nothing in Tempo uses "use cache"; plain dynamic SSR is enough.
   turbopack: {
     rules: {
       "*.css": {
