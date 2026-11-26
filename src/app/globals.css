@@ -1,26 +1,273 @@
+/*
+ * Tempo design tokens. Spec and contrast table: docs/05-design-system.md.
+ * One system: Tempo values live in the shadcn CSS variables below and are
+ * exposed to Tailwind through `@theme inline`. Do not add a parallel palette.
+ */
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* Type. --font-inter is set by next/font in layout.tsx when loaded. */
+  --font-sans:
+    var(--font-inter), "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+  --font-heading: var(--font-sans);
+  --font-mono:
+    var(--font-geist-mono), "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+
+  /* shadcn surface + ink */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /*
+   * Tempo semantic tokens. Each has three roles:
+   *   <name>            ink/fill: text on background/card/subtle, bars, dots
+   *   <name>-foreground text on a solid <name> fill
+   *   <name>-subtle     tinted background (cells, pills, banners)
+   * Usage: text-work, bg-warning-subtle, bg-pto text-pto-foreground.
+   */
+  --color-work: var(--work);
+  --color-work-foreground: var(--work-foreground);
+  --color-work-subtle: var(--work-subtle);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-pto: var(--pto);
+  --color-pto-foreground: var(--pto-foreground);
+  --color-pto-subtle: var(--pto-subtle);
+  --color-holiday: var(--holiday);
+  --color-holiday-foreground: var(--holiday-foreground);
+  --color-holiday-subtle: var(--holiday-subtle);
+
+  /* Radius: 10px base, calm and consistent */
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Motion easing: always emitted as CSS vars and as ease-spring / ease-standard utilities */
+@theme static {
+  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+}
+
+:root {
+  /* Motion durations (easing lives in @theme static above) */
+  --duration-fast: 120ms; /* hover, press, cell focus */
+  --duration-base: 200ms; /* pills, popovers, optimistic flash */
+  --duration-slow: 320ms; /* drawers, modals */
+
+  /* Layout */
+  --radius: 0.625rem;
+  --hairline: 1px;
+  --target-min: 44px; /* HIG minimum hit target */
+
+  /* Surfaces + ink (light) */
+  --background: #fafafa;
+  --foreground: #111113;
+  --card: #ffffff;
+  --card-foreground: #111113;
+  --popover: #ffffff;
+  --popover-foreground: #111113;
+  --primary: #18181b;
+  --primary-foreground: #fafafa;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --muted: #f4f4f5;
+  --muted-foreground: #5f5f67;
+  --accent: #f4f4f5;
+  --accent-foreground: #18181b;
+  --destructive: #c81e1e;
+  --border: #e4e4e7; /* decorative hairline */
+  --input: #8a8a93; /* form control edge, >= 3:1 */
+  --ring: #71717a;
+
+  /* Semantic (light) */
+  --work: #047857;
+  --work-foreground: #ffffff;
+  --work-subtle: #ecfdf5;
+  --warning: #b45309;
+  --warning-foreground: #ffffff;
+  --warning-subtle: #fff8e6;
+  --pto: #be123c;
+  --pto-foreground: #ffffff;
+  --pto-subtle: #fff1f2;
+  --holiday: #475569;
+  --holiday-foreground: #ffffff;
+  --holiday-subtle: #f1f5f9;
+
+  /* Charts follow the semantic order: work, holiday, warning, pto, neutral */
+  --chart-1: var(--work);
+  --chart-2: var(--holiday);
+  --chart-3: var(--warning);
+  --chart-4: var(--pto);
+  --chart-5: #a1a1aa;
+
+  /* Sidebar */
+  --sidebar: #f4f4f5;
+  --sidebar-foreground: #111113;
+  --sidebar-primary: #18181b;
+  --sidebar-primary-foreground: #fafafa;
+  --sidebar-accent: #e9e9ec;
+  --sidebar-accent-foreground: #111113;
+  --sidebar-border: #e4e4e7;
+  --sidebar-ring: #71717a;
+}
+
+.dark {
+  /* Surfaces + ink (dark) */
+  --background: #111113;
+  --foreground: #f4f4f5;
+  --card: #18181b;
+  --card-foreground: #f4f4f5;
+  --popover: #1c1c1f;
+  --popover-foreground: #f4f4f5;
+  --primary: #f4f4f5;
+  --primary-foreground: #18181b;
+  --secondary: #232326;
+  --secondary-foreground: #f4f4f5;
+  --muted: #232326;
+  --muted-foreground: #a1a1aa;
+  --accent: #232326;
+  --accent-foreground: #f4f4f5;
+  --destructive: #f87171;
+  --border: #2a2a2e;
+  --input: #6e6e76;
+  --ring: #a1a1aa;
+
+  /* Semantic (dark): lighter ink, dark text on solid fills */
+  --work: #34d399;
+  --work-foreground: #04261a;
+  --work-subtle: #0d2a20;
+  --warning: #fbbf24;
+  --warning-foreground: #261a00;
+  --warning-subtle: #2b2110;
+  --pto: #fb7185;
+  --pto-foreground: #2a0a10;
+  --pto-subtle: #2e1519;
+  --holiday: #94a3b8;
+  --holiday-foreground: #0f172a;
+  --holiday-subtle: #1c222c;
+
+  --chart-5: #52525b;
+
+  --sidebar: #18181b;
+  --sidebar-foreground: #f4f4f5;
+  --sidebar-primary: #f4f4f5;
+  --sidebar-primary-foreground: #18181b;
+  --sidebar-accent: #232326;
+  --sidebar-accent-foreground: #f4f4f5;
+  --sidebar-border: #2a2a2e;
+  --sidebar-ring: #a1a1aa;
+}
+
+/*
+ * Numbers: every hour, total, percentage and date uses tabular figures.
+ * `tabular` = Tailwind `tabular-nums` plus Inter's tnum feature, so it also
+ * works where font-variant-numeric is reset. Right-align is the cell's job.
+ */
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "cv11" 1;
+}
+
+/* Hairline divider helper for matrices: 1px in --border */
+@utility hairline {
+  border-width: var(--hairline);
+  border-color: var(--border);
+}
+
+/* Spring transition for drawers, sheets, modals */
+@utility transition-spring {
+  transition-property: transform, opacity;
+  transition-timing-function: var(--ease-spring);
+  transition-duration: var(--duration-slow);
+}
+
+/* Min 44px hit target without changing visual size */
+@utility hit-target {
+  min-height: var(--target-min);
+  min-width: var(--target-min);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+    font-size: 100%;
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-size: 0.875rem; /* 14px body */
+    line-height: 1.25rem;
+    font-feature-settings: "cv11" 1, "ss01" 1;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  time,
+  data {
+    font-variant-numeric: tabular-nums;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--foreground) 14%, transparent);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Reduced motion: keep state changes, drop movement */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-slow: 0ms;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
