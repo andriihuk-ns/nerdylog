@@ -65,6 +65,5 @@ settings:
   interactivity:
     is_enabled: true
     request_url: https://APP_BASE_URL/api/slack/interactions # modal submissions, button clicks
-  org_deploy_enabled: false
   socket_mode_enabled: false # HTTP only; Vercel route handlers (amendment A3)
   token_rotation_enabled: false
