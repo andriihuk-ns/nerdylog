@@ -2,13 +2,25 @@
 
 import { refresh } from "next/cache";
 import { z } from "zod";
-import { isoDateSchema, roleSchema, type DirectoryUser, type HolidayView, type ProjectView } from "@/contracts";
+import {
+  isoDateSchema,
+  roleSchema,
+  type AppSettings,
+  type DirectoryUser,
+  type HolidayView,
+  type JoinSlackChannelResult,
+  type ProjectView,
+} from "@/contracts";
 import { requireActor } from "@/server/auth/session";
 import { syncDirectoryFromSlack, updateDirectoryUser } from "@/server/services/directory-service";
-import { upsertProject } from "@/server/services/project-service";
+import { listProjects, upsertProject } from "@/server/services/project-service";
 import { addHoliday, removeHoliday } from "@/server/services/holiday-service";
+import { getAppSettings, updateAppSettings } from "@/server/services/settings-service";
+import { SLACK_CHANNEL_ID_PATTERN } from "@/server/services/validation";
 import { fetchSlackDirectory } from "@/server/slack/directory";
+import { joinSlackChannel } from "@/server/slack/channels";
 import { actionError, ok, type ActionResult } from "../action-result";
+import { channelFailure, channelFieldError, fromJoinResult, type ChannelActionResult, type ChannelFailure } from "./channel-result";
 
 const ADMIN = ["admin"] as const;
 
@@ -50,6 +62,19 @@ export async function syncFromSlackAction(): Promise<ActionResult<{ created: num
   }
 }
 
+const channelIdSchema = z.string().regex(SLACK_CHANNEL_ID_PATTERN, "Not a valid Slack channel").nullable();
+
+/** A11: make sure the bot is in the channel before saving it. Slack not configured → inline error. */
+async function ensureBotInChannel(channelId: string): Promise<ChannelFailure | null> {
+  let result: JoinSlackChannelResult;
+  try {
+    result = await joinSlackChannel(channelId);
+  } catch {
+    return channelFailure("Connect the Slack app to choose channels.", "error");
+  }
+  return fromJoinResult(result);
+}
+
 const projectSchema = z.object({
   id: z.uuid().optional(),
   name: z.string().trim().min(1, "Name is required").max(120),
@@ -57,20 +82,55 @@ const projectSchema = z.object({
   monthlyHourCap: z.number().positive().max(10000).nullable(),
   isBillable: z.boolean(),
   isActive: z.boolean(),
+  slackChannelId: channelIdSchema,
 });
 
 export type ProjectInput = z.input<typeof projectSchema>;
 
-export async function upsertProjectAction(input: ProjectInput): Promise<ActionResult<ProjectView>> {
+export async function upsertProjectAction(input: ProjectInput): Promise<ChannelActionResult<ProjectView>> {
   try {
     const actor = await requireActor(ADMIN);
     const parsed = projectSchema.safeParse(input);
-    if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? "Check the project fields." };
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0];
+      if (issue?.path[0] === "slackChannelId") return channelFailure(issue.message);
+      return { ok: false, message: issue?.message ?? "Check the project fields." };
+    }
+    const { slackChannelId } = parsed.data;
+    if (slackChannelId) {
+      const projects: ProjectView[] = await listProjects(actor, { includeArchived: true });
+      const owner = projects.find((p) => p.slackChannelId === slackChannelId && p.id !== parsed.data.id);
+      if (owner) return channelFailure(`Already linked to ${owner.name}`);
+      const current = projects.find((p) => p.id === parsed.data.id);
+      if (current?.slackChannelId !== slackChannelId) {
+        const failure = await ensureBotInChannel(slackChannelId);
+        if (failure) return failure;
+      }
+    }
     const project: ProjectView = await upsertProject(actor, { ...parsed.data, code: parsed.data.code || null });
     refresh();
     return ok(project);
   } catch (err) {
-    return actionError(err);
+    return channelFieldError(err) ?? actionError(err);
+  }
+}
+
+/** A11 Settings tab: the general standup channel (null → Off). Joins the channel first when it changes. */
+export async function updateStandupChannelAction(channelId: string | null): Promise<ChannelActionResult<AppSettings>> {
+  try {
+    const actor = await requireActor(ADMIN);
+    const parsed = channelIdSchema.safeParse(channelId);
+    if (!parsed.success) return channelFailure("Not a valid Slack channel");
+    const current: AppSettings = await getAppSettings(actor);
+    if (parsed.data && parsed.data !== current.standupChannelId) {
+      const failure = await ensureBotInChannel(parsed.data);
+      if (failure) return failure;
+    }
+    const settings: AppSettings = await updateAppSettings(actor, { standupChannelId: parsed.data });
+    refresh();
+    return ok(settings);
+  } catch (err) {
+    return channelFieldError(err) ?? actionError(err);
   }
 }
 
