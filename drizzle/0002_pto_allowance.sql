@@ -1,0 +1,2 @@
+ALTER TABLE "users" ADD COLUMN "pto_allowance_days" numeric(4, 1);--> statement-breakpoint
+ALTER TABLE "users" ADD CONSTRAINT "users_pto_allowance_days_range" CHECK ("users"."pto_allowance_days" is null or "users"."pto_allowance_days" between 0 and 365);
