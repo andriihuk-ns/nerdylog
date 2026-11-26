@@ -44,3 +44,6 @@ next-env.d.ts
 
 # agent worktrees
 .claude/worktrees/
+
+# filled-in local copies (real project values)
+*.local.yaml
