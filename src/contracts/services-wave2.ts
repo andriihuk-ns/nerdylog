@@ -54,6 +54,7 @@ export interface DirectoryUser {
   fullName: string;
   email: string | null;
   avatarUrl: string | null;
+  title: string | null; // A12
   role: Role;
   timezone: string;
   dailyNormHours: number;
@@ -73,6 +74,7 @@ export interface SlackDirectoryMember {
   email: string | null;
   avatarUrl: string | null;
   timezone: string | null;
+  title: string | null; // A12: profile.title; blank → null
 }
 /** src/server/slack/directory.ts — paginated users.list, no arguments. */
 export type FetchSlackDirectory = () => Promise<SlackDirectoryMember[]>;

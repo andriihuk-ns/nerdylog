@@ -1,7 +1,7 @@
 import type { SlackSubmissionKind } from "./enums";
 import type { UserMonthRollup, ProjectCapUsage } from "./rollup";
 import type { DailyCheckinInput, IsoDate, TimeEntryInput } from "./time";
-import type { Actor, SlackActorProfile, SlackIdentity } from "./users";
+import type { Actor, MyProfile, SlackActorProfile, SlackIdentity } from "./users";
 
 /**
  * Cross-agent service signatures. Backend implements them in src/server/services/**;
@@ -11,6 +11,8 @@ import type { Actor, SlackActorProfile, SlackIdentity } from "./users";
 /** src/server/services/user-service.ts — throws InactiveUserError for archived users (callers: deny sign-in). */
 export type UpsertUserFromSlack = (identity: SlackIdentity) => Promise<Actor>;
 export type GetActorByAuthUserId = (authUserId: string) => Promise<Actor | null>;
+/** A12: the actor's own profile (any role). */
+export type GetMyProfile = (actor: Actor) => Promise<MyProfile>;
 /** Active users only; null for unknown or archived. */
 export type GetActorBySlackUserId = (slackUserId: string) => Promise<SlackActorProfile | null>;
 

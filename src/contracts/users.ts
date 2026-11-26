@@ -9,6 +9,7 @@ export const slackIdentitySchema = z.object({
   fullName: z.string().default(""),
   avatarUrl: z.url().nullable(),
   timezone: z.string().nullable(), // IANA tz; null → keep existing / DB default
+  title: z.string().nullable().default(null), // A12: Slack profile title; null → keep existing
 });
 export type SlackIdentity = z.infer<typeof slackIdentitySchema>;
 
@@ -23,5 +24,16 @@ export interface SlackActorProfile extends Actor {
   slackUserId: string;
   fullName: string;
   avatarUrl: string | null;
+  timezone: string;
+}
+
+/** A12: the signed-in user's own profile for the shell and page defaults. */
+export interface MyProfile {
+  userId: string;
+  role: z.infer<typeof roleSchema>;
+  fullName: string;
+  email: string | null;
+  avatarUrl: string | null;
+  title: string | null;
   timezone: string;
 }
