@@ -4,7 +4,8 @@ import { LOGIN_PATH, safeNextPath } from "@/server/auth/route-rules";
 import { isAllowedSlackTeam, slackClaimsFromUser } from "@/server/auth/slack-claims";
 import { serverEnv } from "@/lib/env";
 import { fetchSlackTitleWithTimeout } from "@/server/slack/profile";
-import { InactiveUserError, upsertUserFromSlack } from "@/server/services/user-service";
+import { getMyProfile, InactiveUserError, upsertUserFromSlack } from "@/server/services/user-service";
+import { LOCALE_COOKIE, type Locale } from "@/contracts";
 
 /**
  * GET /auth/callback?code=... — Supabase redirects here after Slack consent.
@@ -37,8 +38,9 @@ export async function GET(request: NextRequest) {
   const title = await fetchSlackTitleWithTimeout(claims.identity.slackUserId);
   const identity = { ...claims.identity, title };
 
+  let actor: Awaited<ReturnType<typeof upsertUserFromSlack>>;
   try {
-    await upsertUserFromSlack(identity);
+    actor = await upsertUserFromSlack(identity);
   } catch (err) {
     await supabase.auth.signOut();
     if (err instanceof InactiveUserError) return fail("inactive_user");
@@ -46,5 +48,22 @@ export async function GET(request: NextRequest) {
     return fail("user_link_failed");
   }
 
-  return NextResponse.redirect(new URL(safeNextPath(searchParams.get("next")), origin));
+  // A14: the saved language wins from the first page after sign-in. Best effort: never blocks sign-in.
+  let locale: Locale | null = null;
+  try {
+    locale = (await getMyProfile(actor)).locale;
+  } catch {
+    locale = null;
+  }
+
+  const res = NextResponse.redirect(new URL(safeNextPath(searchParams.get("next")), origin));
+  if (locale) {
+    res.cookies.set(LOCALE_COOKIE, locale, {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
+  }
+  return res;
 }

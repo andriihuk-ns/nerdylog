@@ -1,4 +1,5 @@
-import { isoDateSchema, type IsoDate, type SlackSubmissionInput } from "@/contracts";
+import { isoDateSchema, type IsoDate, type Locale, type SlackSubmissionInput } from "@/contracts";
+import { t } from "../i18n";
 import { PTO_TYPES } from "../blocks/pto-modal";
 import { businessDaysInRange, spanDays } from "../dates";
 import { BLOCK, MAX_PTO_BUSINESS_DAYS } from "../ids";
@@ -11,6 +12,7 @@ export interface PtoSubmissionArgs {
   values: ViewStateValues;
   /** Company holidays covering the selected range (skipped like weekends). */
   holidays: ReadonlySet<IsoDate>;
+  locale: Locale; // A14: language of the field errors
 }
 
 /** Guards the day loop against absurd ranges before counting business days. */
@@ -33,28 +35,29 @@ export function ptoRange(values: ViewStateValues): { start: string | null; end: 
  * skipping weekends and company holidays, at most 10 business days.
  */
 export function parsePtoSubmission(args: PtoSubmissionArgs): ParseResult<SlackSubmissionInput> {
-  const { viewId, meta, values, holidays } = args;
+  const { viewId, meta, values, holidays, locale } = args;
+  const tooMany = t(locale, "err.ptoMax", { max: MAX_PTO_BUSINESS_DAYS });
   const errors: FieldErrors = {};
   const type = optionValue(values, BLOCK.ptoType);
   const { start, end } = ptoRange(values);
 
-  if (!isPtoType(type)) errors[BLOCK.ptoType] = "Pick vacation or sick day";
-  if (!start || !isoDateSchema.safeParse(start).success) errors[BLOCK.ptoStart] = "Pick a date";
-  if (!end || !isoDateSchema.safeParse(end).success) errors[BLOCK.ptoEnd] = "Pick a valid end date";
+  if (!isPtoType(type)) errors[BLOCK.ptoType] = t(locale, "err.ptoType");
+  if (!start || !isoDateSchema.safeParse(start).success) errors[BLOCK.ptoStart] = t(locale, "err.ptoStart");
+  if (!end || !isoDateSchema.safeParse(end).success) errors[BLOCK.ptoEnd] = t(locale, "err.ptoEnd");
   if (Object.keys(errors).length > 0 || !start || !end || !isPtoType(type)) return { ok: false, errors };
 
   const span = spanDays(start, end);
-  if (span < 1) return { ok: false, errors: { [BLOCK.ptoEnd]: "End date must be on or after the start date" } };
+  if (span < 1) return { ok: false, errors: { [BLOCK.ptoEnd]: t(locale, "err.ptoOrder") } };
   if (span > MAX_CALENDAR_SPAN) {
-    return { ok: false, errors: { [BLOCK.ptoEnd]: `Up to ${MAX_PTO_BUSINESS_DAYS} business days at a time` } };
+    return { ok: false, errors: { [BLOCK.ptoEnd]: tooMany } };
   }
 
   const days = businessDaysInRange(start, end, holidays);
   if (days.length === 0) {
-    return { ok: false, errors: { [BLOCK.ptoStart]: "That range has only weekends or company holidays" } };
+    return { ok: false, errors: { [BLOCK.ptoStart]: t(locale, "err.ptoNoBusinessDays") } };
   }
   if (days.length > MAX_PTO_BUSINESS_DAYS) {
-    return { ok: false, errors: { [BLOCK.ptoEnd]: `Up to ${MAX_PTO_BUSINESS_DAYS} business days at a time` } };
+    return { ok: false, errors: { [BLOCK.ptoEnd]: tooMany } };
   }
 
   const entries = days.map((workDate) => ({

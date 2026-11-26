@@ -1,4 +1,6 @@
-import type { ProjectView } from "@/contracts";
+import type { Locale, ProjectView } from "@/contracts";
+import { longDate } from "../dates";
+import { t } from "../i18n";
 import { ACTION, BLOCK, CALLBACK, INPUT_ACTION, MAX_PROJECT_ROWS, rowBlock } from "../ids";
 import { encodeMetadata, type ModalMetadata } from "../metadata";
 import type { ModalView, SlackBlock } from "../types";
@@ -12,6 +14,7 @@ export const PLAN_MAX_LENGTH = 4000;
 export interface TimeModalInput {
   meta: ModalMetadata; // kind "standup" or "log"
   projects: ProjectView[]; // active projects only
+  locale: Locale; // A14: recipient's language
 }
 
 function projectOptions(projects: ProjectView[]) {
@@ -21,17 +24,17 @@ function projectOptions(projects: ProjectView[]) {
   }));
 }
 
-function projectRow(n: number, projects: ProjectView[]): SlackBlock[] {
+function projectRow(n: number, projects: ProjectView[], locale: Locale): SlackBlock[] {
   return [
     {
       type: "input",
       block_id: rowBlock.project(n),
       optional: true,
-      label: plain(`Project ${n}`),
+      label: plain(t(locale, "time.projectLabel", { n })),
       element: {
         type: "static_select",
         action_id: INPUT_ACTION,
-        placeholder: plain("Pick a project"),
+        placeholder: plain(t(locale, "time.projectPlaceholder")),
         options: projectOptions(projects),
       },
     },
@@ -39,77 +42,76 @@ function projectRow(n: number, projects: ProjectView[]): SlackBlock[] {
       type: "input",
       block_id: rowBlock.hours(n),
       optional: true,
-      label: plain("Hours"),
+      label: plain(t(locale, "time.hoursLabel")),
+      // A14: plain text (not number_input) so both "2.5" and "2,5" reach the parser; it validates the range.
       element: {
-        type: "number_input",
+        type: "plain_text_input",
         action_id: INPUT_ACTION,
-        is_decimal_allowed: true,
-        min_value: "0.25",
-        max_value: "24",
-        placeholder: plain("e.g. 4 or 2.5"),
+        max_length: 6,
+        placeholder: plain(t(locale, "time.hoursPlaceholder")),
       },
     },
     {
       type: "input",
       block_id: rowBlock.task(n),
       optional: true,
-      label: plain("What did you do?"),
-      hint: plain("Ticket IDs like DOG-1364 are picked up automatically."),
+      label: plain(t(locale, "time.taskLabel")),
+      hint: plain(t(locale, "time.taskHint")),
       element: { type: "plain_text_input", action_id: INPUT_ACTION, max_length: TASK_MAX_LENGTH },
     },
   ];
 }
 
-function rowActions(rows: number): SlackBlock | null {
+function rowActions(rows: number, locale: Locale): SlackBlock | null {
   const elements = [];
   if (rows < MAX_PROJECT_ROWS) {
-    elements.push({ type: "button" as const, action_id: ACTION.addRow, text: plain("+ Add project") });
+    elements.push({ type: "button" as const, action_id: ACTION.addRow, text: plain(t(locale, "time.addRow")) });
   }
   if (rows > 1) {
-    elements.push({ type: "button" as const, action_id: ACTION.removeRow, text: plain("Remove last") });
+    elements.push({ type: "button" as const, action_id: ACTION.removeRow, text: plain(t(locale, "time.removeRow")) });
   }
   return elements.length > 0 ? { type: "actions", block_id: BLOCK.rowActions, elements } : null;
 }
 
-function workSection(meta: ModalMetadata, projects: ProjectView[]): SlackBlock[] {
+function workSection(meta: ModalMetadata, projects: ProjectView[], locale: Locale): SlackBlock[] {
   const blocks: SlackBlock[] = [
-    header("Yesterday's work"),
+    header(t(locale, "time.workHeader", { date: longDate(meta.logDate, locale) })),
     {
       type: "input",
       block_id: BLOCK.workDate,
-      label: plain("Work date"),
+      label: plain(t(locale, "time.workDate")),
       element: { type: "datepicker", action_id: INPUT_ACTION, initial_date: meta.logDate },
     },
   ];
   if (projects.length === 0) {
-    blocks.push(mrkdwnSection("No projects assigned yet. Ask an admin."));
+    blocks.push(mrkdwnSection(t(locale, "time.noProjects")));
     return blocks;
   }
   for (let n = 1; n <= meta.rows; n += 1) {
     if (n > 1) blocks.push(divider());
-    blocks.push(...projectRow(n, projects));
+    blocks.push(...projectRow(n, projects, locale));
   }
-  const actions = rowActions(meta.rows);
+  const actions = rowActions(meta.rows, locale);
   if (actions) blocks.push(actions);
   return blocks;
 }
 
-function standupSection(): SlackBlock[] {
+function standupSection(locale: Locale): SlackBlock[] {
   return [
-    context("Off yesterday? Use Quick PTO instead."),
+    context(t(locale, "time.offYesterday")),
     divider(),
-    header("Today (shared as context, not tracked)"),
+    header(t(locale, "time.todayHeader")),
     {
       type: "input",
       block_id: BLOCK.plan,
-      label: plain("What are you planning today?"),
+      label: plain(t(locale, "time.planLabel")),
       element: { type: "plain_text_input", action_id: INPUT_ACTION, multiline: true, max_length: PLAN_MAX_LENGTH },
     },
     {
       type: "input",
       block_id: BLOCK.blockers,
       optional: true,
-      label: plain("Any blockers?"),
+      label: plain(t(locale, "time.blockersLabel")),
       element: { type: "plain_text_input", action_id: INPUT_ACTION, multiline: true, max_length: PLAN_MAX_LENGTH },
     },
   ];
@@ -119,16 +121,16 @@ function standupSection(): SlackBlock[] {
  * Design system 7.2. kind "standup" = morning modal (Stream A rows + Stream B plan/blockers);
  * kind "log" = /log, time rows only. Row inputs are optional so empty rows can be ignored.
  */
-export function buildTimeModal({ meta, projects }: TimeModalInput): ModalView {
+export function buildTimeModal({ meta, projects, locale }: TimeModalInput): ModalView {
   const standup = meta.kind === "standup";
-  const blocks = [...workSection(meta, projects), ...(standup ? standupSection() : [])];
+  const blocks = [...workSection(meta, projects, locale), ...(standup ? standupSection(locale) : [])];
   return {
     type: "modal",
     callback_id: CALLBACK.time,
     private_metadata: encodeMetadata(meta),
-    title: modalTitle(standup ? "Daily standup" : "Log time"),
-    submit: plain("Submit"),
-    close: plain("Cancel"),
+    title: modalTitle(t(locale, standup ? "title.standup" : "title.log")),
+    submit: plain(t(locale, "common.submit")),
+    close: plain(t(locale, "common.cancel")),
     blocks,
   };
 }

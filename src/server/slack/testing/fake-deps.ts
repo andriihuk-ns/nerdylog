@@ -13,6 +13,7 @@ export const profile: SlackActorProfile = {
   fullName: "Olena Petrenko",
   avatarUrl: "https://avatars.example/o.png",
   timezone: "Europe/Kyiv",
+  locale: "en", // existing tests assert English copy; uk is covered in i18n-specific tests
 };
 
 export const project: ProjectView = {

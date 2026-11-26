@@ -31,7 +31,7 @@ describe("parseTimeSubmission", () => {
     });
 
   it("splits Stream A rows and Stream B check-in; empty rows are ignored", () => {
-    const res = parseTimeSubmission({ viewId: "V1", meta: meta(), values: values() });
+    const res = parseTimeSubmission({ viewId: "V1", locale: "en", meta: meta(), values: values() });
     expect(res.ok).toBe(true);
     if (!res.ok) return;
     expect(res.value.kind).toBe("standup");
@@ -59,6 +59,7 @@ describe("parseTimeSubmission", () => {
   it("errors on a row with hours but no project, and a project without hours", () => {
     const res = parseTimeSubmission({
       viewId: "V1",
+      locale: "en",
       meta: meta(),
       values: values({
         [rowBlock.hours(2)]: { value: "3" },
@@ -73,11 +74,12 @@ describe("parseTimeSubmission", () => {
 
   it("rejects out-of-range, non-quarter and >24 total hours, and future dates", () => {
     const bad = (hours: string) =>
-      parseTimeSubmission({ viewId: "V", meta: meta(), values: values({ [rowBlock.hours(1)]: { value: hours } }) });
+      parseTimeSubmission({ viewId: "V", locale: "en", meta: meta(), values: values({ [rowBlock.hours(1)]: { value: hours } }) });
     expect(bad("0.1")).toMatchObject({ ok: false, errors: { [rowBlock.hours(1)]: "Hours must be between 0.25 and 24" } });
     expect(bad("1.3")).toMatchObject({ ok: false, errors: { [rowBlock.hours(1)]: expect.stringContaining("quarter") } });
     const total = parseTimeSubmission({
       viewId: "V",
+      locale: "en",
       meta: meta(),
       values: values({
         [rowBlock.hours(1)]: { value: "20" },
@@ -88,6 +90,7 @@ describe("parseTimeSubmission", () => {
     expect(total).toMatchObject({ ok: false, errors: { [rowBlock.hours(2)]: expect.stringContaining("24") } });
     const future = parseTimeSubmission({
       viewId: "V",
+      locale: "en",
       meta: meta(),
       values: values({ [BLOCK.workDate]: { selected_date: "2026-11-27" } }),
     });
@@ -95,11 +98,12 @@ describe("parseTimeSubmission", () => {
   });
 
   it("log kind: no check-in, slack_command source, needs at least one row", () => {
-    const ok = parseTimeSubmission({ viewId: "V", meta: meta({ kind: "log" }), values: values() });
+    const ok = parseTimeSubmission({ viewId: "V", locale: "en", meta: meta({ kind: "log" }), values: values() });
     expect(ok.ok && ok.value.checkin).toBe(null);
     expect(ok.ok && ok.value.entries[0].source).toBe("slack_command");
     const empty = parseTimeSubmission({
       viewId: "V",
+      locale: "en",
       meta: meta({ kind: "log" }),
       values: state({ [BLOCK.workDate]: { selected_date: "2026-11-25" } }),
     });
@@ -109,6 +113,7 @@ describe("parseTimeSubmission", () => {
   it("standup with no work rows is allowed (plan only)", () => {
     const res = parseTimeSubmission({
       viewId: "V",
+      locale: "en",
       meta: meta(),
       values: state({ [BLOCK.workDate]: { selected_date: "2026-11-25" }, [BLOCK.plan]: { value: "Plan" } }),
     });
@@ -120,6 +125,7 @@ describe("parsePtoSubmission", () => {
   const pto = (start: string, end?: string, type = "vacation", holidays: string[] = []) =>
     parsePtoSubmission({
       viewId: "VP",
+      locale: "en",
       meta: meta({ kind: "pto" }),
       holidays: new Set(holidays),
       values: state({

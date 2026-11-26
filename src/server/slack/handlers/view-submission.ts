@@ -1,6 +1,7 @@
-import type { IsoDate } from "@/contracts";
+import { DEFAULT_LOCALE, type IsoDate, type Locale } from "@/contracts";
 import { noticeModal, notLinkedMessage } from "../blocks/common";
 import { yearOf } from "../dates";
+import { localeOf, t } from "../i18n";
 import { CALLBACK } from "../ids";
 import { decodeMetadata } from "../metadata";
 import { parsePtoSubmission, ptoRange } from "../parse/pto-submission";
@@ -17,8 +18,8 @@ function errorsResponse(errors: FieldErrors): Response {
   return Response.json({ response_action: "errors", errors });
 }
 
-function noticeResponse(message: string): Response {
-  return Response.json({ response_action: "update", view: noticeModal("nerdylog", message) });
+function noticeResponse(message: string, locale: Locale): Response {
+  return Response.json({ response_action: "update", view: noticeModal("nerdylog", message, locale) });
 }
 
 /**
@@ -31,12 +32,14 @@ export async function handleViewSubmission(payload: ViewSubmissionPayload, deps:
   const callback = view.callback_id;
   if (callback !== CALLBACK.time && callback !== CALLBACK.pto) return new Response(null, { status: 200 });
 
-  const meta = decodeMetadata(view.private_metadata);
-  if (!meta) return noticeResponse("This form has expired. Please open it again.");
-
+  // A14: resolve the user first so every reply (notices, field errors) is in their locale.
   const profile = await deps.tempo.resolveUser(payload.user.id);
-  if (!profile) return noticeResponse(notLinkedMessage(deps.appBaseUrl));
-  if (profile.userId !== meta.userId) return noticeResponse("This form belongs to someone else.");
+  if (!profile) return noticeResponse(notLinkedMessage(deps.appBaseUrl, DEFAULT_LOCALE), DEFAULT_LOCALE);
+  const locale = localeOf(profile);
+
+  const meta = decodeMetadata(view.private_metadata);
+  if (!meta) return noticeResponse(t(locale, "common.formExpired"), locale);
+  if (profile.userId !== meta.userId) return noticeResponse(t(locale, "common.formNotYours"), locale);
 
   const values = view.state?.values ?? {};
   let result;
@@ -44,10 +47,10 @@ export async function handleViewSubmission(payload: ViewSubmissionPayload, deps:
     const { start, end } = ptoRange(values);
     const years = [start, end].filter((d): d is IsoDate => !!d && ISO.test(d)).map(yearOf);
     const holidays = years.length > 0 ? await holidaySet(deps.tempo, profile, years) : new Set<IsoDate>();
-    result = parsePtoSubmission({ viewId: view.id, meta: { ...meta, kind: "pto" }, values, holidays });
+    result = parsePtoSubmission({ viewId: view.id, meta: { ...meta, kind: "pto" }, values, holidays, locale });
   } else {
-    if (meta.kind === "pto") return noticeResponse("This form has expired. Please open it again.");
-    result = parseTimeSubmission({ viewId: view.id, meta, values });
+    if (meta.kind === "pto") return noticeResponse(t(locale, "common.formExpired"), locale);
+    result = parseTimeSubmission({ viewId: view.id, meta, values, locale });
   }
 
   if (!result.ok) return errorsResponse(result.errors);

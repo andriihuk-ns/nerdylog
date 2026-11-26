@@ -1,3 +1,5 @@
+import type { Locale } from "@/contracts";
+import { t } from "../i18n";
 import { CALLBACK } from "../ids";
 import type { ModalView, SlackBlock } from "../types";
 
@@ -35,30 +37,35 @@ function title(text: string): PlainTextElement {
   return plain(text.slice(0, 24));
 }
 
-/** Placeholder opened instantly with the trigger_id, then replaced via views.update. */
-export function loadingModal(heading: string): ModalView {
+/**
+ * Placeholder opened instantly with the trigger_id, then replaced via views.update.
+ * A14: the user (and so their locale) is not resolved yet inside the 3 s window, so this
+ * view is language-neutral: brand title, an hourglass, and a "✕" close button.
+ */
+export function loadingModal(): ModalView {
   return {
     type: "modal",
     callback_id: CALLBACK.loading,
-    title: title(heading),
-    close: plain("Cancel"),
-    blocks: [mrkdwnSection("Loading…")],
+    title: title("nerdylog"),
+    close: plain("✕"),
+    blocks: [mrkdwnSection(":hourglass_flowing_sand:")],
   };
 }
 
 /** Read-only modal for "not set up" and error states. */
-export function noticeModal(heading: string, message: string): ModalView {
+export function noticeModal(heading: string, message: string, locale: Locale): ModalView {
   return {
     type: "modal",
     callback_id: CALLBACK.notice,
     title: title(heading),
-    close: plain("Close"),
+    close: plain(t(locale, "common.close")),
     blocks: [mrkdwnSection(message)],
   };
 }
 
-export function notLinkedMessage(appBaseUrl: string): string {
-  return `You are not set up in nerdylog yet. Sign in once at <${appBaseUrl}|nerdylog> or ask an admin to sync the team from Slack.`;
+/** Shown to Slack users without a Tempo account; they have no locale, so callers pass DEFAULT_LOCALE (uk). */
+export function notLinkedMessage(appBaseUrl: string, locale: Locale): string {
+  return t(locale, "common.notLinked", { url: appBaseUrl });
 }
 
 export { title as modalTitle };

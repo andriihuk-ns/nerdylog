@@ -26,7 +26,10 @@ function yesterdayText(rows: StandupCardInput["yesterday"]): string {
     .join("\n");
 }
 
-/** Design system 7.3 (FR-SLACK-03). Stream B text is shown as context only. */
+/**
+ * Design system 7.3 (FR-SLACK-03). Stream B text is shown as context only.
+ * A14: SHARED channel post, so it stays English for everyone (no locale, no i18n).
+ */
 export function buildStandupCard(input: StandupCardInput): SlackMessage {
   const name = escapeMrkdwn(input.fullName || "Someone");
   const plan = input.plannedToday.trim();

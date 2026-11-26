@@ -1,5 +1,6 @@
-import type { IsoDate } from "@/contracts";
+import type { IsoDate, Locale } from "@/contracts";
 import { addDays, dayOfWeek, isWeekend } from "@/server/services/calendar";
+import { intlTag, t } from "./i18n";
 
 export const DEFAULT_TIMEZONE = "Europe/Kyiv";
 
@@ -37,35 +38,58 @@ export function businessDaysInRange(start: IsoDate, end: IsoDate, holidays: Read
   return days;
 }
 
-const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const MONTHS_LONG = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
+const utcDate = (date: IsoDate) => new Date(`${date}T00:00:00Z`);
 
-export function weekdayName(date: IsoDate): string {
-  return WEEKDAYS[dayOfWeek(date)];
+function formatDate(date: IsoDate, locale: Locale, options: Intl.DateTimeFormatOptions): string {
+  return new Intl.DateTimeFormat(intlTag(locale), { timeZone: "UTC", ...options }).format(utcDate(date));
 }
 
-/** "Dec 25" */
-export function shortDate(date: IsoDate): string {
-  return `${MONTHS[Number(date.slice(5, 7)) - 1]} ${Number(date.slice(8, 10))}`;
+/** "Wednesday" / "середа". */
+export function weekdayName(date: IsoDate, locale: Locale = "en"): string {
+  return formatDate(date, locale, { weekday: "long" });
 }
 
-/** "November" for "2026-11". */
-export function monthName(month: string): string {
-  return MONTHS_LONG[Number(month.slice(5, 7)) - 1] ?? month;
+/** Ukrainian weekdays in the accusative ("за середу"), which Intl does not provide. Sunday first. */
+const UK_WEEKDAYS_ACCUSATIVE = ["неділю", "понеділок", "вівторок", "середу", "четвер", "пʼятницю", "суботу"];
+
+/** Weekday for "Log {day}" / "Запиши роботу за {day}". */
+export function weekdayForPrompt(date: IsoDate, locale: Locale): string {
+  return locale === "uk" ? UK_WEEKDAYS_ACCUSATIVE[dayOfWeek(date)] : weekdayName(date, locale);
 }
 
-/** Design system: hours as `4h` / `2.5h`. */
-export function formatHours(hours: number): string {
-  return `${Math.round(hours * 100) / 100}h`;
+/** "Wednesday 25 November" / "середа, 25 листопада". */
+export function longDate(date: IsoDate, locale: Locale = "en"): string {
+  return formatDate(date, locale, { weekday: "long", day: "numeric", month: "long" });
 }
 
-/** Cap telemetry: one decimal, `32.0h`. */
-export function formatHoursFixed(hours: number): string {
-  return `${hours.toFixed(1)}h`;
+/** "25 Dec" / "25 груд.". */
+export function shortDate(date: IsoDate, locale: Locale = "en"): string {
+  return formatDate(date, locale, { day: "numeric", month: "short" });
+}
+
+/** "November" / "листопад" for "2026-11". */
+export function monthName(month: string, locale: Locale = "en"): string {
+  if (!/^\d{4}-\d{2}$/.test(month)) return month;
+  return formatDate(`${month}-01`, locale, { month: "long" });
+}
+
+/** Locale number: "2.5" (en) / "2,5" (uk). No grouping (hours never reach 1000). */
+export function formatNumber(n: number, locale: Locale = "en", fractionDigits: { min?: number; max?: number } = {}): string {
+  return new Intl.NumberFormat(intlTag(locale), {
+    useGrouping: false,
+    minimumFractionDigits: fractionDigits.min ?? 0,
+    maximumFractionDigits: fractionDigits.max ?? 2,
+  }).format(n);
+}
+
+/** Design system: hours as `4h` / `2.5h`; uk `2,5 год`. Shared channel posts call this without a locale (English). */
+export function formatHours(hours: number, locale: Locale = "en"): string {
+  return t(locale, "unit.hours", { n: formatNumber(hours, locale) });
+}
+
+/** Cap telemetry: one decimal, `32.0h` / `32,0 год`. */
+export function formatHoursFixed(hours: number, locale: Locale = "en"): string {
+  return t(locale, "unit.hours", { n: formatNumber(hours, locale, { min: 1, max: 1 }) });
 }
 
 export function firstName(fullName: string | null | undefined): string {

@@ -1,4 +1,6 @@
-import { isoDateSchema, type SlackSubmissionInput, type TimeEntryInput } from "@/contracts";
+import { isoDateSchema, type Locale, type SlackSubmissionInput, type TimeEntryInput } from "@/contracts";
+import { formatNumber } from "../dates";
+import { t } from "../i18n";
 import { PLAN_MAX_LENGTH, TASK_MAX_LENGTH } from "../blocks/time-modal";
 import { BLOCK, rowBlock } from "../ids";
 import type { ModalMetadata } from "../metadata";
@@ -8,14 +10,22 @@ export interface TimeSubmissionArgs {
   viewId: string;
   meta: ModalMetadata; // kind "standup" or "log"
   values: ViewStateValues;
+  locale: Locale; // A14: language of the field errors
 }
 
-const HOURS_RANGE = "Hours must be between 0.25 and 24";
+const MIN_HOURS = 0.25;
+const MAX_HOURS = 24;
 
-function parseHours(raw: string): number | string {
-  const hours = Number(raw.replace(",", "."));
-  if (!Number.isFinite(hours) || hours < 0.25 || hours > 24) return HOURS_RANGE;
-  if (Math.round(hours * 4) !== hours * 4) return "Use quarter hours, e.g. 2.5 or 0.75";
+/** Parses "2.5" or "2,5" (A14: either decimal separator). Returns a localized error message on failure. */
+export function parseHours(raw: string, locale: Locale): number | string {
+  const normalized = raw.trim().replace(",", ".");
+  const hours = /^\d+(\.\d+)?$|^\.\d+$/.test(normalized) ? Number(normalized) : NaN;
+  if (!Number.isFinite(hours) || hours < MIN_HOURS || hours > MAX_HOURS) {
+    return t(locale, "err.hoursRange", { min: formatNumber(MIN_HOURS, locale), max: formatNumber(MAX_HOURS, locale) });
+  }
+  if (Math.round(hours * 4) !== hours * 4) {
+    return t(locale, "err.quarterHours", { a: formatNumber(2.5, locale), b: formatNumber(0.75, locale) });
+  }
   return hours;
 }
 
@@ -25,11 +35,11 @@ function parseHours(raw: string): number | string {
  * without valid hours, yields a field error on that block. Stream B text goes only
  * into `checkin`, never into `entries`.
  */
-export function parseTimeSubmission({ viewId, meta, values }: TimeSubmissionArgs): ParseResult<SlackSubmissionInput> {
+export function parseTimeSubmission({ viewId, meta, values, locale }: TimeSubmissionArgs): ParseResult<SlackSubmissionInput> {
   const errors: FieldErrors = {};
   const workDate = dateValue(values, BLOCK.workDate);
-  if (!workDate || !isoDateSchema.safeParse(workDate).success) errors[BLOCK.workDate] = "Pick a work date";
-  if (workDate && workDate > meta.today) errors[BLOCK.workDate] = "Work date cannot be in the future";
+  if (!workDate || !isoDateSchema.safeParse(workDate).success) errors[BLOCK.workDate] = t(locale, "err.workDateMissing");
+  if (workDate && workDate > meta.today) errors[BLOCK.workDate] = t(locale, "err.workDateFuture");
 
   const source: TimeEntryInput["source"] = meta.kind === "standup" ? "slack_standup" : "slack_command";
   const entries: TimeEntryInput[] = [];
@@ -43,20 +53,20 @@ export function parseTimeSubmission({ viewId, meta, values }: TimeSubmissionArgs
     if (!projectId && !rawHours && !task) continue;
 
     if (!projectId) {
-      errors[rowBlock.project(n)] = "Pick a project for this row";
+      errors[rowBlock.project(n)] = t(locale, "err.pickProject");
       continue;
     }
     if (!rawHours) {
-      errors[rowBlock.hours(n)] = "Enter hours for this project";
+      errors[rowBlock.hours(n)] = t(locale, "err.enterHours");
       continue;
     }
-    const hours = parseHours(rawHours);
+    const hours = parseHours(rawHours, locale);
     if (typeof hours === "string") {
       errors[rowBlock.hours(n)] = hours;
       continue;
     }
     if (task.length > TASK_MAX_LENGTH) {
-      errors[rowBlock.task(n)] = `Keep it under ${TASK_MAX_LENGTH} characters`;
+      errors[rowBlock.task(n)] = t(locale, "err.tooLong", { max: TASK_MAX_LENGTH });
       continue;
     }
     total += hours;
@@ -73,18 +83,18 @@ export function parseTimeSubmission({ viewId, meta, values }: TimeSubmissionArgs
     });
   }
 
-  if (lastHoursBlock && total > 24) errors[lastHoursBlock] = "Total hours for one day cannot exceed 24";
+  if (lastHoursBlock && total > 24) errors[lastHoursBlock] = t(locale, "err.totalOver");
   if (meta.kind === "log" && entries.length === 0 && Object.keys(errors).length === 0) {
-    errors[rowBlock.hours(1)] = "Add at least one project with hours";
+    errors[rowBlock.hours(1)] = t(locale, "err.atLeastOne");
   }
 
   let checkin: SlackSubmissionInput["checkin"] = null;
   if (meta.kind === "standup") {
     const plannedToday = textValue(values, BLOCK.plan);
     const blockers = textValue(values, BLOCK.blockers);
-    if (!plannedToday) errors[BLOCK.plan] = "Share at least one line about today";
-    if (plannedToday.length > PLAN_MAX_LENGTH) errors[BLOCK.plan] = `Keep it under ${PLAN_MAX_LENGTH} characters`;
-    if (blockers.length > PLAN_MAX_LENGTH) errors[BLOCK.blockers] = `Keep it under ${PLAN_MAX_LENGTH} characters`;
+    if (!plannedToday) errors[BLOCK.plan] = t(locale, "err.planRequired");
+    if (plannedToday.length > PLAN_MAX_LENGTH) errors[BLOCK.plan] = t(locale, "err.tooLong", { max: PLAN_MAX_LENGTH });
+    if (blockers.length > PLAN_MAX_LENGTH) errors[BLOCK.blockers] = t(locale, "err.tooLong", { max: PLAN_MAX_LENGTH });
     checkin = { userId: meta.userId, checkinDate: meta.today, plannedToday, blockers };
   }
 

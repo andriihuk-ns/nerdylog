@@ -1,6 +1,7 @@
 import type { SlackSubmissionInput } from "@/contracts";
 import { buildProjectLinesMessage, groupProjectLines } from "../blocks/project-lines";
 import { buildStandupCard } from "../blocks/standup-card";
+import { localeOf, t } from "../i18n";
 import type { SlackActorProfile, SlackDeps } from "../types";
 
 function errorMessage(error: unknown): string {
@@ -8,6 +9,9 @@ function errorMessage(error: unknown): string {
 }
 
 /**
+ * A14: project-lines and standup-card posts go to SHARED channels and stay English on purpose.
+ * Only the personal failure DM below uses the recipient's locale.
+ *
  * A11 project channels: each project that has a channel gets one message with only that
  * project's work lines. Posts run independently; one failure never blocks the others.
  */
@@ -107,7 +111,7 @@ export async function processSubmission(
   } catch (error) {
     // The modal already closed, so tell the user in a DM instead of failing silently.
     console.error("slack: submission failed", input.kind, error instanceof Error ? error.message : error);
-    await notify(deps, profile, "nerdylog could not save your last submission. Please try again or use the web panel.");
+    await notify(deps, profile, t(localeOf(profile), "common.saveFailedDm"));
     return;
   }
   await routeSubmission(deps, profile, input);

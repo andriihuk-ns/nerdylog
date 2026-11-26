@@ -1,5 +1,6 @@
-import { capStatus, type HolidayView, type ProjectCapUsage, type PtoBalance } from "@/contracts";
-import { formatHours, formatHoursFixed, monthName, shortDate } from "../dates";
+import { capStatus, type HolidayView, type Locale, type ProjectCapUsage, type PtoBalance } from "@/contracts";
+import { formatHours, formatHoursFixed, formatNumber, monthName, shortDate } from "../dates";
+import { t, tPlural } from "../i18n";
 import { ACTION } from "../ids";
 import type { HomeView, SlackBlock } from "../types";
 import { context, divider, escapeMrkdwn, header, mrkdwnSection, plain } from "./common";
@@ -7,13 +8,14 @@ import { context, divider, escapeMrkdwn, header, mrkdwnSection, plain } from "./
 export interface AppHomeInput {
   appBaseUrl: string;
   weekHours: number;
-  /** null → nothing logged today; a label like "Vacation" for PTO days. */
+  locale: Locale; // A14: viewer's language
+  /** null → nothing logged today; an already-translated label like "Відпустка" for PTO days. */
   today: { hours: number } | { label: string } | null;
   month: string; // "YYYY-MM"
   caps: ProjectCapUsage[];
   pto: PtoBalance;
   nextHoliday: HolidayView | null;
-  updatedLabel: string; // e.g. "09:41"
+  updatedLabel: string; // e.g. "09:41" (already locale-formatted)
 }
 
 const SEGMENTS = 10;
@@ -24,75 +26,88 @@ export function capBar(used: number, cap: number): string {
   return "▰".repeat(filled) + "▱".repeat(SEGMENTS - filled);
 }
 
-function capLine(c: ProjectCapUsage & { capHours: number }): SlackBlock {
+function capLine(c: ProjectCapUsage & { capHours: number }, locale: Locale): SlackBlock {
   const pct = Math.round((c.usedHours / c.capHours) * 100);
   const status = capStatus(c.usedHours, c.capHours);
   const emoji = status === "over" ? " :red_circle:" : status === "warning" ? " :large_orange_circle:" : "";
   const name = escapeMrkdwn(c.projectName);
-  const usage = `${formatHoursFixed(c.usedHours)} / ${formatHoursFixed(c.capHours)} · ${pct}%`;
+  const usage = `${formatHoursFixed(c.usedHours, locale)} / ${formatHoursFixed(c.capHours, locale)} · ${pct}%`;
   return mrkdwnSection(`*${name}*  ${usage}${emoji}\n\`${capBar(c.usedHours, c.capHours)}\``);
 }
 
-function days(n: number): string {
-  return `${n} ${n === 1 ? "day" : "days"}`;
+function days(n: number, locale: Locale): string {
+  return tPlural(locale, "plural.days", n, formatNumber(n, locale));
 }
 
-function todayText(today: AppHomeInput["today"]): string {
-  if (!today) return "Not logged";
-  return "label" in today ? today.label : formatHours(today.hours);
+function todayText(today: AppHomeInput["today"], locale: Locale): string {
+  if (!today) return t(locale, "home.notLogged");
+  return "label" in today ? today.label : formatHours(today.hours, locale);
 }
 
-function ptoFields(pto: PtoBalance, nextHoliday: HolidayView | null) {
+function ptoFields(pto: PtoBalance, nextHoliday: HolidayView | null, locale: Locale) {
   // Amendment A9: remaining when an allowance is set, otherwise vacation used only.
   const vacation =
     pto.remainingDays !== null && pto.allowanceDays !== null
-      ? `*Vacation left (${pto.year})*\n${days(pto.remainingDays)} of ${pto.allowanceDays}`
-      : `*Vacation used (${pto.year})*\n${days(pto.vacationUsedDays)}`;
+      ? `*${t(locale, "home.vacationLeft", { year: pto.year })}*\n${t(locale, "home.ofAllowance", {
+          days: days(pto.remainingDays, locale),
+          allowance: formatNumber(pto.allowanceDays, locale),
+        })}`
+      : `*${t(locale, "home.vacationUsed", { year: pto.year })}*\n${days(pto.vacationUsedDays, locale)}`;
+  const holiday = nextHoliday
+    ? `${shortDate(nextHoliday.holidayDate, locale)} · ${escapeMrkdwn(nextHoliday.name)}`
+    : t(locale, "home.noHoliday");
   return [
     { type: "mrkdwn" as const, text: vacation },
-    { type: "mrkdwn" as const, text: `*Sick used*\n${days(pto.sickUsedDays)}` },
-    {
-      type: "mrkdwn" as const,
-      text: `*Next holiday*\n${nextHoliday ? `${shortDate(nextHoliday.holidayDate)} · ${escapeMrkdwn(nextHoliday.name)}` : "None planned"}`,
-    },
+    { type: "mrkdwn" as const, text: `*${t(locale, "home.sickUsed")}*\n${days(pto.sickUsedDays, locale)}` },
+    { type: "mrkdwn" as const, text: `*${t(locale, "home.nextHoliday")}*\n${holiday}` },
   ];
 }
 
-/** Design system 7.4 (FR-SLACK-04). */
+/** Design system 7.4 (FR-SLACK-04). A14: rendered in the viewer's locale. */
 export function buildAppHome(input: AppHomeInput): HomeView {
+  const { locale } = input;
   const capped = input.caps.filter((c): c is ProjectCapUsage & { capHours: number } => c.capHours !== null);
   const blocks: SlackBlock[] = [
-    header("Your week"),
+    header(t(locale, "home.yourWeek")),
     {
       type: "section",
       fields: [
-        { type: "mrkdwn", text: `*This week*\n${formatHours(input.weekHours)}` },
-        { type: "mrkdwn", text: `*Today*\n${todayText(input.today)}` },
+        { type: "mrkdwn", text: `*${t(locale, "home.thisWeek")}*\n${formatHours(input.weekHours, locale)}` },
+        { type: "mrkdwn", text: `*${t(locale, "home.today")}*\n${todayText(input.today, locale)}` },
       ],
     },
     {
       type: "actions",
       elements: [
-        { type: "button", action_id: ACTION.homeLog, text: plain("Log time"), style: "primary" },
-        { type: "button", action_id: ACTION.homePto, text: plain("Quick PTO") },
-        { type: "button", action_id: ACTION.openWeb, text: plain("Open Web Panel"), url: `${input.appBaseUrl}/my-time` },
+        { type: "button", action_id: ACTION.homeLog, text: plain(t(locale, "home.logTime")), style: "primary" },
+        { type: "button", action_id: ACTION.homePto, text: plain(t(locale, "home.quickPto")) },
+        {
+          type: "button",
+          action_id: ACTION.openWeb,
+          text: plain(t(locale, "common.openWeb")),
+          url: `${input.appBaseUrl}/my-time`,
+        },
       ],
     },
   ];
   if (capped.length > 0) {
-    blocks.push(divider(), header(`Client caps · ${monthName(input.month)}`), ...capped.map(capLine));
+    blocks.push(
+      divider(),
+      header(t(locale, "home.clientCaps", { month: monthName(input.month, locale) })),
+      ...capped.map((c) => capLine(c, locale)),
+    );
   }
   blocks.push(
     divider(),
-    header("Time off"),
-    { type: "section", fields: ptoFields(input.pto, input.nextHoliday) },
-    context(`Updated ${input.updatedLabel} · Hours are tracked from your standups and /log.`),
+    header(t(locale, "home.timeOff")),
+    { type: "section", fields: ptoFields(input.pto, input.nextHoliday, locale) },
+    context(t(locale, "home.footer", { time: input.updatedLabel })),
   );
   return { type: "home", blocks };
 }
 
-/** Home tab for Slack users without a Tempo account. */
-export function buildUnlinkedHome(message: string, appBaseUrl: string): HomeView {
+/** Home tab for Slack users without a Tempo account (no locale known → DEFAULT_LOCALE). */
+export function buildUnlinkedHome(message: string, appBaseUrl: string, locale: Locale): HomeView {
   return {
     type: "home",
     blocks: [
@@ -100,7 +115,9 @@ export function buildUnlinkedHome(message: string, appBaseUrl: string): HomeView
       mrkdwnSection(message),
       {
         type: "actions",
-        elements: [{ type: "button", action_id: ACTION.openWeb, text: plain("Open Web Panel"), url: appBaseUrl }],
+        elements: [
+          { type: "button", action_id: ACTION.openWeb, text: plain(t(locale, "common.openWeb")), url: appBaseUrl },
+        ],
       },
     ],
   };

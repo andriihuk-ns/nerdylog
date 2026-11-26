@@ -5,7 +5,7 @@ import type { SlackMessage } from "./morning-dm";
 
 type LineEntry = Pick<TimeEntryInput, "entryType" | "projectId" | "hours" | "taskSummary">;
 
-/** One A11 project-channel line: `<Name> · 4h · <task summary> (DOG-1, DOG-2)`. Plain text. */
+/** A14: SHARED channel post, stays English (formatHours without a locale). One A11 project-channel line: `<Name> · 4h · <task summary> (DOG-1, DOG-2)`. Plain text. */
 export function formatProjectLine(fullName: string, entry: Pick<LineEntry, "hours" | "taskSummary">): string {
   const task = entry.taskSummary.trim();
   const refs = extractTicketRefs(task);

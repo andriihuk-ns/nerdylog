@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   exchangeCodeForSession: vi.fn(),
   signOut: vi.fn(),
   upsertUserFromSlack: vi.fn(),
+  getMyProfile: vi.fn(),
   fetchSlackTitleWithTimeout: vi.fn(),
 }));
 
@@ -22,6 +23,7 @@ vi.mock("@/server/auth/supabase-server", () => ({
 vi.mock("@/server/services/user-service", () => ({
   InactiveUserError: class InactiveUserError extends Error {},
   upsertUserFromSlack: mocks.upsertUserFromSlack,
+  getMyProfile: mocks.getMyProfile,
 }));
 
 vi.mock("@/lib/env", () => ({ serverEnv: () => ({ SLACK_TEAM_ID: TEAM }) }));
@@ -49,6 +51,20 @@ describe("GET /auth/callback workspace check", () => {
     vi.clearAllMocks();
     mocks.upsertUserFromSlack.mockResolvedValue(undefined);
     mocks.fetchSlackTitleWithTimeout.mockResolvedValue(null);
+  });
+
+  it("sets the NEXT_LOCALE cookie from the saved language (A14)", async () => {
+    mocks.getMyProfile.mockResolvedValue({ locale: "en" });
+    mocks.exchangeCodeForSession.mockResolvedValue({ data: { user: userWithTeam(TEAM) }, error: null });
+    const res = await GET(new NextRequest("https://tempo.test/auth/callback?code=abc&next=%2Fteam"));
+    expect(res.cookies.get("NEXT_LOCALE")?.value).toBe("en");
+  });
+
+  it("still signs in when the language lookup fails", async () => {
+    mocks.getMyProfile.mockRejectedValue(new Error("db down"));
+    const loc = await callback(userWithTeam(TEAM));
+    expect(loc.pathname).toBe("/team");
+    expect(mocks.signOut).not.toHaveBeenCalled();
   });
 
   it("links the user and redirects to next for the configured workspace", async () => {

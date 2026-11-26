@@ -1,9 +1,10 @@
-import type { Actor, IsoDate, SlackSubmissionKind } from "@/contracts";
+import { DEFAULT_LOCALE, type Actor, type IsoDate, type Locale, type SlackSubmissionKind } from "@/contracts";
 import { previousBusinessDay } from "@/server/services/calendar";
 import { loadingModal, noticeModal, notLinkedMessage } from "../blocks/common";
 import { buildPtoModal } from "../blocks/pto-modal";
 import { buildTimeModal } from "../blocks/time-modal";
 import { localIsoDate, yearOf } from "../dates";
+import { localeOf, t, type MessageKey } from "../i18n";
 import type { ModalMetadata } from "../metadata";
 import type { SlackDeps, TempoPorts } from "../types";
 
@@ -15,7 +16,7 @@ export interface OpenModalRequest {
   logDate?: IsoDate | null;
 }
 
-const TITLES: Record<SlackSubmissionKind, string> = { standup: "Daily standup", log: "Log time", pto: "Quick PTO" };
+const TITLES: Record<SlackSubmissionKind, MessageKey> = { standup: "title.standup", log: "title.log", pto: "title.pto" };
 
 /** Company holidays for the given years as a Set of ISO dates. */
 export async function holidaySet(tempo: TempoPorts, actor: Actor, years: number[]): Promise<Set<IsoDate>> {
@@ -31,7 +32,7 @@ export async function holidaySet(tempo: TempoPorts, actor: Actor, years: number[
 export async function openModalFast(deps: SlackDeps, req: OpenModalRequest): Promise<boolean> {
   let viewId: string;
   try {
-    viewId = await deps.slack.openView(req.triggerId, loadingModal(TITLES[req.kind]));
+    viewId = await deps.slack.openView(req.triggerId, loadingModal());
   } catch (error) {
     console.error("slack: views.open failed", error instanceof Error ? error.message : error);
     return false;
@@ -41,12 +42,15 @@ export async function openModalFast(deps: SlackDeps, req: OpenModalRequest): Pro
 }
 
 async function fillModal(deps: SlackDeps, req: OpenModalRequest, viewId: string): Promise<void> {
+  let locale: Locale = DEFAULT_LOCALE; // A14: unknown users (and lookup failures) → uk
   try {
     const profile = await deps.tempo.resolveUser(req.slackUserId);
     if (!profile) {
-      await deps.slack.updateView(viewId, noticeModal(TITLES[req.kind], notLinkedMessage(deps.appBaseUrl)));
+      const notice = noticeModal(t(locale, TITLES[req.kind]), notLinkedMessage(deps.appBaseUrl, locale), locale);
+      await deps.slack.updateView(viewId, notice);
       return;
     }
+    locale = localeOf(profile);
     const today = localIsoDate(deps.now(), profile.timezone);
     let logDate = req.logDate ?? null;
     if (!logDate) {
@@ -57,15 +61,15 @@ async function fillModal(deps: SlackDeps, req: OpenModalRequest, viewId: string)
     }
     const meta: ModalMetadata = { kind: req.kind, logDate, userId: profile.userId, today, rows: 1 };
     if (req.kind === "pto") {
-      await deps.slack.updateView(viewId, buildPtoModal(meta));
+      await deps.slack.updateView(viewId, buildPtoModal(meta, locale));
       return;
     }
     const projects = await deps.tempo.listProjects(profile);
-    await deps.slack.updateView(viewId, buildTimeModal({ meta, projects: projects.filter((p) => p.isActive) }));
+    await deps.slack.updateView(viewId, buildTimeModal({ meta, projects: projects.filter((p) => p.isActive), locale }));
   } catch (error) {
     console.error("slack: modal load failed", error instanceof Error ? error.message : error);
     await deps.slack
-      .updateView(viewId, noticeModal(TITLES[req.kind], "Something went wrong loading nerdylog. Please try again."))
+      .updateView(viewId, noticeModal(t(locale, TITLES[req.kind]), t(locale, "common.loadFailed"), locale))
       .catch(() => undefined);
   }
 }
@@ -79,5 +83,6 @@ export async function resizeTimeModal(
   if (!profile || profile.userId !== args.meta.userId) return;
   const projects = await deps.tempo.listProjects(profile);
   const meta = { ...args.meta, rows: args.rows };
-  await deps.slack.updateView(args.viewId, buildTimeModal({ meta, projects: projects.filter((p) => p.isActive) }), args.hash);
+  const view = buildTimeModal({ meta, projects: projects.filter((p) => p.isActive), locale: localeOf(profile) });
+  await deps.slack.updateView(args.viewId, view, args.hash);
 }

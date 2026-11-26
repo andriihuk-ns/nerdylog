@@ -25,7 +25,7 @@ const meta = (over: Partial<ModalMetadata> = {}): ModalMetadata => ({
 
 describe("buildMorningDm", () => {
   it("has the two CTAs carrying the log date", () => {
-    const dm = buildMorningDm({ fullName: "Olena Petrenko", logDate: "2026-11-25" });
+    const dm = buildMorningDm({ fullName: "Olena Petrenko", logDate: "2026-11-25", locale: "en" });
     expect(dm.text).toContain("Morning, Olena.");
     expect(dm.text).toContain("Wednesday");
     const actions = json(dm.blocks).find((b) => b.type === "actions") as { elements: Json[] };
@@ -39,13 +39,13 @@ describe("buildMorningDm", () => {
   });
 
   it("falls back to a generic greeting without a name", () => {
-    expect(buildMorningDm({ logDate: "2026-11-20" }).text).toBe("Morning. Log Friday and plan today.");
+    expect(buildMorningDm({ logDate: "2026-11-20", locale: "en" }).text).toBe("Morning. Log Friday and plan today.");
   });
 });
 
 describe("buildTimeModal", () => {
   it("standup: date, one row, add button, plan and optional blockers", () => {
-    const view = buildTimeModal({ meta: meta(), projects: [project] });
+    const view = buildTimeModal({ meta: meta(), projects: [project], locale: "en" });
     expect(view.callback_id).toBe(CALLBACK.time);
     expect(view.title.text).toBe("Daily standup");
     expect(ids(view.blocks)).toEqual([
@@ -61,28 +61,28 @@ describe("buildTimeModal", () => {
     const date = blocks.find((b) => b.block_id === BLOCK.workDate)!;
     expect((date.element as Json).initial_date).toBe("2026-11-25");
     const hours = blocks.find((b) => b.block_id === rowBlock.hours(1))!;
-    expect(hours.element).toMatchObject({ type: "number_input", is_decimal_allowed: true, min_value: "0.25", max_value: "24" });
+    expect(hours.element).toMatchObject({ type: "plain_text_input" }); // A14: accepts "2.5" and "2,5"
     expect(blocks.find((b) => b.block_id === BLOCK.blockers)!.optional).toBe(true);
     expect(blocks.find((b) => b.block_id === BLOCK.plan)!.optional).toBeUndefined();
     expect(decodeMetadata(view.private_metadata)).toEqual(meta());
   });
 
   it("log: no standup fields, kind log in metadata", () => {
-    const view = buildTimeModal({ meta: meta({ kind: "log" }), projects: [project] });
+    const view = buildTimeModal({ meta: meta({ kind: "log" }), projects: [project], locale: "en" });
     expect(view.title.text).toBe("Log time");
     expect(ids(view.blocks)).not.toContain(BLOCK.plan);
     expect(decodeMetadata(view.private_metadata)?.kind).toBe("log");
   });
 
   it("renders N rows; at max rows only 'Remove last' remains", () => {
-    const view = buildTimeModal({ meta: meta({ rows: MAX_PROJECT_ROWS }), projects: [project] });
+    const view = buildTimeModal({ meta: meta({ rows: MAX_PROJECT_ROWS }), projects: [project], locale: "en" });
     expect(ids(view.blocks)).toContain(rowBlock.project(MAX_PROJECT_ROWS));
     const actions = json(view.blocks).find((b) => b.block_id === BLOCK.rowActions) as { elements: Json[] };
     expect(actions.elements.map((e) => e.action_id)).toEqual([ACTION.removeRow]);
   });
 
   it("shows an empty state instead of rows when there are no projects", () => {
-    const view = buildTimeModal({ meta: meta(), projects: [] });
+    const view = buildTimeModal({ meta: meta(), projects: [], locale: "en" });
     expect(ids(view.blocks)).not.toContain(rowBlock.project(1));
     expect(JSON.stringify(view.blocks)).toContain("No projects assigned yet");
   });
@@ -90,7 +90,7 @@ describe("buildTimeModal", () => {
 
 describe("buildPtoModal", () => {
   it("has type, start and optional end with kind pto", () => {
-    const view = buildPtoModal(meta({ kind: "standup" }));
+    const view = buildPtoModal(meta({ kind: "standup" }), "en");
     expect(view.callback_id).toBe(CALLBACK.pto);
     expect(ids(view.blocks)).toEqual([BLOCK.ptoType, BLOCK.ptoStart, BLOCK.ptoEnd]);
     expect(json(view.blocks)[2].optional).toBe(true);
@@ -134,6 +134,7 @@ describe("buildAppHome", () => {
   });
   const base = {
     appBaseUrl: "https://tempo.example",
+    locale: "en" as const,
     weekHours: 32.5,
     today: null,
     month: "2026-11",
@@ -154,7 +155,7 @@ describe("buildAppHome", () => {
     expect(text.match(/32\.0h/g)).toHaveLength(1); // uncapped project hidden
     expect(text).toContain("Vacation left (2026)*\\n12 days of 20");
     expect(text).toContain("https://tempo.example/my-time");
-    expect(text).toContain("Dec 25");
+    expect(text).toContain("25 Dec"); // en-GB
   });
 
   it("shows vacation used when no allowance is set (A9) and hides caps when none", () => {
