@@ -2,7 +2,6 @@ import { requireActor } from "@/server/auth/session";
 import { Skeleton } from "@/components/ui/skeleton";
 import { NavLinks, type NavItem } from "./nav-links";
 import { getShellProfile } from "./profile";
-import { ThemeToggle } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
 
 /** Role-aware nav + avatar menu. Reads the session, so it renders inside <Suspense>. */
@@ -16,8 +15,7 @@ export async function ShellNav() {
   return (
     <>
       <NavLinks items={items} />
-      <div className="ml-auto flex items-center gap-1">
-        <ThemeToggle />
+      <div className="ml-auto flex items-center">
         <UserMenu profile={profile} role={actor.role} />
       </div>
     </>

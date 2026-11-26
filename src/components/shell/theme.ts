@@ -3,6 +3,7 @@ export type ThemePref = "system" | "light" | "dark";
 
 export const THEME_STORAGE_KEY = "tempo-theme";
 export const THEME_ORDER: readonly ThemePref[] = ["system", "light", "dark"];
+export const THEME_LABEL: Record<ThemePref, string> = { system: "System", light: "Light", dark: "Dark" };
 
 export function parseThemePref(value: unknown): ThemePref {
   return value === "light" || value === "dark" ? value : "system";
@@ -10,10 +11,6 @@ export function parseThemePref(value: unknown): ThemePref {
 
 export function resolveDark(pref: ThemePref, systemDark: boolean): boolean {
   return pref === "dark" || (pref === "system" && systemDark);
-}
-
-export function nextThemePref(pref: ThemePref): ThemePref {
-  return THEME_ORDER[(THEME_ORDER.indexOf(pref) + 1) % THEME_ORDER.length];
 }
 
 /**
