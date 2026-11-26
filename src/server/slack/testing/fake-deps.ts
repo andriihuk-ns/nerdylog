@@ -22,6 +22,18 @@ export const project: ProjectView = {
   monthlyHourCap: 40,
   isBillable: true,
   isActive: true,
+  slackChannelId: "C_DTP",
+};
+
+export const OTHER_PROJECT_ID = "2b3c4d5e-8f1e-4c1b-9a35-3b1f8f0f6a04";
+export const otherProject: ProjectView = {
+  id: OTHER_PROJECT_ID,
+  name: "Changelly",
+  code: "CNG",
+  monthlyHourCap: null,
+  isBillable: true,
+  isActive: true,
+  slackChannelId: "C_CNG",
 };
 
 export const ptoBalance: PtoBalance = {
@@ -44,19 +56,23 @@ export function fakeDeps(over: Partial<SlackDeps> = {}) {
   };
   const tempo = {
     resolveUser: vi.fn(async (id: string) => (id === profile.slackUserId ? profile : null)),
-    listProjects: vi.fn(async () => [project]),
+    listProjects: vi.fn(async () => [project, otherProject]),
     listHolidays: vi.fn(async () => [{ id: "h1", holidayDate: "2026-12-25", name: "Christmas" }]),
     submit: vi.fn(async () => ({ status: "created" as const, entryIds: ["e1"] })),
     listWeekEntries: vi.fn(async () => []),
     getProjectCapUsage: vi.fn(async () => []),
     getPtoBalance: vi.fn(async () => ptoBalance),
     claimMorningPings: vi.fn(async () => []),
+    getStandupChannelId: vi.fn(async (): Promise<string | null> => "C_STANDUP"),
+    listProjectChannels: vi.fn(async () =>
+      [project, otherProject].map((p) => ({ projectId: p.id, projectName: p.name, slackChannelId: p.slackChannelId! })),
+    ),
+    setCheckinChannelTs: vi.fn(async () => undefined),
   };
   const deps = {
     slack,
     tempo,
     appBaseUrl: "https://tempo.example",
-    standupChannelId: "C_STANDUP" as string | null,
     now: () => new Date("2026-11-26T08:00:00Z"), // Thursday 10:00 in Kyiv
     defer: (task: () => Promise<void>) => {
       tasks.push(task);

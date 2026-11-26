@@ -6,6 +6,8 @@ import { claimMorningPings } from "@/server/services/ping-service";
 import { listProjects } from "@/server/services/project-service";
 import { getPtoBalance } from "@/server/services/pto-service";
 import { getProjectCapUsage } from "@/server/services/rollup-service";
+import { setCheckinChannelTs } from "@/server/services/checkin-service";
+import { getStandupChannelId, listProjectChannels } from "@/server/services/settings-service";
 import { submitSlackSubmission } from "@/server/services/standup-service";
 import { listWeekEntries } from "@/server/services/time-entry-service";
 // Contract request (services.ts): GetActorBySlackUserId → SlackActorProfile | null, active users only.
@@ -24,6 +26,9 @@ export function createTempoPorts(): TempoPorts {
     getProjectCapUsage,
     getPtoBalance,
     claimMorningPings,
+    getStandupChannelId,
+    listProjectChannels,
+    setCheckinChannelTs,
   };
 }
 
@@ -33,7 +38,6 @@ export function createSlackDeps(): SlackDeps {
     slack: createSlackApi(),
     tempo: createTempoPorts(),
     appBaseUrl: env.APP_BASE_URL.replace(/\/+$/, ""),
-    standupChannelId: env.SLACK_STANDUP_CHANNEL_ID || null,
     now: () => new Date(),
     defer: (task) => after(task),
   };

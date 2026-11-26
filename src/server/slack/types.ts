@@ -44,13 +44,24 @@ export interface TempoPorts {
   getProjectCapUsage(actor: Actor, month: string): Promise<ProjectCapUsage[]>;
   getPtoBalance(actor: Actor, userId: string, year: number): Promise<PtoBalance>;
   claimMorningPings(now: Date): Promise<PingTarget[]>;
+  /** A11: general standup channel from app_settings; null → no general card. */
+  getStandupChannelId(): Promise<string | null>;
+  /** A11: active projects that have a Slack channel. */
+  listProjectChannels(): Promise<ProjectChannel[]>;
+  /** A11: store the general card's ts on daily_checkins (no row → no-op). */
+  setCheckinChannelTs(userId: string, checkinDate: IsoDate, ts: string): Promise<void>;
+}
+
+export interface ProjectChannel {
+  projectId: string;
+  projectName: string;
+  slackChannelId: string;
 }
 
 export interface SlackDeps {
   slack: SlackApi;
   tempo: TempoPorts;
   appBaseUrl: string;
-  standupChannelId: string | null;
   now(): Date;
   /** Runs work after the HTTP response (next/server `after` in production). */
   defer(task: () => Promise<void>): void;

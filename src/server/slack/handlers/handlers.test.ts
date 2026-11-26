@@ -1,11 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import type { SlackSubmissionInput, TimeEntryInput } from "@/contracts";
 import { ACTION, BLOCK, CALLBACK, INPUT_ACTION, rowBlock } from "../ids";
 import { encodeMetadata, type ModalMetadata } from "../metadata";
-import { fakeDeps, PROJECT_ID, USER_ID } from "../testing/fake-deps";
+import { fakeDeps, OTHER_PROJECT_ID, profile, PROJECT_ID, USER_ID } from "../testing/fake-deps";
 import { handleSlashCommand } from "./commands";
 import { handleEvent } from "./events";
 import { handleInteraction } from "./interactions";
 import { runMorningPings } from "./morning-ping";
+import { routeSubmission } from "./submit";
 
 const form = (fields: Record<string, string>) => new URLSearchParams(fields);
 const payload = (p: unknown) => form({ payload: JSON.stringify(p) });
@@ -105,8 +107,9 @@ describe("interactions", () => {
     expect(tempo.submit).not.toHaveBeenCalled();
     await flush();
     expect(tempo.submit).toHaveBeenCalledWith(expect.objectContaining({ viewId: "V_SUB", kind: "standup", userId: USER_ID }));
-    expect(slack.postMessage).toHaveBeenCalledWith("C_STANDUP", expect.any(String), expect.any(Array));
-    expect(JSON.stringify(slack.postMessage.mock.calls[0])).toContain("4h DogTeamPro — Map modal DOG-1364");
+    const card = slack.postMessage.mock.calls.find((c) => (c as unknown[])[0] === "C_STANDUP");
+    expect(JSON.stringify(card)).toContain("4h DogTeamPro — Map modal DOG-1364");
+    expect(tempo.setCheckinChannelTs).toHaveBeenCalledWith(USER_ID, "2026-11-26", "1700000000.000100");
   });
 
   it("returns field errors synchronously and writes nothing", async () => {
@@ -161,6 +164,88 @@ describe("interactions", () => {
     await flush();
     const input = (tempo.submit.mock.calls[0] as unknown[])[0] as { entries: Array<{ workDate: string }> };
     expect(input.entries.map((e) => e.workDate)).toEqual(["2026-12-24", "2026-12-28"]); // 25th holiday, weekend
+  });
+});
+
+describe("A11 channel routing", () => {
+  const entry = (projectId: string | null, hours: number, taskSummary: string, entryType: "work" | "vacation" = "work"): TimeEntryInput => ({
+    userId: USER_ID,
+    projectId,
+    workDate: "2026-11-25",
+    hours,
+    taskSummary,
+    entryType,
+    source: "slack_standup",
+    slackViewId: "V1",
+  });
+  const input = (kind: SlackSubmissionInput["kind"], entries: TimeEntryInput[]): SlackSubmissionInput => ({
+    viewId: "V1",
+    userId: USER_ID,
+    kind,
+    entries,
+    checkin: kind === "standup" ? { userId: USER_ID, checkinDate: "2026-11-26", plannedToday: "Secret plan", blockers: "Blocked on API" } : null,
+  });
+  const posts = (slack: ReturnType<typeof fakeDeps>["slack"]) =>
+    new Map(slack.postMessage.mock.calls.map((c) => [(c as unknown[])[0] as string, (c as unknown[])[1] as string]));
+
+  it("posts only each project's lines to its own channel, never plan or blockers", async () => {
+    const { deps, slack } = fakeDeps();
+    await routeSubmission(
+      deps,
+      profile,
+      input("standup", [entry(PROJECT_ID, 4, "Map modal DOG-1364"), entry(OTHER_PROJECT_ID, 2.5, "Swap fix"), entry(PROJECT_ID, 1, "Review")]),
+    );
+    const sent = posts(slack);
+    expect(sent.get("C_DTP")).toBe("Olena Petrenko · 4h · Map modal DOG-1364 (DOG-1364)\nOlena Petrenko · 1h · Review");
+    expect(sent.get("C_CNG")).toBe("Olena Petrenko · 2.5h · Swap fix");
+    for (const ch of ["C_DTP", "C_CNG"]) expect(sent.get(ch)).not.toMatch(/Secret plan|Blocked on API/);
+    expect(sent.has("C_STANDUP")).toBe(true);
+  });
+
+  it("log submission: project lines only for projects in it, no general card", async () => {
+    const { deps, slack, tempo } = fakeDeps();
+    await routeSubmission(deps, profile, input("log", [entry(PROJECT_ID, 3, "Map modal")]));
+    expect([...posts(slack).keys()]).toEqual(["C_DTP"]);
+    expect(tempo.getStandupChannelId).not.toHaveBeenCalled();
+    expect(tempo.setCheckinChannelTs).not.toHaveBeenCalled();
+  });
+
+  it("PTO-only submission posts nothing", async () => {
+    const { deps, slack } = fakeDeps();
+    await routeSubmission(deps, profile, input("pto", [entry(null, 0, "", "vacation")]));
+    expect(slack.postMessage).not.toHaveBeenCalled();
+  });
+
+  it("no standup channel configured → no general card; projects without a channel get nothing", async () => {
+    const { deps, slack, tempo } = fakeDeps();
+    tempo.getStandupChannelId.mockResolvedValueOnce(null);
+    tempo.listProjectChannels.mockResolvedValueOnce([{ projectId: PROJECT_ID, projectName: "DogTeamPro", slackChannelId: "C_DTP" }]);
+    await routeSubmission(deps, profile, input("standup", [entry(PROJECT_ID, 1, "a"), entry(OTHER_PROJECT_ID, 1, "b")]));
+    expect([...posts(slack).keys()]).toEqual(["C_DTP"]);
+    expect(tempo.setCheckinChannelTs).not.toHaveBeenCalled();
+  });
+
+  it("one failing post does not stop the others", async () => {
+    const { deps, slack, tempo } = fakeDeps();
+    const errors = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    slack.postMessage.mockImplementation((async (channel: string) => {
+      if (channel === "C_DTP") throw new Error("not_in_channel");
+      return "1700000000.000200";
+    }) as never);
+    await routeSubmission(deps, profile, input("standup", [entry(PROJECT_ID, 1, "a"), entry(OTHER_PROJECT_ID, 1, "b")]));
+    expect(slack.postMessage.mock.calls.map((c) => (c as unknown[])[0]).sort()).toEqual(["C_CNG", "C_DTP", "C_STANDUP"]);
+    expect(tempo.setCheckinChannelTs).toHaveBeenCalledWith(USER_ID, "2026-11-26", "1700000000.000200");
+    expect(errors).toHaveBeenCalledWith("slack: project post failed", "C_DTP", "not_in_channel");
+    errors.mockRestore();
+  });
+
+  it("a failing channel lookup does not block the general card", async () => {
+    const { deps, slack, tempo } = fakeDeps();
+    const errors = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    tempo.listProjectChannels.mockRejectedValueOnce(new Error("db down"));
+    await routeSubmission(deps, profile, input("standup", [entry(PROJECT_ID, 1, "a")]));
+    expect([...posts(slack).keys()]).toEqual(["C_STANDUP"]);
+    errors.mockRestore();
   });
 });
 
