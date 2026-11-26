@@ -7,6 +7,7 @@ import type {
   ProjectCapUsage,
   ProjectView,
   PtoBalance,
+  SlackActorProfile,
   SlackSubmissionInput,
   SubmitSlackSubmissionResult,
   TimeEntryView,
@@ -18,17 +19,8 @@ export type ModalView = Extract<SlackView, { type: "modal" }>;
 export type HomeView = Extract<SlackView, { type: "home" }>;
 export type SlackBlock = ModalView["blocks"][number];
 
-/**
- * A Tempo user resolved from a Slack user id. Backend contract request:
- * `GetActorBySlackUserId = (slackUserId: string) => Promise<SlackActorProfile | null>`
- * in user-service (active users only). Until it lands, handlers receive it through TempoPorts.
- */
-export interface SlackActorProfile extends Actor {
-  slackUserId: string;
-  fullName: string;
-  avatarUrl: string | null;
-  timezone: string;
-}
+/** A Tempo user resolved from a Slack user id (contract: GetActorBySlackUserId). */
+export type { SlackActorProfile } from "@/contracts";
 
 /** Thin port over the Slack Web API so handlers are unit-testable without network. */
 export interface SlackApi {

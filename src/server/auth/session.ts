@@ -5,14 +5,10 @@ import type { Actor, Role } from "@/contracts";
 import { getActorByAuthUserId } from "@/server/services/user-service";
 import { createSupabaseServerClient } from "./supabase-server";
 import { LOGIN_PATH } from "./route-rules";
+import { ForbiddenError } from "@/server/services/errors";
 
-/** Thrown by requireActor when the caller is signed in but lacks the required role. */
-export class ForbiddenError extends Error {
-  constructor(message = "Forbidden") {
-    super(message);
-    this.name = "ForbiddenError";
-  }
-}
+/** One ForbiddenError for the whole app: requireActor and services throw the same class. */
+export { ForbiddenError } from "@/server/services/errors";
 
 /**
  * Current Tempo actor, or null when signed out or not linked to a Tempo user.
