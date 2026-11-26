@@ -10,6 +10,8 @@ export interface SupabaseUserLike {
 
 const SLACK_USER_ID_CLAIM = "https://slack.com/user_id";
 const SLACK_TEAM_ID_CLAIM = "https://slack.com/team_id";
+/** Slack member ids: U… (regular) or W… (Enterprise Grid). */
+const SLACK_MEMBER_ID = /^[UW][A-Z0-9]{6,}$/;
 
 /** Result of mapping a slack_oidc user: the contract identity plus the Slack workspace (team) id. */
 export interface SlackClaims {
@@ -60,7 +62,11 @@ function claimSources(user: SupabaseUserLike): Record<string, unknown>[] {
 export function slackIdentityFromUser(user: SupabaseUserLike): SlackIdentity | null {
   const sources = claimSources(user);
 
-  const slackUserId = claim(sources, SLACK_USER_ID_CLAIM);
+  // Supabase's slack_oidc provider stores the Slack member id as `provider_id` / `sub`
+  // (verified on a real sign-in, 2026-11-26); the namespaced claim is kept as a fallback.
+  const slackUserId = [claim(sources, SLACK_USER_ID_CLAIM), claim(sources, "provider_id"), claim(sources, "sub")].find(
+    (v): v is string => v !== null && SLACK_MEMBER_ID.test(v),
+  );
   if (!slackUserId) return null;
 
   const parsed = slackIdentitySchema.safeParse({

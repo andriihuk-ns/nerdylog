@@ -30,7 +30,7 @@ function userWithTeam(team?: string) {
     id: AUTH_ID,
     email: "dev@example.com",
     user_metadata: {
-      custom_claims: { "https://slack.com/user_id": "U1", ...(team ? { "https://slack.com/team_id": team } : {}) },
+      custom_claims: { "https://slack.com/user_id": "U01AAAAAA1", ...(team ? { "https://slack.com/team_id": team } : {}) },
     },
   };
 }
