@@ -81,12 +81,12 @@ describe("updateDirectoryUser", () => {
 describe("syncDirectoryFromSlack", () => {
   it("inserts new, updates existing, and returns counts", async () => {
     const res = await syncDirectoryFromSlack(admin, [
-      { slackUserId: "U1", fullName: "Existing", email: null, avatarUrl: null, timezone: null },
-      { slackUserId: "U2", fullName: "New", email: null, avatarUrl: null, timezone: null },
+      { slackUserId: "U1", fullName: "Existing", email: null, avatarUrl: null, timezone: null, title: "Engineer" },
+      { slackUserId: "U2", fullName: "New", email: null, avatarUrl: null, timezone: null, title: null },
     ]);
     expect(res).toEqual({ created: 1, updated: 1 });
     expect(dir.insertDirectoryUsers).toHaveBeenCalledWith(tx, [expect.objectContaining({ slackUserId: "U2", role: "member" })]);
-    expect(dir.updateUserProfileBySlackId).toHaveBeenCalledWith(tx, "U1", { fullName: "Existing" });
+    expect(dir.updateUserProfileBySlackId).toHaveBeenCalledWith(tx, "U1", { fullName: "Existing", title: "Engineer" });
   });
 });
 

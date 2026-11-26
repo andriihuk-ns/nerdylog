@@ -21,6 +21,7 @@ describe("slackIdentityFromUser", () => {
       fullName: "Dev Person",
       avatarUrl: "https://avatars.slack-edge.com/a.png",
       timezone: null,
+      title: null, // A12: OIDC has no title claim; the callback fills it from users.info
     });
   });
 

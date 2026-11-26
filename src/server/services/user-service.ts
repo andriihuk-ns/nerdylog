@@ -1,10 +1,12 @@
-import type { GetActorByAuthUserId, GetActorBySlackUserId, UpsertUserFromSlack } from "@/contracts";
+import type { GetActorByAuthUserId, GetActorBySlackUserId, GetMyProfile, UpsertUserFromSlack } from "@/contracts";
 import { getDb } from "@/server/db/client";
 import {
   findActiveActorByAuthUserId,
   findActiveProfileBySlackUserId,
+  findMyProfileById,
   upsertUserBySlackId,
 } from "@/server/db/queries/users";
+import { NotFoundError } from "./errors";
 import { buildUserUpsert } from "./user-mapping";
 
 /** Thrown when an archived (is_active = false) user signs in with Slack. */
@@ -37,4 +39,11 @@ export const getActorBySlackUserId: GetActorBySlackUserId = async (slackUserId) 
 /** Contract GetActorByAuthUserId: the active Tempo user for a Supabase auth id, else null. */
 export const getActorByAuthUserId: GetActorByAuthUserId = async (authUserId) => {
   return (await findActiveActorByAuthUserId(getDb(), authUserId)) ?? null;
+};
+
+/** Contract GetMyProfile (A12): the actor's own profile; no RBAC beyond "self". NotFoundError if the row is gone. */
+export const getMyProfile: GetMyProfile = async (actor) => {
+  const row = await findMyProfileById(getDb(), actor.userId);
+  if (!row) throw new NotFoundError("User not found");
+  return row;
 };

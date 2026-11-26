@@ -9,6 +9,7 @@ const directoryColumns = {
   fullName: users.fullName,
   email: users.email,
   avatarUrl: users.avatarUrl,
+  title: users.title,
   role: users.role,
   timezone: users.timezone,
   dailyNormHours: users.dailyNormHours,
@@ -64,7 +65,7 @@ export async function insertDirectoryUsers(db: DbOrTx, rows: UserInsert[]): Prom
 export async function updateUserProfileBySlackId(
   db: DbOrTx,
   slackUserId: string,
-  set: Partial<Pick<UserInsert, "fullName" | "email" | "avatarUrl" | "timezone">>,
+  set: Partial<Pick<UserInsert, "fullName" | "email" | "avatarUrl" | "timezone" | "title">>,
 ): Promise<boolean> {
   const rows = await db
     .update(users)

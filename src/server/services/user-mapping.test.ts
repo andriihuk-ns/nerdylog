@@ -8,6 +8,7 @@ const identity = {
   fullName: "Sviatoslav",
   avatarUrl: "https://example.com/a.png",
   timezone: "Europe/Kyiv",
+  title: "Product Designer",
 };
 
 describe("buildUserUpsert", () => {
@@ -21,18 +22,28 @@ describe("buildUserUpsert", () => {
       avatarUrl: "https://example.com/a.png",
       fullName: "Sviatoslav",
       timezone: "Europe/Kyiv",
+      title: "Product Designer",
     });
   });
 
   it("never updates role, slack id, norm or active flag on conflict", () => {
     const { update } = buildUserUpsert(identity);
-    expect(Object.keys(update).sort()).toEqual(["authUserId", "avatarUrl", "email", "fullName", "timezone"]);
+    expect(Object.keys(update).sort()).toEqual(["authUserId", "avatarUrl", "email", "fullName", "timezone", "title"]);
   });
 
   it("omits timezone when Slack sends none, so the stored/default value stays", () => {
     const { insert, update } = buildUserUpsert({ ...identity, timezone: null });
     expect(update).not.toHaveProperty("timezone");
     expect(insert).not.toHaveProperty("timezone");
+  });
+
+  it("writes a trimmed title; null or blank keeps the stored title (A12)", () => {
+    expect(buildUserUpsert({ ...identity, title: "  Engineer " }).update.title).toBe("Engineer");
+    for (const title of [null, "", "   "]) {
+      const { insert, update } = buildUserUpsert({ ...identity, title });
+      expect(update).not.toHaveProperty("title");
+      expect(insert).not.toHaveProperty("title");
+    }
   });
 
   it("rejects an invalid identity", () => {

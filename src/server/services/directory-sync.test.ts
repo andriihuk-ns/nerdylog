@@ -9,6 +9,7 @@ const member = (over: Partial<SlackDirectoryMember> = {}): SlackDirectoryMember 
   email: "ada@example.com",
   avatarUrl: "https://example.com/a.png",
   timezone: "Europe/Kyiv",
+  title: "Product Designer",
   ...over,
 });
 
@@ -25,6 +26,7 @@ describe("planDirectorySync", () => {
         email: "ada@example.com",
         avatarUrl: "https://example.com/a.png",
         timezone: "Europe/Kyiv",
+        title: "Product Designer",
       },
     ]);
   });
@@ -40,6 +42,7 @@ describe("planDirectorySync", () => {
           email: "ada@example.com",
           avatarUrl: "https://example.com/a.png",
           timezone: "Europe/Kyiv",
+          title: "Product Designer",
         },
       },
     ]);
@@ -51,10 +54,19 @@ describe("planDirectorySync", () => {
 
   it("keeps stored values when Slack sends blanks, nulls or an unknown zone", () => {
     const plan = planDirectorySync(
-      [member({ fullName: "  ", email: null, avatarUrl: null, timezone: "Nowhere/City" })],
+      [member({ fullName: "  ", email: null, avatarUrl: null, timezone: "Nowhere/City", title: null })],
       new Set(["U1"]),
     );
     expect(plan.updates[0].set).toEqual({});
+  });
+
+  it("title: trimmed when sent, blank clears to null, null keeps stored (A12)", () => {
+    const plan = planDirectorySync(
+      [member({ slackUserId: "U1", title: " Engineer " }), member({ slackUserId: "U2", title: "  " }), member({ slackUserId: "U3", title: null })],
+      new Set(["U1", "U2", "U3"]),
+    );
+    expect(plan.updates.map((u) => u.set.title)).toEqual(["Engineer", null, undefined]);
+    expect(plan.updates[2].set).not.toHaveProperty("title");
   });
 
   it("new users without a timezone get the DB default (field omitted)", () => {

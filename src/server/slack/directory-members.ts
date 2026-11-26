@@ -12,7 +12,14 @@ export interface SlackListMember {
   name?: string;
   real_name?: string;
   tz?: string;
-  profile?: { real_name?: string; display_name?: string; email?: string; image_192?: string; image_72?: string };
+  profile?: {
+    real_name?: string;
+    display_name?: string;
+    email?: string;
+    image_192?: string;
+    image_72?: string;
+    title?: string;
+  };
 }
 
 const SLACKBOT_ID = "USLACKBOT";
@@ -33,6 +40,7 @@ export function toDirectoryMember(m: SlackListMember & { id: string }): SlackDir
     email: m.profile?.email || null,
     avatarUrl: m.profile?.image_192 || m.profile?.image_72 || null,
     timezone: m.tz || null,
+    title: m.profile?.title?.trim() || null, // A12: blank → null
   };
 }
 

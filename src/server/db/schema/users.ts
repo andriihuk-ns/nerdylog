@@ -5,6 +5,7 @@ import { roleEnum } from "./enums";
 /**
  * PRD §5.2 `users`. `auth_user_id` links a Supabase Auth user (auth.users.id) for RLS.
  * A9: `pto_allowance_days` is the yearly vacation allowance; null means "not set".
+ * A12: `title` is the Slack profile title; null when Slack has none.
  */
 export const users = pgTable(
   "users",
@@ -15,6 +16,7 @@ export const users = pgTable(
     fullName: text("full_name").notNull().default(""),
     email: text("email"),
     avatarUrl: text("avatar_url"),
+    title: text("title"), // A12: Slack profile title; null = not set
     role: roleEnum("role").notNull().default("member"),
     timezone: text("timezone").notNull().default("Europe/Kyiv"),
     dailyNormHours: numeric("daily_norm_hours", { precision: 3, scale: 1, mode: "number" })

@@ -44,18 +44,18 @@ describe("metadata", () => {
 describe("toDirectoryMembers", () => {
   it("keeps people only and maps profile fields", () => {
     const members = toDirectoryMembers([
-      { id: "U1", real_name: "Olena", tz: "Europe/Kyiv", profile: { email: "o@x.io", image_192: "https://i/1.png" } },
+      { id: "U1", real_name: "Olena", tz: "Europe/Kyiv", profile: { email: "o@x.io", image_192: "https://i/1.png", title: "  Product Designer " } },
       { id: "U2", is_bot: true },
       { id: "U3", deleted: true },
       { id: "USLACKBOT" },
       { id: "U4", is_restricted: true },
       { id: "U5", is_ultra_restricted: true },
       { id: "U6", is_app_user: true },
-      { id: "U7", name: "andrii", profile: {} },
+      { id: "U7", name: "andrii", profile: { title: "   " } },
     ]);
     expect(members).toEqual([
-      { slackUserId: "U1", fullName: "Olena", email: "o@x.io", avatarUrl: "https://i/1.png", timezone: "Europe/Kyiv" },
-      { slackUserId: "U7", fullName: "andrii", email: null, avatarUrl: null, timezone: null },
+      { slackUserId: "U1", fullName: "Olena", email: "o@x.io", avatarUrl: "https://i/1.png", timezone: "Europe/Kyiv", title: "Product Designer" },
+      { slackUserId: "U7", fullName: "andrii", email: null, avatarUrl: null, timezone: null, title: null },
     ]);
   });
 });

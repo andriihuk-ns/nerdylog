@@ -1,5 +1,5 @@
 import { and, asc, eq } from "drizzle-orm";
-import type { Actor, SlackActorProfile } from "@/contracts";
+import type { Actor, MyProfile, SlackActorProfile } from "@/contracts";
 import { users, type UserInsert } from "../schema";
 import type { DbOrTx } from "./types";
 
@@ -47,6 +47,24 @@ export async function findActiveProfileBySlackUserId(
     })
     .from(users)
     .where(and(eq(users.slackUserId, slackUserId), eq(users.isActive, true)))
+    .limit(1);
+  return row;
+}
+
+/** A12: a user's own profile by id (archived users included), or undefined. */
+export async function findMyProfileById(db: DbOrTx, userId: string): Promise<MyProfile | undefined> {
+  const [row] = await db
+    .select({
+      userId: users.id,
+      role: users.role,
+      fullName: users.fullName,
+      email: users.email,
+      avatarUrl: users.avatarUrl,
+      title: users.title,
+      timezone: users.timezone,
+    })
+    .from(users)
+    .where(eq(users.id, userId))
     .limit(1);
   return row;
 }

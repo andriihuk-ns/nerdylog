@@ -9,9 +9,10 @@ export const slackDirectoryMemberSchema = z.object({
   email: z.string().nullable(),
   avatarUrl: z.string().nullable(),
   timezone: z.string().nullable(),
+  title: z.string().nullable().default(null),
 });
 
-export type ProfileUpdate = Partial<Pick<UserInsert, "fullName" | "email" | "avatarUrl" | "timezone">>;
+export type ProfileUpdate = Partial<Pick<UserInsert, "fullName" | "email" | "avatarUrl" | "timezone" | "title">>;
 
 export interface DirectorySyncPlan {
   inserts: UserInsert[];
@@ -22,6 +23,7 @@ export interface DirectorySyncPlan {
  * Pure plan for SyncDirectoryFromSlack. Upsert key: slack_user_id (last duplicate wins).
  * New rows → role member, active, Slack profile. Existing rows → only profile fields that
  * Slack actually sent (empty name / null email / null avatar / unknown tz keep the stored value).
+ * A12 title: a string is written trimmed (blank → null clears it); null keeps the stored title.
  * role, daily_norm_hours, pto_allowance_days, is_active and auth_user_id are never written.
  */
 export function planDirectorySync(
@@ -49,5 +51,6 @@ function profileFields(m: z.output<typeof slackDirectoryMemberSchema>): ProfileU
   if (m.email) set.email = m.email;
   if (m.avatarUrl) set.avatarUrl = m.avatarUrl;
   if (m.timezone && isValidTimeZone(m.timezone)) set.timezone = m.timezone;
+  if (m.title !== null) set.title = m.title.trim() || null; // A12: blank → null, null → keep
   return set;
 }
