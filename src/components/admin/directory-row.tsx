@@ -44,6 +44,18 @@ export function DirectoryRow({ user, onError }: Props) {
           </span>
         </span>
       </th>
+      <td className="max-w-48 px-2 py-2 text-sm">
+        {view.title ? (
+          <span className="block truncate" title={view.title}>
+            {view.title}
+          </span>
+        ) : (
+          <span className="text-muted-foreground">
+            <span aria-hidden>—</span>
+            <span className="sr-only">No title in Slack</span>
+          </span>
+        )}
+      </td>
       <td className="px-2 py-2">
         <Select value={view.role} onValueChange={(role) => update({ role: role as Role })}>
           <SelectTrigger aria-label={`Role for ${view.fullName}`} className="hit-target w-32">

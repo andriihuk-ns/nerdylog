@@ -3,12 +3,14 @@ import { createSupabaseServerClient } from "@/server/auth/supabase-server";
 import { LOGIN_PATH, safeNextPath } from "@/server/auth/route-rules";
 import { isAllowedSlackTeam, slackClaimsFromUser } from "@/server/auth/slack-claims";
 import { serverEnv } from "@/lib/env";
+import { fetchSlackTitleWithTimeout } from "@/server/slack/profile";
 import { InactiveUserError, upsertUserFromSlack } from "@/server/services/user-service";
 
 /**
  * GET /auth/callback?code=... — Supabase redirects here after Slack consent.
  * Exchanges the code for a session (sets auth cookies), rejects tokens from any Slack workspace other
- * than SLACK_TEAM_ID (before any user row is created), binds the Slack identity to a Tempo user,
+ * than SLACK_TEAM_ID (before any user row is created), looks up the Slack profile title (A12, best effort),
+ * binds the Slack identity to a Tempo user,
  * then redirects to `next` (default /my-time). Failures go to /login?error=<reason>.
  */
 export async function GET(request: NextRequest) {
@@ -31,7 +33,9 @@ export async function GET(request: NextRequest) {
     await supabase.auth.signOut();
     return fail("wrong_workspace");
   }
-  const { identity } = claims;
+  // A12: profile title via bot users.info; capped at ~2 s and null on any failure, so it never blocks sign-in.
+  const title = await fetchSlackTitleWithTimeout(claims.identity.slackUserId);
+  const identity = { ...claims.identity, title };
 
   try {
     await upsertUserFromSlack(identity);

@@ -54,14 +54,23 @@ export function weekDays(weekStart: IsoDate): IsoDate[] {
   return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 }
 
-/** Today as "YYYY-MM-DD" in an IANA timezone. */
-export function todayIn(timeZone: string = DEFAULT_TIMEZONE, now: Date = new Date()): IsoDate {
+/** Fallback only: pages pass the actor's `profile.timezone` (A12). */
+function formatToday(timeZone: string, now: Date): IsoDate {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
   }).format(now);
+}
+
+/** Today as "YYYY-MM-DD" in an IANA timezone; an unknown zone falls back to DEFAULT_TIMEZONE. */
+export function todayIn(timeZone: string = DEFAULT_TIMEZONE, now: Date = new Date()): IsoDate {
+  try {
+    return formatToday(timeZone, now);
+  } catch {
+    return formatToday(DEFAULT_TIMEZONE, now);
+  }
 }
 
 /** `?week=` → Monday of that week; missing or invalid → Monday of `today`. */

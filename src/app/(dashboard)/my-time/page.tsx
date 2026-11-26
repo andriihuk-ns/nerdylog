@@ -10,6 +10,7 @@ import { WeekView } from "@/components/my-time/week-view";
 import { CapPills } from "@/components/my-time/cap-pills";
 import { PtoBalanceCard } from "@/components/my-time/pto-balance-card";
 import { ExportLinks, exportHref } from "@/components/shell/export-links";
+import { getCurrentProfile } from "@/components/shell/profile";
 
 export const metadata: Metadata = { title: "My time" };
 
@@ -17,9 +18,8 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 export default async function MyTimePage({ searchParams }: { searchParams: SearchParams }) {
   const actor = await requireActor();
-  const params = await searchParams;
-  // Assumption: Actor has no timezone yet, so "today" uses the company default (Europe/Kyiv).
-  const today = todayIn();
+  const [params, profile] = await Promise.all([searchParams, getCurrentProfile()]);
+  const today = todayIn(profile.timezone); // A12: the actor's own timezone
   const weekStart = parseWeekParam(params.week, today);
   const weekEnd = addDays(weekStart, 6);
   const month = monthForWeek(weekStart, today);

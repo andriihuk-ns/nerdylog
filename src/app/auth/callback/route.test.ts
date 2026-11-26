@@ -8,7 +8,10 @@ const mocks = vi.hoisted(() => ({
   exchangeCodeForSession: vi.fn(),
   signOut: vi.fn(),
   upsertUserFromSlack: vi.fn(),
+  fetchSlackTitleWithTimeout: vi.fn(),
 }));
+
+vi.mock("@/server/slack/profile", () => ({ fetchSlackTitleWithTimeout: mocks.fetchSlackTitleWithTimeout }));
 
 vi.mock("@/server/auth/supabase-server", () => ({
   createSupabaseServerClient: async () => ({
@@ -45,6 +48,7 @@ describe("GET /auth/callback workspace check", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.upsertUserFromSlack.mockResolvedValue(undefined);
+    mocks.fetchSlackTitleWithTimeout.mockResolvedValue(null);
   });
 
   it("links the user and redirects to next for the configured workspace", async () => {
@@ -62,8 +66,27 @@ describe("GET /auth/callback workspace check", () => {
       expect(loc.searchParams.get("error")).toBe("wrong_workspace");
       expect(mocks.signOut).toHaveBeenCalledOnce();
       expect(mocks.upsertUserFromSlack).not.toHaveBeenCalled();
+      expect(mocks.fetchSlackTitleWithTimeout).not.toHaveBeenCalled();
     },
   );
+
+  it("passes the Slack profile title into the identity", async () => {
+    mocks.fetchSlackTitleWithTimeout.mockResolvedValue("Product Designer");
+    const loc = await callback(userWithTeam(TEAM));
+    expect(loc.pathname).toBe("/team");
+    expect(mocks.fetchSlackTitleWithTimeout).toHaveBeenCalledWith("U01AAAAAA1");
+    expect(mocks.upsertUserFromSlack).toHaveBeenCalledWith(
+      expect.objectContaining({ slackUserId: "U01AAAAAA1", title: "Product Designer" }),
+    );
+  });
+
+  it("still signs in with title null when the lookup fails or times out", async () => {
+    mocks.fetchSlackTitleWithTimeout.mockResolvedValue(null); // the helper maps errors/timeouts to null
+    const loc = await callback(userWithTeam(TEAM));
+    expect(loc.pathname).toBe("/team");
+    expect(mocks.upsertUserFromSlack).toHaveBeenCalledWith(expect.objectContaining({ title: null }));
+    expect(mocks.signOut).not.toHaveBeenCalled();
+  });
 
   it("does not follow an open redirect in next", async () => {
     const loc = await callback(userWithTeam(TEAM), "/\t/evil.example");

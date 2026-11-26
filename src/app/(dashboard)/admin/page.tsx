@@ -7,6 +7,7 @@ import { listHolidays } from "@/server/services/holiday-service";
 import { getAppSettings } from "@/server/services/settings-service";
 import { todayIn } from "@/components/lib/dates";
 import { NoAccessPanel } from "@/components/shell/state-panels";
+import { getCurrentProfile } from "@/components/shell/profile";
 import { AdminTabs, parseAdminTab } from "@/components/admin/admin-tabs";
 import { DirectoryPanel } from "@/components/admin/directory-panel";
 import { ProjectsPanel } from "@/components/admin/projects-panel";
@@ -27,8 +28,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
   const actor = await requireActor();
   if (actor.role !== "admin") return <NoAccessPanel area="Admin" />;
 
-  const params = await searchParams;
-  const currentYear = Number(todayIn().slice(0, 4));
+  const [params, profile] = await Promise.all([searchParams, getCurrentProfile()]);
+  const currentYear = Number(todayIn(profile.timezone).slice(0, 4));
   const year = parseYear(params.year, currentYear);
   const [users, projects, holidays, settings, channels]: [
     DirectoryUser[],

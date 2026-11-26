@@ -72,6 +72,8 @@ describe("dates", () => {
     const lateUtc = new Date("2026-11-26T23:30:00Z");
     expect(todayIn("Europe/Kyiv", lateUtc)).toBe("2026-11-27");
     expect(todayIn("UTC", lateUtc)).toBe("2026-11-26");
+    expect(todayIn("America/New_York", lateUtc)).toBe("2026-11-26");
+    expect(todayIn("Not/AZone", lateUtc)).toBe("2026-11-27"); // falls back to Europe/Kyiv
   });
 
   it("formats ranges and labels", () => {

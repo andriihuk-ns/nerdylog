@@ -1,13 +1,13 @@
 import { requireActor } from "@/server/auth/session";
 import { Skeleton } from "@/components/ui/skeleton";
 import { NavLinks, type NavItem } from "./nav-links";
-import { getShellProfile } from "./profile";
+import { getCurrentProfile } from "./profile";
 import { UserMenu } from "./user-menu";
 
 /** Role-aware nav + avatar menu. Reads the session, so it renders inside <Suspense>. */
 export async function ShellNav() {
   const actor = await requireActor();
-  const profile = await getShellProfile();
+  const profile = await getCurrentProfile();
   const items: NavItem[] = [{ href: "/my-time", label: "My Time" }];
   if (actor.role === "manager" || actor.role === "admin") items.push({ href: "/team", label: "Team" });
   if (actor.role === "admin") items.push({ href: "/admin", label: "Admin" });
@@ -16,7 +16,7 @@ export async function ShellNav() {
     <>
       <NavLinks items={items} />
       <div className="ml-auto flex items-center">
-        <UserMenu profile={profile} role={actor.role} />
+        <UserMenu profile={profile} />
       </div>
     </>
   );

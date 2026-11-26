@@ -6,6 +6,7 @@ import { getTeamMonthRollup } from "@/server/services/rollup-service";
 import { monthWeeks } from "@/server/services/calendar";
 import { firstDayOfMonth, lastDayOfMonth, parseDateParam, parseMonthParam, todayIn } from "@/components/lib/dates";
 import { exportHref } from "@/components/shell/export-links";
+import { getCurrentProfile } from "@/components/shell/profile";
 import { NoAccessPanel } from "@/components/shell/state-panels";
 import { TeamHeader } from "@/components/team/team-header";
 import { SummaryGrid } from "@/components/team/summary-grid";
@@ -20,8 +21,8 @@ export default async function TeamPage({ searchParams }: { searchParams: SearchP
   const actor = await requireActor();
   if (actor.role === "member") return <NoAccessPanel area="Team" />;
 
-  const params = await searchParams;
-  const today = todayIn(); // company default timezone; see /my-time
+  const [params, profile] = await Promise.all([searchParams, getCurrentProfile()]);
+  const today = todayIn(profile.timezone); // A12: the actor's own timezone
   const month = parseMonthParam(params.month, today);
   const drawerDate = parseDateParam(params.date); // drawer open iff ?date=
   const rows: UserMonthRollup[] = await getTeamMonthRollup(actor, month);

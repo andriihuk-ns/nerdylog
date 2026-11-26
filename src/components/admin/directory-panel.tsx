@@ -12,7 +12,7 @@ import { DirectoryRow } from "./directory-row";
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
-/** FR-WEB-06 Team Directory: Sync from Slack, role, daily norm, PTO allowance (A9), active. */
+/** FR-WEB-06 Team Directory: Sync from Slack, title (A12, read-only), role, daily norm, PTO allowance (A9), active. */
 export function DirectoryPanel({ users }: { users: DirectoryUser[] }) {
   const { toast, show, dismiss } = useToast();
   const [syncing, startSync] = useTransition();
@@ -54,6 +54,9 @@ export function DirectoryPanel({ users }: { users: DirectoryUser[] }) {
               <tr className="border-b text-xs font-medium text-muted-foreground">
                 <th scope="col" className="h-10 px-4 text-left font-medium">
                   Name
+                </th>
+                <th scope="col" className="px-2 text-left font-medium">
+                  Title
                 </th>
                 <th scope="col" className="px-2 text-left font-medium">
                   Role
