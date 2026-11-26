@@ -8,8 +8,8 @@ import { selectPingTargets, windowCandidates } from "./ping-decision";
 const HOLIDAY_LOOKBACK_DAYS = 31;
 
 /**
- * Contract ClaimMorningPings (A4). System call (cron only, no actor).
- * 1. active users → those whose local time is in [09:30, 09:45) on a local weekday (pure);
+ * Contract ClaimMorningPings (A4, window per A10). System call (pg_cron only, no actor).
+ * 1. active users → those whose local time is in [09:30, 11:00) on a local weekday (pure);
  * 2. drop company holidays and users with a PTO row that local day (pure, on loaded sets);
  * 3. insert daily_pings ON CONFLICT DO NOTHING and return only rows this call inserted,
  *    so overlapping or retried cron runs never double-send.

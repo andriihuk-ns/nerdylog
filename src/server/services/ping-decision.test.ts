@@ -36,34 +36,43 @@ describe("localClock", () => {
   });
 });
 
-describe("pingDecision window edges (Europe/Kyiv, UTC+2 in winter)", () => {
+describe("pingDecision window edges [09:30, 11:00) (Europe/Kyiv, UTC+2 in winter)", () => {
   it.each([
     ["2026-11-27T07:29:59Z", "outside_window"], // 09:29:59
     ["2026-11-27T07:30:00Z", "due"], // 09:30:00 inclusive
-    ["2026-11-27T07:44:59Z", "due"], // 09:44:59
-    ["2026-11-27T07:45:00Z", "outside_window"], // 09:45:00 exclusive
+    ["2026-11-27T07:45:00Z", "due"], // 09:45:00 (old A4 end, now inside: catch-up)
+    ["2026-11-27T08:59:59Z", "due"], // 10:59:59
+    ["2026-11-27T09:00:00Z", "outside_window"], // 11:00:00 exclusive
   ])("%s → %s", (iso, expected) => {
     expect(decide(iso, "Europe/Kyiv")).toBe(expected);
   });
 });
 
-describe("pingDecision window edges (America/New_York, UTC-5 in winter)", () => {
+describe("pingDecision window edges [09:30, 11:00) (America/New_York, UTC-5 in winter)", () => {
   it.each([
-    ["2026-11-27T14:29:59Z", "outside_window"],
-    ["2026-11-27T14:30:00Z", "due"],
-    ["2026-11-27T14:44:59Z", "due"],
-    ["2026-11-27T14:45:00Z", "outside_window"],
+    ["2026-11-27T14:29:59Z", "outside_window"], // 09:29:59
+    ["2026-11-27T14:30:00Z", "due"], // 09:30:00
+    ["2026-11-27T15:59:59Z", "due"], // 10:59:59
+    ["2026-11-27T16:00:00Z", "outside_window"], // 11:00:00
   ])("%s → %s", (iso, expected) => {
     expect(decide(iso, "America/New_York")).toBe(expected);
   });
 });
 
 describe("DST transitions", () => {
-  it("Kyiv: 09:30 is 07:30Z before the March switch and 06:30Z after it", () => {
-    expect(decide("2026-03-27T07:30:00Z", "Europe/Kyiv")).toBe("due"); // Fri, EET
-    expect(decide("2026-03-27T06:30:00Z", "Europe/Kyiv")).toBe("outside_window"); // 08:30
-    expect(decide("2026-03-30T06:30:00Z", "Europe/Kyiv")).toBe("due"); // Mon, EEST
-    expect(decide("2026-03-30T07:30:00Z", "Europe/Kyiv")).toBe("outside_window"); // 10:30
+  it("Kyiv: before the March switch (Fri 2026-03-27, EET UTC+2)", () => {
+    expect(decide("2026-03-27T07:29:59Z", "Europe/Kyiv")).toBe("outside_window"); // 09:29:59
+    expect(decide("2026-03-27T07:30:00Z", "Europe/Kyiv")).toBe("due"); // 09:30
+    expect(decide("2026-03-27T08:59:59Z", "Europe/Kyiv")).toBe("due"); // 10:59:59
+    expect(decide("2026-03-27T09:00:00Z", "Europe/Kyiv")).toBe("outside_window"); // 11:00
+  });
+
+  it("Kyiv: after the March switch (Mon 2026-03-30, EEST UTC+3)", () => {
+    expect(decide("2026-03-30T06:29:59Z", "Europe/Kyiv")).toBe("outside_window"); // 09:29:59
+    expect(decide("2026-03-30T06:30:00Z", "Europe/Kyiv")).toBe("due"); // 09:30
+    expect(decide("2026-03-30T07:59:59Z", "Europe/Kyiv")).toBe("due"); // 10:59:59
+    expect(decide("2026-03-30T08:00:00Z", "Europe/Kyiv")).toBe("outside_window"); // 11:00
+    expect(decide("2026-03-30T08:59:59Z", "Europe/Kyiv")).toBe("outside_window"); // 11:59:59 (would be 10:59:59 in EET)
   });
 
   it("Kyiv: transition day (Sun 2026-03-29) reads 09:30 correctly but is a weekend", () => {
@@ -72,23 +81,34 @@ describe("DST transitions", () => {
     expect(pingDecision(clock, none, none)).toBe("weekend");
   });
 
-  it("Kyiv: October fall-back moves 09:30 back to 07:30Z", () => {
-    expect(decide("2026-10-23T06:30:00Z", "Europe/Kyiv")).toBe("due"); // Fri, EEST
-    expect(decide("2026-10-26T07:30:00Z", "Europe/Kyiv")).toBe("due"); // Mon, EET
-    expect(decide("2026-10-26T06:30:00Z", "Europe/Kyiv")).toBe("outside_window");
+  it("Kyiv: October fall-back (Sun 2026-10-25)", () => {
+    expect(decide("2026-10-23T06:30:00Z", "Europe/Kyiv")).toBe("due"); // Fri 09:30 EEST
+    expect(decide("2026-10-23T07:59:59Z", "Europe/Kyiv")).toBe("due"); // Fri 10:59:59 EEST
+    expect(decide("2026-10-23T08:00:00Z", "Europe/Kyiv")).toBe("outside_window"); // Fri 11:00 EEST
+    expect(decide("2026-10-26T06:30:00Z", "Europe/Kyiv")).toBe("outside_window"); // Mon 08:30 EET
+    expect(decide("2026-10-26T07:30:00Z", "Europe/Kyiv")).toBe("due"); // Mon 09:30 EET
+    expect(decide("2026-10-26T08:59:59Z", "Europe/Kyiv")).toBe("due"); // Mon 10:59:59 EET
+    expect(decide("2026-10-26T09:00:00Z", "Europe/Kyiv")).toBe("outside_window"); // Mon 11:00 EET
   });
 
   it("New York: March spring-forward (Sun 2026-03-08)", () => {
-    expect(decide("2026-03-06T14:30:00Z", "America/New_York")).toBe("due"); // Fri, EST
-    expect(decide("2026-03-08T13:30:00Z", "America/New_York")).toBe("weekend"); // 09:30 EDT, Sunday
-    expect(decide("2026-03-09T13:30:00Z", "America/New_York")).toBe("due"); // Mon, EDT
-    expect(decide("2026-03-09T14:30:00Z", "America/New_York")).toBe("outside_window"); // 10:30
+    expect(decide("2026-03-06T14:30:00Z", "America/New_York")).toBe("due"); // Fri 09:30 EST
+    expect(decide("2026-03-06T15:59:59Z", "America/New_York")).toBe("due"); // Fri 10:59:59 EST
+    expect(decide("2026-03-06T16:00:00Z", "America/New_York")).toBe("outside_window"); // Fri 11:00 EST
+    expect(decide("2026-03-08T13:30:00Z", "America/New_York")).toBe("weekend"); // Sun 09:30 EDT
+    expect(decide("2026-03-09T13:29:59Z", "America/New_York")).toBe("outside_window"); // Mon 09:29:59 EDT
+    expect(decide("2026-03-09T13:30:00Z", "America/New_York")).toBe("due"); // Mon 09:30 EDT
+    expect(decide("2026-03-09T14:59:59Z", "America/New_York")).toBe("due"); // Mon 10:59:59 EDT
+    expect(decide("2026-03-09T15:00:00Z", "America/New_York")).toBe("outside_window"); // Mon 11:00 EDT
   });
 
   it("New York: November fall-back (Sun 2026-11-01)", () => {
-    expect(decide("2026-10-30T13:30:00Z", "America/New_York")).toBe("due"); // Fri, EDT
-    expect(decide("2026-11-02T14:30:00Z", "America/New_York")).toBe("due"); // Mon, EST
-    expect(decide("2026-11-02T13:30:00Z", "America/New_York")).toBe("outside_window"); // 08:30
+    expect(decide("2026-10-30T13:30:00Z", "America/New_York")).toBe("due"); // Fri 09:30 EDT
+    expect(decide("2026-10-30T15:00:00Z", "America/New_York")).toBe("outside_window"); // Fri 11:00 EDT
+    expect(decide("2026-11-02T13:30:00Z", "America/New_York")).toBe("outside_window"); // Mon 08:30 EST
+    expect(decide("2026-11-02T14:30:00Z", "America/New_York")).toBe("due"); // Mon 09:30 EST
+    expect(decide("2026-11-02T15:59:59Z", "America/New_York")).toBe("due"); // Mon 10:59:59 EST
+    expect(decide("2026-11-02T16:00:00Z", "America/New_York")).toBe("outside_window"); // Mon 11:00 EST
   });
 });
 
@@ -113,6 +133,12 @@ describe("pingDecision skip rules", () => {
     expect(decide("2026-11-27T07:30:00Z", "Europe/Kyiv", none, new Set(["2026-11-26"]))).toBe("due");
   });
 
+  it("skips weekend, holiday and PTO late in the window too (10:59:59)", () => {
+    expect(decide("2026-11-28T08:59:59Z", "Europe/Kyiv")).toBe("weekend");
+    expect(decide("2026-12-25T08:59:59Z", "Europe/Kyiv", new Set(["2026-12-25"]))).toBe("holiday");
+    expect(decide("2026-11-27T08:59:59Z", "Europe/Kyiv", none, new Set(["2026-11-27"]))).toBe("pto");
+  });
+
   it("checks the window before the calendar (outside window wins)", () => {
     expect(decide("2026-11-28T10:00:00Z", "Europe/Kyiv", new Set(["2026-11-28"]))).toBe("outside_window");
   });
@@ -128,6 +154,16 @@ describe("windowCandidates + selectPingTargets", () => {
   it("keeps only users inside their local window", () => {
     const ids = windowCandidates(at("2026-11-30T07:30:00Z"), users).map((c) => c.user.userId);
     expect(ids).toEqual(["kyiv", "kyiv-pto"]);
+  });
+
+  it("catches up on a late run (10:45 Kyiv) and still excludes users outside their window", () => {
+    const ids = windowCandidates(at("2026-11-30T08:45:00Z"), users).map((c) => c.user.userId);
+    expect(ids).toEqual(["kyiv", "kyiv-pto"]); // New York is 03:45
+  });
+
+  it("selects by each user's own zone (10:00 New York, 17:00 Kyiv)", () => {
+    // 15:00Z = 17:00 Kyiv (outside), 10:00 New York (inside).
+    expect(windowCandidates(at("2026-11-30T15:00:00Z"), users).map((c) => c.user.userId)).toEqual(["ny"]);
   });
 
   it("drops PTO users and logs the previous business day (Mon → Fri)", () => {

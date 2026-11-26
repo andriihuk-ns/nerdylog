@@ -4,13 +4,15 @@ import { previousBusinessDay } from "./calendar";
 import { isValidTimeZone } from "./validation";
 
 /**
- * Pure morning-ping rules (amendment A4, FR-SLACK-01). No DB, no clock: `now` is passed in.
- * The cron runs every 15 minutes; each user is due once per local weekday in [09:30, 09:45).
+ * Pure morning-ping rules (amendment A10, superseding A4's window; FR-SLACK-01). No DB, no clock:
+ * `now` is passed in. Supabase pg_cron calls the endpoint every 15 minutes; a user is due on the
+ * first run where local time is in [09:30, 11:00) on a local weekday. The wide window lets late or
+ * skipped runs catch up; the daily_pings claim in ping-service keeps it to one ping per local date.
  */
 
 export const DEFAULT_TIMEZONE = "Europe/Kyiv";
 export const PING_WINDOW_START_SEC = 9 * 3600 + 30 * 60; // 09:30:00 inclusive
-export const PING_WINDOW_END_SEC = 9 * 3600 + 45 * 60; // 09:45:00 exclusive
+export const PING_WINDOW_END_SEC = 11 * 3600; // 11:00:00 exclusive
 
 export interface LocalClock {
   /** Effective IANA zone (stored zone, or the default when it is unknown). */
