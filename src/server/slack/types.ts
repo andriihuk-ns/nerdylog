@@ -44,11 +44,11 @@ export interface TempoPorts {
   getProjectCapUsage(actor: Actor, month: string): Promise<ProjectCapUsage[]>;
   getPtoBalance(actor: Actor, userId: string, year: number): Promise<PtoBalance>;
   claimMorningPings(now: Date): Promise<PingTarget[]>;
-  /** A11: general standup channel from app_settings; null → no general card. */
-  getStandupChannelId(): Promise<string | null>;
+  /** A13: distinct channels of the user's active teams, else the A11 general channel, else []. */
+  listStandupChannelsForUser(userId: string): Promise<string[]>;
   /** A11: active projects that have a Slack channel. */
   listProjectChannels(): Promise<ProjectChannel[]>;
-  /** A11: store the general card's ts on daily_checkins (no row → no-op). */
+  /** A11/A13: store the first standup card's ts on daily_checkins (no row → no-op). */
   setCheckinChannelTs(userId: string, checkinDate: IsoDate, ts: string): Promise<void>;
 }
 

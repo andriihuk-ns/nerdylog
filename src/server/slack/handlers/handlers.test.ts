@@ -206,7 +206,7 @@ describe("A11 channel routing", () => {
     const { deps, slack, tempo } = fakeDeps();
     await routeSubmission(deps, profile, input("log", [entry(PROJECT_ID, 3, "Map modal")]));
     expect([...posts(slack).keys()]).toEqual(["C_DTP"]);
-    expect(tempo.getStandupChannelId).not.toHaveBeenCalled();
+    expect(tempo.listStandupChannelsForUser).not.toHaveBeenCalled();
     expect(tempo.setCheckinChannelTs).not.toHaveBeenCalled();
   });
 
@@ -216,13 +216,58 @@ describe("A11 channel routing", () => {
     expect(slack.postMessage).not.toHaveBeenCalled();
   });
 
-  it("no standup channel configured → no general card; projects without a channel get nothing", async () => {
+  it("empty standup channel list → no card; projects without a channel get nothing", async () => {
     const { deps, slack, tempo } = fakeDeps();
-    tempo.getStandupChannelId.mockResolvedValueOnce(null);
+    tempo.listStandupChannelsForUser.mockResolvedValueOnce([]);
     tempo.listProjectChannels.mockResolvedValueOnce([{ projectId: PROJECT_ID, projectName: "DogTeamPro", slackChannelId: "C_DTP" }]);
     await routeSubmission(deps, profile, input("standup", [entry(PROJECT_ID, 1, "a"), entry(OTHER_PROJECT_ID, 1, "b")]));
     expect([...posts(slack).keys()]).toEqual(["C_DTP"]);
     expect(tempo.setCheckinChannelTs).not.toHaveBeenCalled();
+  });
+
+  const cardChannels = (slack: ReturnType<typeof fakeDeps>["slack"]) =>
+    slack.postMessage.mock.calls
+      .filter((c) => JSON.stringify(c).includes("Secret plan"))
+      .map((c) => (c as unknown[])[0] as string);
+
+  it("A13: user in two teams → the full card goes to both team channels", async () => {
+    const { deps, slack, tempo } = fakeDeps();
+    tempo.listStandupChannelsForUser.mockResolvedValueOnce(["C_DESIGN", "C_MOBILE"]);
+    await routeSubmission(deps, profile, input("standup", [entry(PROJECT_ID, 1, "a")]));
+    expect(tempo.listStandupChannelsForUser).toHaveBeenCalledWith(USER_ID);
+    expect(cardChannels(slack).sort()).toEqual(["C_DESIGN", "C_MOBILE"]);
+    expect(posts(slack).has("C_DTP")).toBe(true); // project lines unchanged
+    expect(tempo.setCheckinChannelTs).toHaveBeenCalledTimes(1);
+  });
+
+  it("A13: a duplicate channel gets the card once", async () => {
+    const { deps, slack, tempo } = fakeDeps();
+    tempo.listStandupChannelsForUser.mockResolvedValueOnce(["C_DESIGN", "C_DESIGN"]);
+    await routeSubmission(deps, profile, input("standup", []));
+    expect(cardChannels(slack)).toEqual(["C_DESIGN"]);
+  });
+
+  it("A13: no team → the general channel returned by the service gets the card", async () => {
+    const { deps, slack, tempo } = fakeDeps();
+    tempo.listStandupChannelsForUser.mockResolvedValueOnce(["C_GENERAL"]);
+    await routeSubmission(deps, profile, input("standup", []));
+    expect(cardChannels(slack)).toEqual(["C_GENERAL"]);
+    expect(tempo.setCheckinChannelTs).toHaveBeenCalledWith(USER_ID, "2026-11-26", "1700000000.000100");
+  });
+
+  it("A13: a failing team channel does not block the others; first successful ts is stored", async () => {
+    const { deps, slack, tempo } = fakeDeps();
+    const errors = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    tempo.listStandupChannelsForUser.mockResolvedValueOnce(["C_A", "C_B", "C_C"]);
+    slack.postMessage.mockImplementation((async (channel: string) => {
+      if (channel === "C_A") throw new Error("not_in_channel");
+      return channel === "C_B" ? "1700000000.000B" : "1700000000.000C";
+    }) as never);
+    await routeSubmission(deps, profile, input("standup", []));
+    expect(cardChannels(slack).sort()).toEqual(["C_A", "C_B", "C_C"]);
+    expect(tempo.setCheckinChannelTs).toHaveBeenCalledWith(USER_ID, "2026-11-26", "1700000000.000B");
+    expect(errors).toHaveBeenCalledWith("slack: standup post failed", "C_A", "not_in_channel");
+    errors.mockRestore();
   });
 
   it("one failing post does not stop the others", async () => {

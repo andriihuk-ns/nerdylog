@@ -55,6 +55,7 @@ oauth_config:
       - im:write # open a DM channel with a user (conversations.open) for the morning ping
       - users:read # "Sync from Slack": list members, read tz + avatar
       - users:read.email # "Sync from Slack": match members to Tempo users by email
+      - usergroups:read # "Sync from Slack" (A13): read user groups, members and default channels → teams
       - commands # register /log and /pto
 
 settings:

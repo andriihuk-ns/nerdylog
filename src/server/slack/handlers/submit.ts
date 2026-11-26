@@ -33,8 +33,9 @@ export async function postProjectLines(
 }
 
 /**
- * FR-SLACK-03 / A11: full standup card in the admin-chosen general channel (standup only),
- * then store its ts on daily_checkins. No channel configured → nothing is posted.
+ * FR-SLACK-03 / A11 / A13: the full standup card goes to every distinct channel of the member's
+ * active teams (the service falls back to the general standup channel; empty → no card). Posts
+ * fail independently; the FIRST successful post's ts is stored on daily_checkins.
  */
 export async function broadcastStandup(
   deps: SlackDeps,
@@ -42,8 +43,8 @@ export async function broadcastStandup(
   input: SlackSubmissionInput,
 ): Promise<string | null> {
   if (input.kind !== "standup" || !input.checkin) return null;
-  const channel = await deps.tempo.getStandupChannelId();
-  if (!channel) return null;
+  const channels = [...new Set(await deps.tempo.listStandupChannelsForUser(input.checkin.userId))];
+  if (channels.length === 0) return null;
   const projects = await deps.tempo.listProjects(profile);
   const names = new Map(projects.map((p) => [p.id, p.name]));
   const card = buildStandupCard({
@@ -59,7 +60,18 @@ export async function broadcastStandup(
     plannedToday: input.checkin.plannedToday,
     blockers: input.checkin.blockers,
   });
-  const ts = await deps.slack.postMessage(channel, card.text, card.blocks);
+  // Posts run in parallel; results keep channel order, so "first" is the first listed channel that succeeded.
+  const results = await Promise.all(
+    channels.map(async (channel) => {
+      try {
+        return await deps.slack.postMessage(channel, card.text, card.blocks);
+      } catch (error) {
+        console.error("slack: standup post failed", channel, errorMessage(error));
+        return null;
+      }
+    }),
+  );
+  const ts = results.find((t): t is string => Boolean(t)) ?? null;
   if (ts) await deps.tempo.setCheckinChannelTs(input.checkin.userId, input.checkin.checkinDate, ts);
   return ts;
 }

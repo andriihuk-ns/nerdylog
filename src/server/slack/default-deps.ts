@@ -7,8 +7,9 @@ import { listProjects } from "@/server/services/project-service";
 import { getPtoBalance } from "@/server/services/pto-service";
 import { getProjectCapUsage } from "@/server/services/rollup-service";
 import { setCheckinChannelTs } from "@/server/services/checkin-service";
-import { getStandupChannelId, listProjectChannels } from "@/server/services/settings-service";
+import { listProjectChannels } from "@/server/services/settings-service";
 import { submitSlackSubmission } from "@/server/services/standup-service";
+import { listStandupChannelsForUser } from "@/server/services/team-service";
 import { listWeekEntries } from "@/server/services/time-entry-service";
 // Contract request (services.ts): GetActorBySlackUserId → SlackActorProfile | null, active users only.
 import { getActorBySlackUserId } from "@/server/services/user-service";
@@ -26,7 +27,7 @@ export function createTempoPorts(): TempoPorts {
     getProjectCapUsage,
     getPtoBalance,
     claimMorningPings,
-    getStandupChannelId,
+    listStandupChannelsForUser,
     listProjectChannels,
     setCheckinChannelTs,
   };

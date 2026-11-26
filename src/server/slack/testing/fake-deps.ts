@@ -63,7 +63,7 @@ export function fakeDeps(over: Partial<SlackDeps> = {}) {
     getProjectCapUsage: vi.fn(async () => []),
     getPtoBalance: vi.fn(async () => ptoBalance),
     claimMorningPings: vi.fn(async () => []),
-    getStandupChannelId: vi.fn(async (): Promise<string | null> => "C_STANDUP"),
+    listStandupChannelsForUser: vi.fn<(userId: string) => Promise<string[]>>(async () => ["C_STANDUP"]),
     listProjectChannels: vi.fn(async () =>
       [project, otherProject].map((p) => ({ projectId: p.id, projectName: p.name, slackChannelId: p.slackChannelId! })),
     ),
