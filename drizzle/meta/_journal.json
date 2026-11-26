@@ -36,6 +36,13 @@
       "when": 1795725246766,
       "tag": "0004_app_settings_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795727449646,
+      "tag": "0005_lockdown_grants",
+      "breakpoints": true
     }
   ]
 }

@@ -15,7 +15,7 @@ Source: PRD §5.2 + amendments A1, A4, A5, A6. Code: `src/server/db/schema/*.ts`
 
 All `id` columns are `uuid` PK `default gen_random_uuid()`. Timestamps are `timestamptz default now() not null`. Dates are `date` mapped to `"YYYY-MM-DD"` strings (`IsoDate`). Numerics use Drizzle `mode: "number"`, so services get `number`, never strings.
 
-**`users`** — `slack_user_id text unique not null`, `auth_user_id uuid unique null` (*addition, pending approval*: links `auth.users.id` for RLS), `full_name text not null default ''`, `email text`, `avatar_url text`, `role role not null default 'member'`, `timezone text not null default 'Europe/Kyiv'`, `daily_norm_hours numeric(3,1) not null default 8.0`, `pto_allowance_days numeric(4,1) null` (A9: yearly vacation allowance, null = not set; check `pto_allowance_days is null or pto_allowance_days between 0 and 365`, migration `0002_pto_allowance`), `is_active bool not null default true`, `created_at`.
+**`users`** — `slack_user_id text unique not null`, `auth_user_id uuid unique null` (A7, approved: links `auth.users.id` for RLS), `full_name text not null default ''`, `email text`, `avatar_url text`, `role role not null default 'member'`, `timezone text not null default 'Europe/Kyiv'`, `daily_norm_hours numeric(3,1) not null default 8.0`, `pto_allowance_days numeric(4,1) null` (A9: yearly vacation allowance, null = not set; check `pto_allowance_days is null or pto_allowance_days between 0 and 365`, migration `0002_pto_allowance`), `is_active bool not null default true`, `created_at`.
 
 **`projects`** — `name text not null`, `code text unique` (nullable), `monthly_hour_cap numeric(5,1)` (null = no cap), `is_billable bool not null default true`, `is_active bool not null default true`, `slack_channel_id text unique` (A11: nullable; one channel = one project; constraint `projects_slack_channel_id_unique`, migration `0003_project_channels`).
 
@@ -51,18 +51,20 @@ A4 ping dedup: `insert into daily_pings … on conflict do nothing returning use
 
 ## RLS (defence in depth, A5)
 
-Drizzle connects as the table owner and bypasses RLS; services enforce RBAC. Policies cover Supabase-client (JWT) access. Helpers in schema `app_private` (not exposed via PostgREST), `SECURITY DEFINER`, mapping `auth.uid() → users.auth_user_id`; inactive users resolve to nothing.
+**No Supabase Data API (PostgREST) access, by design.** All data access is server-side Drizzle (table owner, bypasses RLS) with service-layer RBAC (A5). Migration `0005_lockdown_grants` revokes all privileges on every table, sequence and function in schema `public` from `anon` and `authenticated` (this removes the Supabase default grants, including `TRUNCATE`, which RLS does not cover, plus `TRIGGER` and `REFERENCES`). It also revokes the default privileges for future objects. That covers only objects created by the migrating role (`postgres`), so new migrations must not re-grant to `anon`/`authenticated`.
+
+RLS stays on as defence in depth: if grants are ever restored by mistake, the policies below still apply to Supabase-client (JWT) access. Helpers in schema `app_private` (not exposed via PostgREST), `SECURITY DEFINER`, mapping `auth.uid() → users.auth_user_id`; inactive users resolve to nothing.
 
 | Table | Read | Write |
 | :--- | :--- | :--- |
 | users | own row; manager/admin all | admin |
-| projects, company_holidays | any authenticated | admin |
+| projects, company_holidays | active app users (`app_private.current_user_id() is not null`, `0005`) | admin |
 | time_entries | own; manager/admin all | own; manager/admin all (PRD §2 "edit on behalf") |
 | daily_checkins | own; manager/admin all | own only |
 | app_settings (A11, `0004`) | manager/admin | admin |
 | slack_submissions, daily_pings | none | none (server only) |
 
-`anon` has no policies → no access. Migrations `0001` and `0004` need Supabase (`auth.uid()`, role `authenticated`); it will not apply on plain Postgres.
+`anon` has no grants and no policies → no access. Migrations `0001`, `0004` and `0005` need Supabase (`auth.uid()`, role `authenticated`); it will not apply on plain Postgres.
 
 ## Rollup spec (Wave 1b, pure functions)
 

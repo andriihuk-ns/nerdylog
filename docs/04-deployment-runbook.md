@@ -22,7 +22,7 @@ Validated at runtime by `src/lib/env.ts`. Template: `.env.example`.
 
 1. `npm ci`, then `cp .env.example .env.local` and fill it in.
 2. `supabase start` (needs Docker). It reads `supabase/config.toml`, which enables `[auth.external.slack_oidc]` with `SLACK_CLIENT_ID` / `SLACK_CLIENT_SECRET` from the shell env, so export them first (or put them in `supabase/.env`, which is git-ignored).
-3. `npm run db:migrate` — applies `drizzle/0000_init.sql`, `0001_rls_policies.sql`, `0002_pto_allowance.sql`, `0003_project_channels.sql`, `0004_app_settings_rls.sql` in order. `0001` and `0004` need Supabase (`auth.uid()`, role `authenticated`); it fails on plain Postgres.
+3. `npm run db:migrate` — applies `drizzle/0000_init.sql`, `0001_rls_policies.sql`, `0002_pto_allowance.sql`, `0003_project_channels.sql`, `0004_app_settings_rls.sql`, `0005_lockdown_grants.sql` in order. `0001`, `0004` and `0005` need Supabase (`auth.uid()`, roles `anon`/`authenticated`); they fail on plain Postgres.
 4. `npm run dev` → http://localhost:3000. Slack cannot reach localhost: for Slack webhooks use a tunnel (ngrok / cloudflared) and put its origin into the Slack app URLs (section 4).
 
 Schema changes: edit `src/server/db/schema/*.ts`, run `npm run db:generate`, review the SQL in `drizzle/`, commit it, then `npm run db:migrate`.
@@ -33,8 +33,9 @@ Schema changes: edit `src/server/db/schema/*.ts`, run `npm run db:generate`, rev
 2. **Auth → Providers → Slack (OIDC)**: enable, paste Slack Client ID and Client Secret. Copy the callback URL shown (`https://<project>.supabase.co/auth/v1/callback`) — it goes into the Slack app (section 4).
 3. **Auth → URL Configuration**: Site URL = `APP_BASE_URL`; Redirect URLs = `APP_BASE_URL/auth/callback` (plus preview URLs if used, e.g. `https://*-<team>.vercel.app/auth/callback`).
 4. Run migrations against the hosted DB from a trusted machine (section 3a): `DATABASE_URL=<session-uri> npm run db:migrate`. Run it before each deploy that ships a new migration.
-5. Promote the first admin once they have signed in: `update users set role = 'admin' where email = '<admin email>';` (SQL editor). Everything else is done in `/admin`.
-6. Set up the morning-ping scheduler (section 5a) once the app is deployed.
+5. **Project Settings → API (Data API)**: you can turn the Data API off. Tempo does not use PostgREST (all data goes through server-side Drizzle), and `0005_lockdown_grants` already revokes `anon`/`authenticated` table access. Supabase Auth keeps working without it.
+6. Promote the first admin once they have signed in: `update users set role = 'admin' where email = '<admin email>';` (SQL editor). Everything else is done in `/admin`.
+7. Set up the morning-ping scheduler (section 5a) once the app is deployed.
 
 ## 3a. Supabase cloud dev project (which connection string and key goes where)
 
