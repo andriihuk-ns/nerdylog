@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, lte } from "drizzle-orm";
+import { and, asc, eq, gte, isNotNull, lte } from "drizzle-orm";
 import type { HolidayView, IsoDate, ProjectView } from "@/contracts";
 import { companyHolidays, projects, type ProjectInsert } from "../schema";
 import type { DbOrTx } from "./types";
@@ -10,6 +10,7 @@ const projectColumns = {
   monthlyHourCap: projects.monthlyHourCap,
   isBillable: projects.isBillable,
   isActive: projects.isActive,
+  slackChannelId: projects.slackChannelId,
 };
 
 /** Projects sorted by name; archived ones only when asked. */
@@ -32,6 +33,22 @@ export async function insertProject(db: DbOrTx, values: ProjectValues): Promise<
 export async function updateProject(db: DbOrTx, id: string, values: ProjectValues): Promise<ProjectView | undefined> {
   const [row] = await db.update(projects).set(values).where(eq(projects.id, id)).returning(projectColumns);
   return row;
+}
+
+export interface ProjectChannelRow {
+  projectId: string;
+  projectName: string;
+  slackChannelId: string;
+}
+
+/** A11: active projects that have a Slack channel, by name. */
+export async function listProjectChannelRows(db: DbOrTx): Promise<ProjectChannelRow[]> {
+  const rows = await db
+    .select({ projectId: projects.id, projectName: projects.name, slackChannelId: projects.slackChannelId })
+    .from(projects)
+    .where(and(eq(projects.isActive, true), isNotNull(projects.slackChannelId)))
+    .orderBy(asc(projects.name), asc(projects.id));
+  return rows.flatMap((r) => (r.slackChannelId ? [{ ...r, slackChannelId: r.slackChannelId }] : []));
 }
 
 const holidayColumns = {

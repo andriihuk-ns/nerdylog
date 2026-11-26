@@ -15,6 +15,7 @@ vi.mock("@/server/db/queries/catalog", () => ({
   listProjectViews: vi.fn(),
   insertProject: vi.fn(),
   updateProject: vi.fn(),
+  listProjectChannelRows: vi.fn(),
   listHolidayViews: vi.fn(),
   insertHoliday: vi.fn(),
   deleteHoliday: vi.fn(),
@@ -90,7 +91,14 @@ describe("syncDirectoryFromSlack", () => {
 });
 
 describe("projects and holidays (admin writes)", () => {
-  const project = { name: "DogTeamPro", code: "DTP", monthlyHourCap: 40, isBillable: true, isActive: true };
+  const project = {
+    name: "DogTeamPro",
+    code: "DTP",
+    monthlyHourCap: 40,
+    isBillable: true,
+    isActive: true,
+    slackChannelId: null,
+  };
 
   it("forbid non-admins", async () => {
     await expect(upsertProject(manager, project)).rejects.toBeInstanceOf(ForbiddenError);
@@ -104,6 +112,22 @@ describe("projects and holidays (admin writes)", () => {
     expect(err.fieldErrors).toEqual({ code: ["Another project already uses this code"] });
     await upsertProject(admin, { ...project, code: "  " });
     expect(cat.insertProject).toHaveBeenLastCalledWith(expect.anything(), { ...project, code: null });
+  });
+
+  it("validates slackChannelId; blank → null; duplicate channel → field error", async () => {
+    const bad = await upsertProject(admin, { ...project, slackChannelId: "#general" }).catch((e) => e);
+    expect(bad).toBeInstanceOf(InvalidInputError);
+    expect(Object.keys(bad.fieldErrors)).toEqual(["slackChannelId"]);
+    expect(cat.insertProject).not.toHaveBeenCalled();
+
+    await upsertProject(admin, { ...project, slackChannelId: " " });
+    expect(cat.insertProject).toHaveBeenLastCalledWith(expect.anything(), { ...project, slackChannelId: null });
+    await upsertProject(admin, { ...project, slackChannelId: "C0123ABCD" });
+    expect(cat.insertProject).toHaveBeenLastCalledWith(expect.anything(), { ...project, slackChannelId: "C0123ABCD" });
+
+    vi.mocked(cat.insertProject).mockRejectedValueOnce(uniqueErr("projects_slack_channel_id_unique"));
+    const dup = await upsertProject(admin, { ...project, slackChannelId: "C0123ABCD" }).catch((e) => e);
+    expect(dup.fieldErrors).toEqual({ slackChannelId: ["This channel is already linked to another project"] });
   });
 
   it("updates by id and 404s a missing project", async () => {

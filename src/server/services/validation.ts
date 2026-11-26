@@ -27,6 +27,17 @@ export function assertIsoDate(value: string, label = "date"): IsoDate {
   return value;
 }
 
+/** A11: Slack channel id (public `C…` or legacy private `G…`). */
+export const SLACK_CHANNEL_ID_PATTERN = /^[CG][A-Z0-9]{8,}$/;
+
+/** Blank → null; otherwise must look like a Slack channel id. */
+export const slackChannelIdSchema = z
+  .string()
+  .trim()
+  .nullable()
+  .transform((c) => (c ? c : null))
+  .refine((c) => c === null || SLACK_CHANNEL_ID_PATTERN.test(c), "Not a valid Slack channel id");
+
 const uuidSchema = z.uuid();
 
 export function isRowId(id: string): boolean {
