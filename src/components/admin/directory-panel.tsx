@@ -2,27 +2,28 @@
 
 import { useTransition } from "react";
 import { RefreshCw } from "lucide-react";
-import type { DirectoryUser } from "@/contracts";
+import type { DirectoryUser, TeamView } from "@/contracts";
 import { cn } from "@/lib/utils";
 import { syncFromSlackAction } from "@/app/(dashboard)/admin/actions";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Toast } from "@/components/ui/toast";
 import { DirectoryRow } from "./directory-row";
+import { syncSummary, teamHandlesByUser } from "./team-helpers";
 
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
-
-/** FR-WEB-06 Team Directory: Sync from Slack, title (A12, read-only), role, daily norm, PTO allowance (A9), active. */
-export function DirectoryPanel({ users }: { users: DirectoryUser[] }) {
+/** FR-WEB-06 Team Directory: Sync from Slack (people + teams, A13), title (A12) and teams (A13) read-only, role, daily norm, PTO allowance (A9), active. */
+export function DirectoryPanel({ users, teams }: { users: DirectoryUser[]; teams: TeamView[] }) {
   const { toast, show, dismiss } = useToast();
   const [syncing, startSync] = useTransition();
+  const handles = teamHandlesByUser(teams);
   const sorted = [...users].sort((a, b) => Number(b.isActive) - Number(a.isActive) || a.fullName.localeCompare(b.fullName));
 
   function sync() {
     startSync(async () => {
       const res = await syncFromSlackAction();
-      if (res.ok) show(`Synced from Slack: ${plural(res.data.created, "new teammate")}, ${res.data.updated} updated.`);
-      else show(`Sync failed. ${res.message}`, { tone: "error", onRetry: sync });
+      if (!res.ok) show(`Sync failed. ${res.message}`, { tone: "error", onRetry: sync });
+      else if (res.data.teamsError) show(`${syncSummary(res.data)} ${res.data.teamsError}`, { tone: "error", onRetry: sync });
+      else show(syncSummary(res.data));
     });
   }
 
@@ -59,6 +60,9 @@ export function DirectoryPanel({ users }: { users: DirectoryUser[] }) {
                   Title
                 </th>
                 <th scope="col" className="px-2 text-left font-medium">
+                  Teams
+                </th>
+                <th scope="col" className="px-2 text-left font-medium">
                   Role
                 </th>
                 <th scope="col" className="px-2 text-right font-medium">
@@ -74,7 +78,7 @@ export function DirectoryPanel({ users }: { users: DirectoryUser[] }) {
             </thead>
             <tbody>
               {sorted.map((u) => (
-                <DirectoryRow key={u.id} user={u} onError={(m) => show(m, { tone: "error" })} />
+                <DirectoryRow key={u.id} user={u} teamHandles={handles.get(u.id) ?? []} onError={(m) => show(m, { tone: "error" })} />
               ))}
             </tbody>
           </table>

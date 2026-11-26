@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { ADMIN_TABS, type AdminTab } from "./admin-tab";
 
-const LABEL: Record<AdminTab, string> = { directory: "Directory", projects: "Projects", holidays: "Holidays", settings: "Settings" };
+const LABEL: Record<AdminTab, string> = { directory: "Directory", teams: "Teams", projects: "Projects", holidays: "Holidays", settings: "Settings" };
 
 /** Tabs synced to `?tab=` so reloads and links keep the panel. Panels are server-rendered. */
 export function AdminTabs({ tab, year, panels }: { tab: AdminTab; year: number; panels: Record<AdminTab, ReactNode> }) {

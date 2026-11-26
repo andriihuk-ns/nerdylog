@@ -10,6 +10,8 @@ import {
   type HolidayView,
   type JoinSlackChannelResult,
   type ProjectView,
+  type SlackUsergroup,
+  type TeamView,
 } from "@/contracts";
 import { requireActor } from "@/server/auth/session";
 import { syncDirectoryFromSlack, updateDirectoryUser } from "@/server/services/directory-service";
@@ -19,8 +21,11 @@ import { getAppSettings, updateAppSettings } from "@/server/services/settings-se
 import { SLACK_CHANNEL_ID_PATTERN } from "@/server/services/validation";
 import { fetchSlackDirectory } from "@/server/slack/directory";
 import { joinSlackChannel } from "@/server/slack/channels";
+import { fetchSlackUsergroups } from "@/server/slack/usergroups";
+import { listTeams, syncTeamsFromSlack, updateTeamChannel } from "@/server/services/team-service";
 import { actionError, ok, type ActionResult } from "../action-result";
 import { channelFailure, channelFieldError, fromJoinResult, type ChannelActionResult, type ChannelFailure } from "./channel-result";
+import { teamsErrorText, type SlackSyncResult, type TeamSyncCounts } from "./sync-result";
 
 const ADMIN = ["admin"] as const;
 
@@ -50,13 +55,23 @@ export async function updateDirectoryUserAction(userId: string, patch: Directory
   }
 }
 
-export async function syncFromSlackAction(): Promise<ActionResult<{ created: number; updated: number }>> {
+/** A13: directory first (its result always stands), then user groups → teams. */
+export async function syncFromSlackAction(): Promise<ActionResult<SlackSyncResult>> {
   try {
     const actor = await requireActor(ADMIN);
     const members = await fetchSlackDirectory();
-    const result: { created: number; updated: number } = await syncDirectoryFromSlack(actor, members);
+    const people: { created: number; updated: number } = await syncDirectoryFromSlack(actor, members);
+    let teams: TeamSyncCounts | null = null;
+    let teamsError: string | null = null;
+    try {
+      const groups: SlackUsergroup[] = await fetchSlackUsergroups();
+      teams = await syncTeamsFromSlack(actor, groups);
+    } catch (err) {
+      console.warn("team sync failed", err instanceof Error ? err.message : err);
+      teamsError = teamsErrorText(err);
+    }
     refresh();
-    return ok(result);
+    return ok({ people, teams, teamsError });
   } catch (err) {
     return actionError(err);
   }
@@ -129,6 +144,31 @@ export async function updateStandupChannelAction(channelId: string | null): Prom
     const settings: AppSettings = await updateAppSettings(actor, { standupChannelId: parsed.data });
     refresh();
     return ok(settings);
+  } catch (err) {
+    return channelFieldError(err) ?? actionError(err);
+  }
+}
+
+/** A13 Teams tab: one channel per team (null → none). Same uniqueness + join-first rules as A11. */
+export async function updateTeamChannelAction(teamId: string, channelId: string | null): Promise<ChannelActionResult<TeamView>> {
+  try {
+    const actor = await requireActor(ADMIN);
+    if (!z.uuid().safeParse(teamId).success) return { ok: false, message: "Unknown team." };
+    const parsed = channelIdSchema.safeParse(channelId);
+    if (!parsed.success) return channelFailure("Not a valid Slack channel");
+    if (parsed.data) {
+      const teams: TeamView[] = await listTeams(actor, { includeArchived: true });
+      const owner = teams.find((t) => t.slackChannelId === parsed.data && t.id !== teamId);
+      if (owner) return channelFailure(`Already linked to @${owner.handle}`);
+      const current = teams.find((t) => t.id === teamId);
+      if (current?.slackChannelId !== parsed.data) {
+        const failure = await ensureBotInChannel(parsed.data);
+        if (failure) return failure;
+      }
+    }
+    const team: TeamView = await updateTeamChannel(actor, teamId, parsed.data);
+    refresh();
+    return ok(team);
   } catch (err) {
     return channelFieldError(err) ?? actionError(err);
   }
