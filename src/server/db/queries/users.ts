@@ -1,5 +1,5 @@
 import { and, asc, eq } from "drizzle-orm";
-import type { Actor, MyProfile, SlackActorProfile } from "@/contracts";
+import type { Actor, Locale, MyProfile, SlackActorProfile } from "@/contracts";
 import { users, type UserInsert } from "../schema";
 import type { DbOrTx } from "./types";
 
@@ -44,6 +44,7 @@ export async function findActiveProfileBySlackUserId(
       fullName: users.fullName,
       avatarUrl: users.avatarUrl,
       timezone: users.timezone,
+      locale: users.locale,
     })
     .from(users)
     .where(and(eq(users.slackUserId, slackUserId), eq(users.isActive, true)))
@@ -62,11 +63,18 @@ export async function findMyProfileById(db: DbOrTx, userId: string): Promise<MyP
       avatarUrl: users.avatarUrl,
       title: users.title,
       timezone: users.timezone,
+      locale: users.locale,
     })
     .from(users)
     .where(eq(users.id, userId))
     .limit(1);
   return row;
+}
+
+/** A14: set a user's language; returns false if no such user. */
+export async function updateUserLocale(db: DbOrTx, userId: string, locale: Locale): Promise<boolean> {
+  const rows = await db.update(users).set({ locale }).where(eq(users.id, userId)).returning({ id: users.id });
+  return rows.length > 0;
 }
 
 export interface RollupUserRow {

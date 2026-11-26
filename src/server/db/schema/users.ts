@@ -1,11 +1,12 @@
 import { sql } from "drizzle-orm";
 import { boolean, check, numeric, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import { roleEnum } from "./enums";
+import { localeEnum, roleEnum } from "./enums";
 
 /**
  * PRD §5.2 `users`. `auth_user_id` links a Supabase Auth user (auth.users.id) for RLS.
  * A9: `pto_allowance_days` is the yearly vacation allowance; null means "not set".
  * A12: `title` is the Slack profile title; null when Slack has none.
+ * A14: `locale` is the UI / bot language; the DB default applies to new users and sync never writes it.
  */
 export const users = pgTable(
   "users",
@@ -19,6 +20,7 @@ export const users = pgTable(
     title: text("title"), // A12: Slack profile title; null = not set
     role: roleEnum("role").notNull().default("member"),
     timezone: text("timezone").notNull().default("Europe/Kyiv"),
+    locale: localeEnum("locale").notNull().default("uk"), // A14
     dailyNormHours: numeric("daily_norm_hours", { precision: 3, scale: 1, mode: "number" })
       .notNull()
       .default(8.0),

@@ -1,13 +1,22 @@
-import type { GetActorByAuthUserId, GetActorBySlackUserId, GetMyProfile, UpsertUserFromSlack } from "@/contracts";
+import {
+  localeSchema,
+  type GetActorByAuthUserId,
+  type GetActorBySlackUserId,
+  type GetMyProfile,
+  type SetMyLocale,
+  type UpsertUserFromSlack,
+} from "@/contracts";
 import { getDb } from "@/server/db/client";
 import {
   findActiveActorByAuthUserId,
   findActiveProfileBySlackUserId,
   findMyProfileById,
+  updateUserLocale,
   upsertUserBySlackId,
 } from "@/server/db/queries/users";
 import { NotFoundError } from "./errors";
 import { buildUserUpsert } from "./user-mapping";
+import { parseInput } from "./validation";
 
 /** Thrown when an archived (is_active = false) user signs in with Slack. */
 export class InactiveUserError extends Error {
@@ -46,4 +55,10 @@ export const getMyProfile: GetMyProfile = async (actor) => {
   const row = await findMyProfileById(getDb(), actor.userId);
   if (!row) throw new NotFoundError("User not found");
   return row;
+};
+
+/** Contract SetMyLocale (A14): the actor changes only their own language. NotFoundError if the row is gone. */
+export const setMyLocale: SetMyLocale = async (actor, locale) => {
+  const value = parseInput(localeSchema, locale);
+  if (!(await updateUserLocale(getDb(), actor.userId, value))) throw new NotFoundError("User not found");
 };

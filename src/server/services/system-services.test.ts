@@ -84,7 +84,7 @@ describe("checkin-service", () => {
 
 describe("getActorBySlackUserId", () => {
   it("returns the active profile or null", async () => {
-    const profile = { userId: ME, role: "member" as const, slackUserId: "U1", fullName: "Ann", avatarUrl: null, timezone: "Europe/Kyiv" };
+    const profile = { userId: ME, role: "member" as const, slackUserId: "U1", fullName: "Ann", avatarUrl: null, timezone: "Europe/Kyiv", locale: "uk" as const };
     vi.mocked(usersQ.findActiveProfileBySlackUserId).mockResolvedValueOnce(profile).mockResolvedValueOnce(undefined);
     await expect(getActorBySlackUserId("U1")).resolves.toEqual(profile);
     await expect(getActorBySlackUserId("U2")).resolves.toBeNull();
