@@ -90,6 +90,7 @@ export interface ProjectView {
   monthlyHourCap: number | null;
   isBillable: boolean;
   isActive: boolean;
+  slackChannelId: string | null; // A11: one channel = one project; unique
 }
 export type ListProjects = (actor: Actor, opts?: { includeArchived?: boolean }) => Promise<ProjectView[]>;
 export type UpsertProject = (actor: Actor, input: Omit<ProjectView, "id"> & { id?: string }) => Promise<ProjectView>; // admin
@@ -135,3 +136,29 @@ export interface ExportFile {
 export type BuildLedgerCsv = (actor: Actor, range: ExportRange) => Promise<ExportFile>;
 export type BuildSummaryCsv = (actor: Actor, month: string) => Promise<ExportFile>;
 export type BuildReportPdf = (actor: Actor, range: ExportRange) => Promise<ExportFile>;
+
+// ── src/server/services/settings-service.ts (A11) ───────────────────────────
+export interface AppSettings {
+  standupChannelId: string | null; // general channel for full standup cards
+}
+export type GetAppSettings = (actor: Actor) => Promise<AppSettings>; // manager+ read
+export type UpdateAppSettings = (actor: Actor, patch: Partial<AppSettings>) => Promise<AppSettings>; // admin
+/** System read for the Slack layer (no actor). */
+export type GetStandupChannelId = () => Promise<string | null>;
+/** System read for the Slack layer: active projects that have a channel. */
+export type ListProjectChannels = () => Promise<Array<{ projectId: string; projectName: string; slackChannelId: string }>>;
+
+// ── src/server/slack/channels.ts (A11) ───────────────────────────────────────
+export interface SlackChannelOption {
+  id: string;
+  name: string;
+  isPrivate: boolean;
+  isMember: boolean; // bot already in the channel
+}
+/** Non-archived public + private channels visible to the bot (paginated conversations.list). */
+export type ListSlackChannels = () => Promise<SlackChannelOption[]>;
+export type JoinSlackChannelResult =
+  | { ok: true }
+  | { ok: false; reason: "private_needs_invite" | "not_found" | "error"; message: string };
+/** Public channel → conversations.join; private and not a member → private_needs_invite. */
+export type JoinSlackChannel = (channelId: string) => Promise<JoinSlackChannelResult>;
