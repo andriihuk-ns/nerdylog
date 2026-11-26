@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  images: {
+    // Slack avatars (users.list / OIDC picture)
+    remotePatterns: [{ protocol: "https", hostname: "*.slack-edge.com" }],
+  },
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {

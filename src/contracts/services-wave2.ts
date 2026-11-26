@@ -74,6 +74,8 @@ export interface SlackDirectoryMember {
   avatarUrl: string | null;
   timezone: string | null;
 }
+/** src/server/slack/directory.ts — paginated users.list, no arguments. */
+export type FetchSlackDirectory = () => Promise<SlackDirectoryMember[]>;
 /** admin only. Upserts by slack_user_id; never changes role/norm/allowance; new rows → member, active. */
 export type SyncDirectoryFromSlack = (
   actor: Actor,
