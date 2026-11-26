@@ -79,6 +79,15 @@ export function parseDateParam(value: string | string[] | undefined): IsoDate | 
   return isIsoDate(value) ? value : null;
 }
 
+/**
+ * Month whose client caps a week shows: today's month for the current week, otherwise
+ * the month of the week's Thursday (the ISO rule for weeks that cross a month).
+ */
+export function monthForWeek(weekStart: IsoDate, today: IsoDate): string {
+  const days = weekDays(weekStart);
+  return (days.includes(today) ? today : days[3]).slice(0, 7);
+}
+
 export function shiftMonth(month: string, delta: number): string {
   const [y, m] = month.split("-").map(Number);
   return new Date(Date.UTC(y, m - 1 + delta, 1)).toISOString().slice(0, 7);

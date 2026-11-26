@@ -10,6 +10,7 @@ import {
   isWeekend,
   lastDayOfMonth,
   mondayOf,
+  monthForWeek,
   parseDateParam,
   parseMonthParam,
   parseWeekParam,
@@ -52,6 +53,13 @@ describe("dates", () => {
     expect(parseMonthParam("2026-02", "2026-11-26")).toBe("2026-02");
     expect(parseDateParam("2026-11-24")).toBe("2026-11-24");
     expect(parseDateParam("x")).toBeNull();
+  });
+
+  it("picks the cap month for a week", () => {
+    expect(monthForWeek("2026-11-30", "2026-12-01")).toBe("2026-12");
+    expect(monthForWeek("2026-11-30", "2026-11-30")).toBe("2026-11");
+    expect(monthForWeek("2026-11-30", "2027-01-15")).toBe("2026-12");
+    expect(monthForWeek("2026-10-26", "2027-01-15")).toBe("2026-10");
   });
 
   it("shifts months across years", () => {
