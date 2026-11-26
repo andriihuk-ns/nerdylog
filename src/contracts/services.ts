@@ -11,6 +11,8 @@ import type { Actor, MyProfile, SlackActorProfile, SlackIdentity } from "./users
 /** src/server/services/user-service.ts — throws InactiveUserError for archived users (callers: deny sign-in). */
 export type UpsertUserFromSlack = (identity: SlackIdentity) => Promise<Actor>;
 export type GetActorByAuthUserId = (authUserId: string) => Promise<Actor | null>;
+/** A14: save the actor's own UI/bot language. */
+export type SetMyLocale = (actor: Actor, locale: import("./locale").Locale) => Promise<void>;
 /** A12: the actor's own profile (any role). */
 export type GetMyProfile = (actor: Actor) => Promise<MyProfile>;
 /** Active users only; null for unknown or archived. */

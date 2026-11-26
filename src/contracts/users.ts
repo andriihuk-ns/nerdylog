@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { roleSchema } from "./enums";
+import type { Locale } from "./locale";
 
 /** Identity returned by Sign in with Slack (OIDC claims, normalised by the auth layer). */
 export const slackIdentitySchema = z.object({
@@ -25,6 +26,7 @@ export interface SlackActorProfile extends Actor {
   fullName: string;
   avatarUrl: string | null;
   timezone: string;
+  locale: Locale; // A14: language for DMs, modals, App Home
 }
 
 /** A12: the signed-in user's own profile for the shell and page defaults. */
@@ -36,4 +38,5 @@ export interface MyProfile {
   avatarUrl: string | null;
   title: string | null;
   timezone: string;
+  locale: Locale; // A14
 }

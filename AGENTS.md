@@ -30,11 +30,11 @@ Every agent and engineer reads this file before writing code. Role prompts live 
 
 | Role | Owns (exclusive) |
 | :--- | :--- |
-| **0. Orchestrator** (main session) | `AGENTS.md`, `CLAUDE.md`, `.claude/**`, `package.json`, `package-lock.json`, `*.config.*`, `components.json`, `.env.example`, `.gitignore`, `docs/00-prd.md`, `docs/01-architecture.md`, `src/contracts/**`, `src/lib/utils.ts`, `src/lib/env.ts` |
+| **0. Orchestrator** (main session) | `AGENTS.md`, `CLAUDE.md`, `.claude/**`, `package.json`, `package-lock.json`, `*.config.*`, `components.json`, `.env.example`, `.gitignore`, `docs/00-prd.md`, `docs/01-architecture.md`, `src/contracts/**`, `src/lib/utils.ts`, `src/lib/env.ts`, `src/i18n/**` |
 | **1. Designer** | `docs/05-design-system.md`, `src/app/globals.css`, `src/styles/**` |
 | **2. Backend** | `docs/02-database-schema.md`, `docs/04-deployment-runbook.md`, `src/server/db/**`, `src/server/services/**`, `src/app/api/cron/**` (except `morning-ping`), `src/app/api/export/**`, `scripts/**`, `drizzle/**`, `supabase/**` |
 | **3. Slack & Auth** | `docs/03-slack-app-manifest.yaml`, `src/server/slack/**`, `src/server/auth/**`, `src/app/api/slack/**`, `src/app/api/cron/morning-ping/**`, `src/app/auth/**`, `src/proxy.ts` |
-| **4. Frontend** | `src/app/layout.tsx`, `src/app/page.tsx`, `src/app/(auth)/**`, `src/app/(dashboard)/**`, `src/components/**`, `src/hooks/**` |
+| **4. Frontend** | `messages/**` (web copy, en + uk), `src/app/layout.tsx`, `src/app/page.tsx`, `src/app/(auth)/**`, `src/app/(dashboard)/**`, `src/components/**`, `src/hooks/**` |
 | **5. QA** | `tests/**`, `.github/workflows/**` |
 
 Unit tests next to the code (`src/**/*.test.ts`) belong to the owner of that code. `tests/**` is for cross-cutting, parity, and E2E tests.
