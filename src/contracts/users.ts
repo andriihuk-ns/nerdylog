@@ -17,3 +17,5 @@ export interface Actor {
   userId: string;
   role: z.infer<typeof roleSchema>;
 }
+
+export interface SlackActorProfile extends Actor { slackUserId: string; fullName: string; avatarUrl: string | null; timezone: string; }
