@@ -274,39 +274,6 @@
   }
 }
 
-/*
- * Long tables scroll inside their own frame so the header can be pinned by CSS alone. A script that
- * follows page scrolling always lags behind it.
- */
-[data-sticky-head] {
-  overflow: auto;
-  max-height: calc(100dvh - 5.5rem); /* app header plus breathing room */
-  isolation: isolate; /* table z-indexes stay below the app header */
-  scroll-padding-top: 5rem; /* focused cells are not hidden under the table header */
-}
-[data-sticky-head] thead {
-  position: sticky;
-  top: 0;
-  z-index: 25; /* above the pinned body columns (10–20) */
-}
-@layer base {
-  [data-sticky-head] thead tr > * {
-    background-color: var(--card);
-  }
-}
-/*
- * Separate borders: collapsed ones stay behind when the head sticks and leave see-through seams.
- * Separate tables ignore row borders, so rows that relied on them get cell borders.
- */
-[data-sticky-head] table {
-  border-collapse: separate;
-  border-spacing: 0;
-}
-[data-sticky-head] thead tr:last-child > *,
-[data-sticky-head] tbody tr:not(:last-child) > * {
-  border-bottom-width: 1px;
-}
-
 /* Reduced motion: keep state changes, drop movement */
 @media (prefers-reduced-motion: reduce) {
   :root {

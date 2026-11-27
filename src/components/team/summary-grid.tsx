@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import type { IsoDate, MonthWeek, UserMonthRollup } from "@/contracts";
 import { cn } from "@/lib/utils";
 import { useGridNavigation } from "@/hooks/use-grid-navigation";
+import { FloatingHead } from "@/components/shell/floating-head";
 import { useFormat } from "@/hooks/use-format";
 import { initials } from "@/components/lib/format";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -36,7 +37,7 @@ export function SummaryGrid({ rows, weeks, today, avatars, selfId }: Props) {
   const f = useFormat();
 
   return (
-    <div data-sticky-head className="rounded-lg border bg-card">
+    <FloatingHead className="rounded-lg border bg-card">
       <table
         ref={gridRef}
         role="grid"
@@ -151,6 +152,6 @@ export function SummaryGrid({ rows, weeks, today, avatars, selfId }: Props) {
           </tr>
         </tfoot>
       </table>
-    </div>
+    </FloatingHead>
   );
 }

@@ -6,6 +6,7 @@ import type { DirectoryUser, OfficeView, ProjectView } from "@/contracts";
 import { cn } from "@/lib/utils";
 import { syncPeopleFromSlackAction } from "@/app/(dashboard)/admin/actions";
 import { useToast } from "@/hooks/use-toast";
+import { FloatingHead } from "@/components/shell/floating-head";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Button } from "@/components/ui/button";
 import { Toast } from "@/components/ui/toast";
@@ -137,7 +138,7 @@ export function DirectoryPanel({ users, projects, offices }: Props) {
           </Button>
         </div>
       ) : (
-        <div data-sticky-head className="rounded-lg border bg-card">
+        <FloatingHead className="rounded-lg border bg-card">
           {hasFilters(filters) ? (
             <p
               className="border-b px-4 py-2 text-xs text-muted-foreground"
@@ -175,7 +176,7 @@ export function DirectoryPanel({ users, projects, offices }: Props) {
               ))}
             </tbody>
           </table>
-        </div>
+        </FloatingHead>
       )}
       <Toast toast={toast} onDismiss={dismiss} />
     </section>

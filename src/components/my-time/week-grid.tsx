@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import type { IsoDate } from "@/contracts";
 import { cn } from "@/lib/utils";
 import { useGridNavigation } from "@/hooks/use-grid-navigation";
+import { FloatingHead } from "@/components/shell/floating-head";
 import { isWeekend } from "@/components/lib/dates";
 import { useFormat } from "@/hooks/use-format";
 import { AddProjectRow } from "./add-project-row";
@@ -59,7 +60,7 @@ export function WeekGrid({ matrix, display, holidayNames, addable, pendingKeys, 
   }
 
   return (
-    <div data-sticky-head className="rounded-lg border bg-card">
+    <FloatingHead className="rounded-lg border bg-card" rows={1}>
       <table ref={gridRef} role="grid" aria-label={t("grid.label")} className={`${WEEK_TABLE_WIDTH} border-collapse ${TABLE_EDGE_PADDING}`}>
         <colgroup>
           <col className="w-[132px] sm:w-[200px]" />
@@ -181,6 +182,6 @@ export function WeekGrid({ matrix, display, holidayNames, addable, pendingKeys, 
           </tr>
         </tfoot>
       </table>
-    </div>
+    </FloatingHead>
   );
 }
