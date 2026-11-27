@@ -71,6 +71,34 @@
       "when": 1795733333064,
       "tag": "0009_user_locale",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1795745048490,
+      "tag": "0010_a15_drop_teams_caps",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1795745075298,
+      "tag": "0011_a15_offices_project_members",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1795745092106,
+      "tag": "0012_a15_rls",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1795745093013,
+      "tag": "0013_a15_seed_holidays_2026",
+      "breakpoints": true
     }
   ]
 }

@@ -1,13 +1,23 @@
 import { z } from "zod";
-import { roleSchema, type ListDirectory, type SyncDirectoryFromSlack, type UpdateDirectoryUser } from "@/contracts";
+import {
+  roleSchema,
+  type DirectoryUser,
+  type ListDirectory,
+  type SyncDirectoryFromSlack,
+  type UpdateDirectoryUser,
+} from "@/contracts";
 import { getDb } from "@/server/db/client";
 import {
+  type DirectoryRow,
   findUsersBySlackIds,
   insertDirectoryUsers,
   listDirectoryUsers,
   updateDirectoryRow,
   updateUserProfileBySlackId,
 } from "@/server/db/queries/directory";
+import { officeExists } from "@/server/db/queries/offices";
+import { listProjectMemberRows } from "@/server/db/queries/projects";
+import type { DbOrTx } from "@/server/db/queries/types";
 import { planDirectorySync } from "./directory-sync";
 import { InvalidInputError, NotFoundError } from "./errors";
 import { assertAdmin, assertManagerOrAdmin } from "./rbac";
@@ -21,13 +31,23 @@ export const directoryPatchSchema = z
     ptoAllowanceDays: z.number().min(0).max(365).multipleOf(0.1).nullable(),
     isActive: z.boolean(),
     timezone: z.string().refine(isValidTimeZone, "Unknown IANA timezone"),
+    officeId: z.uuid("Unknown office").nullable(), // A15: null = no office (no holidays)
   })
   .partial();
+
+/** A15: attach the projects whose channel each user is in. */
+async function withProjectIds(db: DbOrTx, rows: DirectoryRow[]): Promise<DirectoryUser[]> {
+  const members = await listProjectMemberRows(db, { userIds: rows.map((r) => r.id) });
+  const byUser = new Map<string, string[]>();
+  for (const m of members) byUser.set(m.userId, [...(byUser.get(m.userId) ?? []), m.projectId]);
+  return rows.map((r) => ({ ...r, projectIds: byUser.get(r.id) ?? [] }));
+}
 
 /** Contract ListDirectory: manager/admin read, every user (archived included). */
 export const listDirectory: ListDirectory = async (actor) => {
   assertManagerOrAdmin(actor);
-  return listDirectoryUsers(getDb());
+  const db = getDb();
+  return withProjectIds(db, await listDirectoryUsers(db));
 };
 
 /**
@@ -45,9 +65,14 @@ export const updateDirectoryUser: UpdateDirectoryUser = async (actor, userId, pa
     if (parsed.isActive === false) throw InvalidInputError.field("isActive", "You cannot archive yourself");
   }
   if (Object.keys(parsed).length === 0) throw InvalidInputError.field("_", "Nothing to update");
-  const row = await updateDirectoryRow(getDb(), userId, parsed);
+  const db = getDb();
+  if (parsed.officeId && !(await officeExists(db, parsed.officeId))) {
+    throw InvalidInputError.field("officeId", "Unknown office");
+  }
+  const row = await updateDirectoryRow(db, userId, parsed);
   if (!row) throw new NotFoundError("User not found");
-  return row;
+  const [user] = await withProjectIds(db, [row]);
+  return user;
 };
 
 /**

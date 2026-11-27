@@ -1,9 +1,8 @@
 import {
-  capStatus,
   type EntryType,
   type IsoDate,
   type MonthWeek,
-  type ProjectCapUsage,
+  type ProjectHours,
   type RollupTotals,
   type UserMonthRollup,
 } from "@/contracts";
@@ -30,11 +29,9 @@ export interface RollupEntry {
   projectId: string | null;
 }
 
-export interface CapProject {
+export interface NamedProject {
   id: string;
   name: string;
-  monthlyHourCap: number | null;
-  isActive: boolean;
 }
 
 /** Hours are numeric(4,2); round sums to cents so float noise never reaches the UI. */
@@ -103,32 +100,21 @@ export function aggregateMonth(
 }
 
 /**
- * Month hours per project vs. client cap (FR-WEB-03). Counts `work` entries of all
- * users passed in. Returns active projects plus inactive ones that still have hours
- * this month, sorted by name.
+ * A15: month `work` hours per project for the entries passed in (callers pass one user's rows).
+ * Only projects with hours > 0 that appear in `projects` are returned, sorted by name.
  */
-export function projectCapUsage(
+export function projectHours(
   month: string,
-  projects: readonly CapProject[],
+  projects: readonly NamedProject[],
   entries: readonly RollupEntry[],
-): ProjectCapUsage[] {
+): ProjectHours[] {
   const used = new Map<string, number>();
   for (const e of entries) {
     if (e.entryType !== "work" || e.projectId === null || !isInMonth(e.workDate, month)) continue;
     used.set(e.projectId, (used.get(e.projectId) ?? 0) + e.hours);
   }
   return projects
-    .filter((p) => p.isActive || (used.get(p.id) ?? 0) > 0)
-    .map((p) => {
-      const usedHours = roundHours(used.get(p.id) ?? 0);
-      return {
-        projectId: p.id,
-        projectName: p.name,
-        month,
-        usedHours,
-        capHours: p.monthlyHourCap,
-        status: capStatus(usedHours, p.monthlyHourCap),
-      };
-    })
-    .sort((a, b) => a.projectName.localeCompare(b.projectName));
+    .map((p) => ({ projectId: p.id, projectName: p.name, month, hours: roundHours(used.get(p.id) ?? 0) }))
+    .filter((p) => p.hours > 0)
+    .sort((a, b) => a.projectName.localeCompare(b.projectName) || a.projectId.localeCompare(b.projectId));
 }

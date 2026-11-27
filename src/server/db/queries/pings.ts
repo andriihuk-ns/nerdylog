@@ -1,6 +1,6 @@
-import { and, eq, gte, inArray, lte, ne } from "drizzle-orm";
-import type { IsoDate } from "@/contracts";
-import { companyHolidays, dailyPings, timeEntries, users } from "../schema";
+import { and, eq, inArray, ne } from "drizzle-orm";
+import type { IsoDate, Locale } from "@/contracts";
+import { dailyPings, timeEntries, users } from "../schema";
 import type { DbOrTx } from "./types";
 
 export interface PingUserRow {
@@ -8,21 +8,22 @@ export interface PingUserRow {
   slackUserId: string;
   fullName: string;
   timezone: string;
+  locale: Locale; // A14
+  officeId: string | null; // A15: whose holidays apply; null = none
 }
 
 export async function listActivePingUsers(db: DbOrTx): Promise<PingUserRow[]> {
   return db
-    .select({ userId: users.id, slackUserId: users.slackUserId, fullName: users.fullName, timezone: users.timezone })
+    .select({
+      userId: users.id,
+      slackUserId: users.slackUserId,
+      fullName: users.fullName,
+      timezone: users.timezone,
+      locale: users.locale,
+      officeId: users.officeId,
+    })
     .from(users)
     .where(eq(users.isActive, true));
-}
-
-export async function listHolidayDates(db: DbOrTx, start: IsoDate, end: IsoDate): Promise<IsoDate[]> {
-  const rows = await db
-    .select({ date: companyHolidays.holidayDate })
-    .from(companyHolidays)
-    .where(and(gte(companyHolidays.holidayDate, start), lte(companyHolidays.holidayDate, end)));
-  return rows.map((r) => r.date);
 }
 
 /** Non-work (vacation/sick/holiday) rows of these users on these dates. */

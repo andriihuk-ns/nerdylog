@@ -22,7 +22,7 @@ Validated at runtime by `src/lib/env.ts`. Template: `.env.example`.
 
 1. `npm ci`, then `cp .env.example .env.local` and fill it in.
 2. `supabase start` (needs Docker). It reads `supabase/config.toml`, which enables `[auth.external.slack_oidc]` with `SLACK_CLIENT_ID` / `SLACK_CLIENT_SECRET` from the shell env, so export them first (or put them in `supabase/.env`, which is git-ignored).
-3. `npm run db:migrate` — applies `drizzle/0000_init.sql`, `0001_rls_policies.sql`, `0002_pto_allowance.sql`, `0003_project_channels.sql`, `0004_app_settings_rls.sql`, `0005_lockdown_grants.sql` in order. `0001`, `0004` and `0005` need Supabase (`auth.uid()`, roles `anon`/`authenticated`); they fail on plain Postgres.
+3. `npm run db:migrate` — applies every file in `drizzle/` in journal order (`0000_init` … `0013_a15_seed_holidays_2026`). `0001`, `0004`, `0005`, `0008` and `0012` need Supabase (`auth.uid()`, roles `anon`/`authenticated`); they fail on plain Postgres.
 4. `npm run dev` → http://localhost:3000. Slack cannot reach localhost: for Slack webhooks use a tunnel (ngrok / cloudflared) and put its origin into the Slack app URLs (section 4).
 
 Schema changes: edit `src/server/db/schema/*.ts`, run `npm run db:generate`, review the SQL in `drizzle/`, commit it, then `npm run db:migrate`.
@@ -60,8 +60,20 @@ URL-encode special characters in the database password inside connection strings
 5. Confirm the request URLs verify: Event Subscriptions (`/api/slack/events`), Interactivity (`/api/slack/interactions`), slash commands `/log` and `/pto` (`/api/slack/commands`).
 6. Channels are picked in `/admin` (amendment A11), not in env vars: the general standup channel (full standup card) and one channel per project (only that project's lines). No channel set → nothing is posted. Public channels: the bot joins on pick. Private channels: `/invite @Tempo` in the channel first, then pick it.
    Bot scopes required by A11: `channels:read`, `groups:read`, `channels:join`. An existing install must be **reinstalled** (OAuth & Permissions → Reinstall to Workspace) after the manifest gains these scopes; the bot token may change, so re-copy `SLACK_BOT_TOKEN` if it does.
-   Bot scope required by A13: `usergroups:read` (Sync from Slack reads user groups via `usergroups.list` incl. disabled and `usergroups.users.list`). Adding it also needs a **reinstall** (OAuth & Permissions → Reinstall to Workspace); re-copy `SLACK_BOT_TOKEN` if it changes. Ship migrations `0007_teams` and `0008_teams_rls` (`npm run db:migrate`, section 3) before deploying the code that reads `teams`.
-7. In `/admin`, click **Sync from Slack** to import members (new users start as active `member`s) and teams (one per Slack user group, A13). Then pick one channel per team in `/admin` → Teams. Morning standup cards go to every channel of a member's active teams; members with no team channel fall back to the general standup channel.
+   A15 removed teams: `usergroups:read` is **no longer needed** and can be dropped from the manifest (dropping a scope also needs a reinstall; keeping it is harmless). Project members are read with `conversations.members`, covered by `channels:read` / `groups:read`; the bot must be in the channel (public: it joins on pick; private: invite it first).
+7. In `/admin`, click **Sync from Slack** to import members (new users start as active `member`s, with no office) and refresh every project's members. Morning standup cards go to the general standup channel (A11).
+8. A15 offices and projects, after migrating (section 3a / A15 rollout below): in `/admin` → People assign each new user an office (users without an office get no holidays: they are pinged on every weekday and their "previous business day" skips weekends only). In `/admin` → Projects, each project needs a channel; saving a project refreshes its members, and **Refresh members** re-reads the channel. Only members of a project's channel can log time to it (web and Slack).
+
+### A15 rollout (migrations `0010`–`0013`)
+
+Ship the migrations **before** deploying the A15 code (`DATABASE_URL=<session-uri> npm run db:migrate`), in one go:
+
+- `0010_a15_drop_teams_caps` drops `teams` / `team_members` **with their data** and the `projects` columns `code`, `monthly_hour_cap`, `is_billable`. Not reversible; take a backup first if team data matters. The old (A13/A14) code reads those columns, so deploy right after migrating.
+- `0011_a15_offices_project_members` creates `offices` (+ `UA`, `PL`) and `project_members`, adds `projects.created_by`, assigns **every existing user to `UA`**, backfills existing holidays to `UA`, then makes `company_holidays.office_id` not null and swaps the unique to `(office_id, holiday_date)`. Re-assign the Polish team to `PL` in `/admin` → People afterwards.
+- `0012_a15_rls` enables RLS (no policies) and revokes Data API grants on the two new tables.
+- `0013_a15_seed_holidays_2026` inserts the 2026 holidays for UA and PL (`on conflict do nothing`, so it never overwrites admin edits).
+
+After deploy, existing projects have **no members** until an admin opens `/admin` → Projects and runs **Refresh members** (or **Sync from Slack**); until then nobody can log time to them. Each year, add the next year's holidays per office in `/admin` → Holidays (**Copy from {previous year}**, then move Easter-based dates by hand).
 
 ## 5. Vercel
 
@@ -71,7 +83,7 @@ URL-encode special characters in the database password inside connection strings
 
 ## 5a. Morning-ping scheduler (Supabase `pg_cron` + `pg_net`, amendment A10)
 
-Supabase calls `GET <APP_BASE_URL>/api/cron/morning-ping` every 15 minutes with `Authorization: Bearer <CRON_SECRET>`. The app sends the ping on the first run where the user's local time is in `[09:30, 11:00)` on a local weekday, not a company holiday, not on PTO, and not yet pinged that local date (`daily_pings`, `ON CONFLICT DO NOTHING`). Late, skipped, repeated or weekend runs are therefore safe: a user gets at most one ping per local date, and a run delayed by up to ~1.5 h still catches them.
+Supabase calls `GET <APP_BASE_URL>/api/cron/morning-ping` every 15 minutes with `Authorization: Bearer <CRON_SECRET>`. The app sends the ping on the first run where the user's local time is in `[09:30, 11:00)` on a local weekday, not a holiday of the user's own office (A15), not on PTO, and not yet pinged that local date (`daily_pings`, `ON CONFLICT DO NOTHING`). Late, skipped, repeated or weekend runs are therefore safe: a user gets at most one ping per local date, and a run delayed by up to ~1.5 h still catches them.
 
 Do this once per environment, after the app is deployed and `CRON_SECRET` is set in Vercel:
 
@@ -103,4 +115,5 @@ Rotating `CRON_SECRET`: update Vercel's env and redeploy, then `vault.update_sec
 - [ ] Supabase Slack OIDC enabled; Site URL and Redirect URLs match `APP_BASE_URL`.
 - [ ] Slack app request URLs verified; bot invited to the standup channel.
 - [ ] `CRON_SECRET` set in Vercel; Vault secrets `tempo_app_base_url` / `tempo_cron_secret` match; `scripts/setup-pg-cron.sql` run; `net._http_response` shows `200`.
-- [ ] First admin promoted; directory synced; holidays for the year entered in `/admin`.
+- [ ] First admin promoted; directory synced; every user has an office; each office's holidays for the year entered in `/admin` → Holidays.
+- [ ] Projects have a channel and their members refreshed (`/admin` → Projects → Refresh members).

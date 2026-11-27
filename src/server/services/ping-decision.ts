@@ -1,5 +1,5 @@
 import { TZDate } from "@date-fns/tz";
-import type { IsoDate, PingTarget } from "@/contracts";
+import type { IsoDate, Locale, PingTarget } from "@/contracts";
 import { previousBusinessDay } from "./calendar";
 import { isValidTimeZone } from "./validation";
 
@@ -45,7 +45,7 @@ export function inPingWindow(clock: LocalClock): boolean {
 
 /**
  * Is this user due for today's ping? Checks run cheapest first; the reason helps logs/tests.
- * `holidays` = company holidays; `offDays` = this user's PTO dates (vacation/sick/holiday rows).
+ * `holidays` = holidays of the user's office (A15); `offDays` = this user's PTO dates (vacation/sick/holiday rows).
  */
 export function pingDecision(
   clock: LocalClock,
@@ -64,6 +64,8 @@ export interface PingUser {
   slackUserId: string;
   fullName: string;
   timezone: string;
+  locale: Locale; // A14
+  officeId: string | null; // A15: null = no holidays apply
 }
 
 export interface PingCandidate {
@@ -79,21 +81,29 @@ export function windowCandidates(now: Date, users: readonly PingUser[]): PingCan
     .filter((c) => pingDecision(c.clock, none, none) === "due");
 }
 
-/** Stage 2: drop holiday/PTO users and attach the log date (previous business day). */
+/**
+ * Stage 2: drop holiday/PTO users and attach the log date (previous business day).
+ * A15: holidays are per office (`holidaysByOffice`); a user without an office has none.
+ */
 export function selectPingTargets(
   candidates: readonly PingCandidate[],
-  holidays: ReadonlySet<IsoDate>,
+  holidaysByOffice: ReadonlyMap<string, ReadonlySet<IsoDate>>,
   offDaysByUser: ReadonlyMap<string, ReadonlySet<IsoDate>>,
 ): PingTarget[] {
   const none = new Set<IsoDate>();
-  return candidates
-    .filter((c) => pingDecision(c.clock, holidays, offDaysByUser.get(c.user.userId) ?? none) === "due")
-    .map(({ user, clock }) => ({
-      userId: user.userId,
-      slackUserId: user.slackUserId,
-      fullName: user.fullName,
-      timezone: clock.timezone,
-      localDate: clock.date,
-      logDate: previousBusinessDay(clock.date, holidays),
-    }));
+  return candidates.flatMap(({ user, clock }) => {
+    const holidays = (user.officeId && holidaysByOffice.get(user.officeId)) || none;
+    if (pingDecision(clock, holidays, offDaysByUser.get(user.userId) ?? none) !== "due") return [];
+    return [
+      {
+        userId: user.userId,
+        slackUserId: user.slackUserId,
+        fullName: user.fullName,
+        locale: user.locale,
+        timezone: clock.timezone,
+        localDate: clock.date,
+        logDate: previousBusinessDay(clock.date, holidays),
+      },
+    ];
+  });
 }

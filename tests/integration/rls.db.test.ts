@@ -1,5 +1,6 @@
 /**
- * RLS as the Supabase `authenticated` role (drizzle/0001_rls_policies.sql, 0004_app_settings_rls.sql),
+ * RLS as the Supabase `authenticated` role (drizzle/0001_rls_policies.sql, 0004_app_settings_rls.sql,
+ * 0012_a15_rls.sql),
  * checked against docs/02 "RLS" table and PRD A5/A7. Defence in depth: Drizzle bypasses RLS.
  */
 import { eq } from "drizzle-orm";
@@ -10,13 +11,15 @@ import {
   companyHolidays,
   dailyCheckins,
   dailyPings,
+  offices,
+  projectMembers,
   projects,
   slackSubmissions,
   timeEntries,
   users,
 } from "@/server/db/schema";
 import { PUBLIC_TABLES, withRollback } from "./db";
-import { seedEntries, seedProject, seedUser, type SeededUser } from "./fixtures";
+import { seedEntries, seedOffice, seedProject, seedUser, type SeededUser } from "./fixtures";
 import { asAnon, asAuth, expectRlsDenied, grantDataApi } from "./rls-session";
 
 interface World {
@@ -27,6 +30,7 @@ interface World {
   inactive: SeededUser;
   projectId: string;
   otherEntryId: string;
+  officeId: string;
 }
 
 async function seedWorld(tx: Tx): Promise<World> {
@@ -36,7 +40,8 @@ async function seedWorld(tx: Tx): Promise<World> {
   const manager = await seedUser(tx, { role: "manager" });
   const admin = await seedUser(tx, { role: "admin" });
   const inactive = await seedUser(tx, { role: "admin", isActive: false });
-  const projectId = await seedProject(tx);
+  const projectId = await seedProject(tx, { members: [member.id] });
+  const officeId = await seedOffice(tx);
   await seedEntries(tx, [{ userId: member.id, date: "2026-11-02", hours: 4, projectId }]);
   const [otherEntryId] = await seedEntries(tx, [{ userId: other.id, date: "2026-11-02", hours: 6, projectId }]);
   await seedEntries(tx, [{ userId: inactive.id, date: "2026-11-02", type: "sick" }]);
@@ -47,7 +52,7 @@ async function seedWorld(tx: Tx): Promise<World> {
   await tx.insert(slackSubmissions).values({ viewId: "VTEST_RLS", userId: member.id, kind: "log" });
   await tx.insert(dailyPings).values({ userId: member.id, pingDate: "2026-11-02" });
   await tx.insert(appSettings).values({ key: "standup_channel_id", value: "CTEST00001" });
-  return { member, other, manager, admin, inactive, projectId, otherEntryId };
+  return { member, other, manager, admin, inactive, projectId, otherEntryId, officeId };
 }
 
 const sub = (u: SeededUser) => u.authUserId as string;
@@ -55,7 +60,7 @@ const entryOwners = (sp: Tx) => sp.select({ userId: timeEntries.userId }).from(t
 const checkinOwners = (sp: Tx) => sp.select({ userId: dailyCheckins.userId }).from(dailyCheckins);
 
 describe("RLS as deployed: no Data-API grants", () => {
-  it("authenticated (even an active admin) is denied on all 8 public tables", async () => {
+  it("authenticated (even an active admin) is denied on all 10 public tables", async () => {
     await withRollback(async (tx) => {
       const admin = await seedUser(tx, { role: "admin" });
       for (const table of Object.values(PUBLIC_TABLES)) {
@@ -178,7 +183,7 @@ describe("RLS policies: admin-only catalog tables", () => {
       const w = await seedWorld(tx);
       await expectRlsDenied(tx, sub(w[who]), (sp) => sp.insert(projects).values({ name: "Nope" }));
       await expectRlsDenied(tx, sub(w[who]), (sp) =>
-        sp.insert(companyHolidays).values({ holidayDate: "2026-12-25", name: "Nope" }),
+        sp.insert(companyHolidays).values({ officeId: w.officeId, holidayDate: "2026-12-25", name: "Nope" }),
       );
       await expectRlsDenied(tx, sub(w[who]), (sp) => sp.insert(appSettings).values({ key: "k", value: "v" }));
       const touched = await asAuth(tx, sub(w[who]), (sp) =>
@@ -193,7 +198,10 @@ describe("RLS policies: admin-only catalog tables", () => {
       const w = await seedWorld(tx);
       const out = await asAuth(tx, sub(w.admin), async (sp) => ({
         project: await sp.insert(projects).values({ name: "Admin Project" }).returning(),
-        holiday: await sp.insert(companyHolidays).values({ holidayDate: "2026-12-25", name: "H" }).returning(),
+        holiday: await sp
+          .insert(companyHolidays)
+          .values({ officeId: w.officeId, holidayDate: "2026-12-25", name: "H" })
+          .returning(),
         setting: await sp
           .update(appSettings)
           .set({ value: "CTEST00002" })
@@ -228,6 +236,23 @@ describe("RLS policies: server-only tables and inactive / anonymous callers", ()
         expect(seen).toEqual({ subs: [], pings: [] });
         await expectRlsDenied(tx, sub(actor), (sp) =>
           sp.insert(slackSubmissions).values({ viewId: "VTEST_RLS_2", userId: actor.id, kind: "log" }),
+        );
+      }
+    });
+  });
+
+  it("authenticated (even admin) gets nothing from offices and project_members (A15)", async () => {
+    await withRollback(async (tx) => {
+      const w = await seedWorld(tx);
+      for (const actor of [w.member, w.admin]) {
+        const seen = await asAuth(tx, sub(actor), async (sp) => ({
+          offices: await sp.select().from(offices),
+          members: await sp.select().from(projectMembers),
+        }));
+        expect(seen).toEqual({ offices: [], members: [] });
+        await expectRlsDenied(tx, sub(actor), (sp) => sp.insert(offices).values({ code: "TRLS", name: "Nope" }));
+        await expectRlsDenied(tx, sub(actor), (sp) =>
+          sp.insert(projectMembers).values({ projectId: w.projectId, userId: actor.id }),
         );
       }
     });

@@ -1,12 +1,14 @@
 import { sql } from "drizzle-orm";
 import { boolean, check, numeric, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { localeEnum, roleEnum } from "./enums";
+import { offices } from "./offices";
 
 /**
  * PRD §5.2 `users`. `auth_user_id` links a Supabase Auth user (auth.users.id) for RLS.
  * A9: `pto_allowance_days` is the yearly vacation allowance; null means "not set".
  * A12: `title` is the Slack profile title; null when Slack has none.
  * A14: `locale` is the UI / bot language; the DB default applies to new users and sync never writes it.
+ * A15: `office_id` picks the office whose holidays apply; null = no holidays.
  */
 export const users = pgTable(
   "users",
@@ -26,6 +28,7 @@ export const users = pgTable(
       .default(8.0),
     ptoAllowanceDays: numeric("pto_allowance_days", { precision: 4, scale: 1, mode: "number" }),
     isActive: boolean("is_active").notNull().default(true),
+    officeId: uuid("office_id").references(() => offices.id, { onDelete: "set null" }), // A15
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

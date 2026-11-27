@@ -1,5 +1,5 @@
 /**
- * Rollups against real SQL (docs/02 "Rollup spec", A2 month-weeks, FR-WEB-03 caps).
+ * Rollups against real SQL (docs/02 "Rollup spec", A2 month-weeks, A15 hours per project).
  * Nov 2026: 1st is a Sunday → W1 1–1, W2 2–8, W3 9–15, W4 16–22, W5 23–29, W6 30–30.
  */
 import { vi } from "vitest";
@@ -14,7 +14,8 @@ import { describe, expect, it } from "vitest";
 import type { RollupTotals, UserMonthRollup } from "@/contracts";
 import type { Tx } from "@/server/db/queries/types";
 import { dailyCheckins } from "@/server/db/schema";
-import { getProjectCapUsage, getTeamMonthRollup } from "@/server/services/rollup-service";
+import { getProjectHours, getTeamMonthRollup } from "@/server/services/rollup-service";
+import { ForbiddenError } from "@/server/services/errors";
 import { withRollback } from "./db";
 import { seedEntries, seedProject, seedUser } from "./fixtures";
 
@@ -102,47 +103,42 @@ describe("getTeamMonthRollup (real SQL)", () => {
   });
 });
 
-describe("getProjectCapUsage (real SQL)", () => {
-  async function seedCaps(tx: Tx) {
+describe("getProjectHours (real SQL, A15)", () => {
+  async function seedHours(tx: Tx) {
     const a = await seedUser(tx, { fullName: "Alpha Tester" });
     const b = await seedUser(tx, { fullName: "Bravo Tester" });
-    const p84 = await seedProject(tx, { name: "Cap 84", cap: 100 });
-    const p85 = await seedProject(tx, { name: "Cap 85", cap: 100 });
-    const p100 = await seedProject(tx, { name: "Cap 100", cap: 40 });
-    const free = await seedProject(tx, { name: "No Cap", cap: null });
-    const day = (n: number) => `2026-11-${String(n).padStart(2, "0")}`;
+    const p1 = await seedProject(tx, { name: "Alpha Project" });
+    const p2 = await seedProject(tx, { name: "Bravo Project" });
+    const quiet = await seedProject(tx, { name: "Quiet Project" });
     await seedEntries(tx, [
-      ...[24, 24, 24, 12].map((hours, i) => ({ userId: a.id, date: day(i + 2), hours, projectId: p84 })),
-      ...[24, 24, 24].map((hours, i) => ({ userId: a.id, date: day(i + 9), hours, projectId: p85 })),
-      { userId: b.id, date: day(12), hours: 13, projectId: p85 },
-      { userId: a.id, date: day(16), hours: 24, projectId: p100 },
-      { userId: a.id, date: day(17), hours: 16, projectId: p100 },
-      { userId: a.id, date: "2026-12-01", hours: 24, projectId: p100 }, // next month: ignored
-      { userId: a.id, date: day(18), hours: 5, projectId: free },
-      { userId: a.id, date: day(19), type: "vacation" }, // PTO never counts against caps
+      { userId: a.id, date: "2026-11-02", hours: 4, projectId: p1 },
+      { userId: a.id, date: "2026-11-03", hours: 3.5, projectId: p1 },
+      { userId: a.id, date: "2026-11-04", hours: 2, projectId: p2 },
+      { userId: a.id, date: "2026-12-01", hours: 8, projectId: p1 }, // next month: ignored
+      { userId: a.id, date: "2026-11-05", type: "vacation" }, // PTO never counts
+      { userId: b.id, date: "2026-11-02", hours: 6, projectId: p1 }, // other user: not in a's hours
     ]);
-    return { a, b, p84, p85, p100, free };
+    return { a, b, p1, p2, quiet };
   }
 
-  it("manager: 84% neutral, 85% warning, 100% over, no cap neutral", async () => {
+  it("member: own hours per project, zero-hour projects omitted", async () => {
     await withRollback(async (tx) => {
-      const s = await seedCaps(tx);
-      const usage = await getProjectCapUsage({ userId: s.a.id, role: "manager" }, "2026-11");
-      const byId = new Map(usage.map((u) => [u.projectId, u]));
-      expect(usage).toHaveLength(4);
-      expect(byId.get(s.p84)).toMatchObject({ usedHours: 84, capHours: 100, status: "neutral", month: "2026-11" });
-      expect(byId.get(s.p85)).toMatchObject({ usedHours: 85, capHours: 100, status: "warning" });
-      expect(byId.get(s.p100)).toMatchObject({ usedHours: 40, capHours: 40, status: "over" });
-      expect(byId.get(s.free)).toMatchObject({ usedHours: 5, capHours: null, status: "neutral" });
+      const s = await seedHours(tx);
+      expect(await getProjectHours({ userId: s.a.id, role: "member" }, "2026-11")).toEqual([
+        { projectId: s.p1, projectName: "Alpha Project", month: "2026-11", hours: 7.5 },
+        { projectId: s.p2, projectName: "Bravo Project", month: "2026-11", hours: 2 },
+      ]);
+      await expect(getProjectHours({ userId: s.a.id, role: "member" }, "2026-11", s.b.id)).rejects.toBeInstanceOf(
+        ForbiddenError,
+      );
     });
   });
 
-  it("member: only projects they logged, with team-wide usedHours", async () => {
+  it("manager: any user's hours", async () => {
     await withRollback(async (tx) => {
-      const s = await seedCaps(tx);
-      const usage = await getProjectCapUsage({ userId: s.b.id, role: "member" }, "2026-11");
-      expect(usage).toEqual([
-        { projectId: s.p85, projectName: "Cap 85", month: "2026-11", usedHours: 85, capHours: 100, status: "warning" },
+      const s = await seedHours(tx);
+      expect(await getProjectHours({ userId: s.a.id, role: "manager" }, "2026-11", s.b.id)).toEqual([
+        { projectId: s.p1, projectName: "Alpha Project", month: "2026-11", hours: 6 },
       ]);
     });
   });

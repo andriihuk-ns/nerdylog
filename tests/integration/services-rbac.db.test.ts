@@ -12,9 +12,12 @@ vi.mock("@/server/db/client", async () => {
 import { eq, inArray } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import type { SlackDirectoryMember } from "@/contracts";
-import { timeEntries, users } from "@/server/db/schema";
-import { syncDirectoryFromSlack } from "@/server/services/directory-service";
-import { ForbiddenError } from "@/server/services/errors";
+import { projectMembers, timeEntries, users } from "@/server/db/schema";
+import { syncDirectoryFromSlack, updateDirectoryUser } from "@/server/services/directory-service";
+import { ForbiddenError, InvalidInputError } from "@/server/services/errors";
+import { addHoliday, copyHolidays, listHolidayDatesForUser } from "@/server/services/holiday-service";
+import { deleteOffice, listOffices, upsertOffice } from "@/server/services/office-service";
+import { listProjects, replaceProjectMembers, upsertProject } from "@/server/services/project-service";
 import {
   createTimeEntry,
   deleteTimeEntry,
@@ -30,7 +33,7 @@ describe("time-entry-service RBAC", () => {
     await withRollback(async (tx) => {
       const member = await seedUser(tx);
       const other = await seedUser(tx);
-      const p = await seedProject(tx);
+      const p = await seedProject(tx, { members: [member.id, other.id] });
       const [id] = await seedEntries(tx, [{ userId: other.id, date: "2026-11-02", hours: 6, projectId: p }]);
       const actor = actorOf(member);
       await expect(updateTimeEntry(actor, id, { hours: 1 })).rejects.toBeInstanceOf(ForbiddenError);
@@ -50,7 +53,7 @@ describe("time-entry-service RBAC", () => {
     await withRollback(async (tx) => {
       const boss = await seedUser(tx, { role });
       const other = await seedUser(tx);
-      const p = await seedProject(tx);
+      const p = await seedProject(tx, { members: [other.id] });
       const [id, id2] = await seedEntries(tx, [
         { userId: other.id, date: "2026-11-02", hours: 6, projectId: p },
         { userId: other.id, date: "2026-11-03", hours: 2, projectId: p },
@@ -67,8 +70,73 @@ describe("time-entry-service RBAC", () => {
       const member = await seedUser(tx);
       const p = await seedProject(tx);
       const [id] = await seedEntries(tx, [{ userId: member.id, date: "2026-11-02", hours: 6, projectId: p }]);
+      // Not a member (any more), but the project is unchanged → still editable (A15).
       const view = await updateTimeEntry(actorOf(member), id, { hours: 2.5 });
       expect(view.hours).toBe(2.5);
+    });
+  });
+});
+
+describe("project membership (A15)", () => {
+  it("create/move requires the owner to be a member, even when a manager logs for them", async () => {
+    await withRollback(async (tx) => {
+      const boss = await seedUser(tx, { role: "manager" });
+      const member = await seedUser(tx);
+      const mine = await seedProject(tx, { members: [member.id] });
+      const notMine = await seedProject(tx, { members: [boss.id] });
+      const input = { userId: member.id, workDate: "2026-11-03", hours: 1, entryType: "work" as const, taskSummary: "" };
+      const created = await createTimeEntry(actorOf(member), { ...input, projectId: mine });
+      for (const actor of [actorOf(member), actorOf(boss)]) {
+        const err = await createTimeEntry(actor, { ...input, projectId: notMine }).catch((e) => e);
+        expect(err).toBeInstanceOf(InvalidInputError);
+        expect(err.fieldErrors).toEqual({ projectId: ["not_member"] });
+      }
+      await expect(updateTimeEntry(actorOf(boss), created.id, { projectId: notMine })).rejects.toBeInstanceOf(InvalidInputError);
+      expect(await tx.$count(timeEntries, eq(timeEntries.userId, member.id))).toBe(1);
+    });
+  });
+
+  it("replaceProjectMembers keeps only known Slack ids; listProjects shows isMember per actor", async () => {
+    await withRollback(async (tx) => {
+      const admin = await seedUser(tx, { role: "admin" });
+      const member = await seedUser(tx);
+      const view = await upsertProject(actorOf(admin), { name: "A15 Project", slackChannelId: "CTESTA1500" });
+      expect(view.createdBy).toEqual({ userId: admin.id, fullName: expect.any(String) });
+      await expect(replaceProjectMembers(view.id, [member.slackUserId, "UTESTUNKNOWN"])).resolves.toEqual({
+        members: 1,
+        skipped: 1,
+      });
+      const forMember = (await listProjects(actorOf(member))).find((p) => p.id === view.id);
+      const forAdmin = (await listProjects(actorOf(admin))).find((p) => p.id === view.id);
+      expect(forMember).toMatchObject({ memberIds: [member.id], isMember: true });
+      expect(forAdmin).toMatchObject({ memberIds: [member.id], isMember: false });
+      await replaceProjectMembers(view.id, []);
+      expect(await tx.$count(projectMembers, eq(projectMembers.projectId, view.id))).toBe(0);
+    });
+  });
+});
+
+describe("offices and holidays (A15)", () => {
+  it("assigning an office, copying holidays and refusing to delete a used office", async () => {
+    await withRollback(async (tx) => {
+      const admin = await seedUser(tx, { role: "admin" });
+      const member = await seedUser(tx);
+      const office = await upsertOffice(actorOf(admin), { code: "tq", name: "Test Office" });
+      expect(office).toMatchObject({ code: "TQ", memberCount: 0 });
+      const user = await updateDirectoryUser(actorOf(admin), member.id, { officeId: office.id });
+      expect(user).toMatchObject({ officeId: office.id, projectIds: [] });
+      await addHoliday(actorOf(admin), { officeId: office.id, holidayDate: "2028-02-29", name: "Leap" });
+      await addHoliday(actorOf(admin), { officeId: office.id, holidayDate: "2028-12-25", name: "Різдво Христове" });
+      await addHoliday(actorOf(admin), { officeId: office.id, holidayDate: "2029-12-25", name: "Already there" });
+      await expect(copyHolidays(actorOf(admin), office.id, 2028, 2029)).resolves.toEqual({ copied: 0, skipped: 2 });
+      await expect(copyHolidays(actorOf(admin), office.id, 2029, 2030)).resolves.toEqual({ copied: 1, skipped: 0 });
+      expect(await listHolidayDatesForUser(member.id, "2029-01-01", "2030-12-31")).toEqual(["2029-12-25", "2030-12-25"]);
+      expect(await listHolidayDatesForUser(admin.id, "2029-01-01", "2030-12-31")).toEqual([]); // no office
+      const err = await deleteOffice(actorOf(admin), office.id).catch((e) => e);
+      expect(Object.keys(err.fieldErrors).sort()).toEqual(["holidays", "members"]);
+      const empty = await upsertOffice(actorOf(admin), { code: "TQZ", name: "Empty" });
+      await deleteOffice(actorOf(admin), empty.id);
+      expect((await listOffices(actorOf(member))).some((o) => o.id === empty.id)).toBe(false);
     });
   });
 });

@@ -21,6 +21,7 @@ import {
 import type { TimeEntryInsert } from "@/server/db/schema";
 import { addDays, dayOfWeek } from "./calendar";
 import { NotFoundError } from "./errors";
+import { assertProjectMember } from "./project-service";
 import { assertCanActOnUser } from "./rbac";
 import { assertIsoDate, assertRowId, parseInput } from "./validation";
 
@@ -34,11 +35,15 @@ export const listWeekEntries: ListWeekEntries = async (actor, userId, weekStart)
   return listEntryViews(getDb(), userId, weekStart, addDays(weekStart, 6));
 };
 
-/** Contract CreateTimeEntry. Validates with timeEntryInputSchema, source `web_ui`. */
+/**
+ * Contract CreateTimeEntry. Validates with timeEntryInputSchema, source `web_ui`.
+ * A15: the entry's owner (not the actor) must be a member of the project.
+ */
 export const createTimeEntry: CreateTimeEntry = async (actor, input) => {
   const parsed = parseInput(timeEntryInputSchema, { ...input, source: "web_ui", slackViewId: null });
   assertIsoDate(parsed.workDate, "workDate");
   assertCanActOnUser(actor, parsed.userId);
+  if (parsed.projectId) await assertProjectMember(parsed.userId, parsed.projectId);
   const row: TimeEntryInsert = {
     userId: parsed.userId,
     projectId: parsed.projectId,
@@ -58,6 +63,8 @@ export const createTimeEntry: CreateTimeEntry = async (actor, input) => {
 /**
  * Contract UpdateTimeEntry. The merged row is re-validated as a whole (so a work row
  * cannot lose its project and PTO rows stay at 0h). `source` keeps the row's origin.
+ * A15: moving the row to another project requires the owner to be a member of it; rows that keep
+ * their project stay editable even if the owner has since left the channel.
  */
 export const updateTimeEntry: UpdateTimeEntry = async (actor, id, patch) => {
   assertRowId(id, "Time entry");
@@ -75,6 +82,9 @@ export const updateTimeEntry: UpdateTimeEntry = async (actor, id, patch) => {
     source: existing.source,
     slackViewId: null,
   });
+  if (merged.projectId && merged.projectId !== existing.projectId) {
+    await assertProjectMember(existing.userId, merged.projectId);
+  }
   await updateEntry(db, id, {
     projectId: merged.projectId,
     hours: merged.hours,

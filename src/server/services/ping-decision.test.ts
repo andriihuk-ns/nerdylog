@@ -146,9 +146,9 @@ describe("pingDecision skip rules", () => {
 
 describe("windowCandidates + selectPingTargets", () => {
   const users: PingUser[] = [
-    { userId: "kyiv", slackUserId: "U1", fullName: "Name U1", timezone: "Europe/Kyiv" },
-    { userId: "ny", slackUserId: "U2", fullName: "Name U2", timezone: "America/New_York" },
-    { userId: "kyiv-pto", slackUserId: "U3", fullName: "Name U3", timezone: "Europe/Kyiv" },
+    { userId: "kyiv", slackUserId: "U1", fullName: "Name U1", timezone: "Europe/Kyiv", locale: "uk", officeId: "UA" },
+    { userId: "ny", slackUserId: "U2", fullName: "Name U2", timezone: "America/New_York", locale: "en", officeId: null },
+    { userId: "kyiv-pto", slackUserId: "U3", fullName: "Name U3", timezone: "Europe/Kyiv", locale: "uk", officeId: "UA" },
   ];
 
   it("keeps only users inside their local window", () => {
@@ -168,15 +168,29 @@ describe("windowCandidates + selectPingTargets", () => {
 
   it("drops PTO users and logs the previous business day (Mon → Fri)", () => {
     const candidates = windowCandidates(at("2026-11-30T07:30:00Z"), users);
-    const targets = selectPingTargets(candidates, none, new Map([["kyiv-pto", new Set(["2026-11-30"])]]));
+    const targets = selectPingTargets(candidates, new Map(), new Map([["kyiv-pto", new Set(["2026-11-30"])]]));
     expect(targets).toEqual([
-      { userId: "kyiv", slackUserId: "U1", fullName: "Name U1", timezone: "Europe/Kyiv", localDate: "2026-11-30", logDate: "2026-11-27" },
+      { userId: "kyiv", slackUserId: "U1", fullName: "Name U1", locale: "uk", timezone: "Europe/Kyiv", localDate: "2026-11-30", logDate: "2026-11-27" },
     ]);
   });
 
   it("skips a Friday holiday when computing the log date", () => {
     const candidates = windowCandidates(at("2026-11-30T07:30:00Z"), users.slice(0, 1));
-    const [target] = selectPingTargets(candidates, new Set(["2026-11-27"]), new Map());
+    const [target] = selectPingTargets(candidates, new Map([["UA", new Set(["2026-11-27"])]]), new Map());
     expect(target.logDate).toBe("2026-11-26");
+  });
+
+  it("uses only the user's own office holidays; no office → no holidays (A15)", () => {
+    const candidates = windowCandidates(at("2026-11-30T07:30:00Z"), [
+      users[0],
+      { ...users[0], userId: "pl", officeId: "PL" },
+      { ...users[0], userId: "none", officeId: null },
+    ]);
+    const holidays = new Map([["UA", new Set(["2026-11-30"])], ["PL", new Set(["2026-11-27"])]]);
+    const targets = selectPingTargets(candidates, holidays, new Map());
+    expect(targets.map((t) => [t.userId, t.logDate])).toEqual([
+      ["pl", "2026-11-26"],
+      ["none", "2026-11-27"],
+    ]);
   });
 });

@@ -5,7 +5,7 @@
 import { randomUUID } from "node:crypto";
 import type { EntryType, Role } from "@/contracts";
 import type { Tx } from "@/server/db/queries/types";
-import { companyHolidays, projects, timeEntries, users } from "@/server/db/schema";
+import { companyHolidays, offices, projectMembers, projects, timeEntries, users } from "@/server/db/schema";
 
 let seq = 0;
 const next = () => `${Date.now().toString(36)}${(seq++).toString(36)}`.toUpperCase();
@@ -18,6 +18,7 @@ export interface SeedUserOpts {
   ptoAllowanceDays?: number | null;
   isActive?: boolean;
   withAuth?: boolean;
+  officeId?: string | null;
 }
 
 export interface SeededUser {
@@ -43,6 +44,7 @@ export async function seedUser(tx: Tx, opts: SeedUserOpts = {}): Promise<SeededU
       dailyNormHours: opts.dailyNormHours ?? 8,
       ptoAllowanceDays: opts.ptoAllowanceDays ?? null,
       isActive: opts.isActive ?? true,
+      officeId: opts.officeId ?? null,
     })
     .returning({ id: users.id });
   return { id: row.id, authUserId, role, slackUserId };
@@ -50,19 +52,28 @@ export async function seedUser(tx: Tx, opts: SeedUserOpts = {}): Promise<SeededU
 
 export async function seedProject(
   tx: Tx,
-  opts: { name?: string; cap?: number | null; isActive?: boolean; slackChannelId?: string | null } = {},
+  opts: { name?: string; isActive?: boolean; slackChannelId?: string | null; members?: readonly string[] } = {},
 ): Promise<string> {
-  const code = `T${next()}`;
   const [row] = await tx
     .insert(projects)
     .values({
-      name: opts.name ?? `Test Project ${code}`,
-      code,
-      monthlyHourCap: opts.cap ?? null,
+      name: opts.name ?? `Test Project ${next()}`,
       isActive: opts.isActive ?? true,
       slackChannelId: opts.slackChannelId ?? null,
     })
     .returning({ id: projects.id });
+  if (opts.members?.length) await seedProjectMembers(tx, row.id, opts.members);
+  return row.id;
+}
+
+/** A15: cache users as members of a project (only members may log work to it). */
+export async function seedProjectMembers(tx: Tx, projectId: string, userIds: readonly string[]): Promise<void> {
+  await tx.insert(projectMembers).values(userIds.map((userId) => ({ projectId, userId })));
+}
+
+/** A15: a synthetic office (codes never collide with the real UA / PL rows). */
+export async function seedOffice(tx: Tx, name = "Test Office"): Promise<string> {
+  const [row] = await tx.insert(offices).values({ code: `T${next()}`, name }).returning({ id: offices.id });
   return row.id;
 }
 
@@ -94,8 +105,8 @@ export async function seedEntries(tx: Tx, rows: readonly SeedEntry[]): Promise<s
   return inserted.map((r) => r.id);
 }
 
-export async function seedHoliday(tx: Tx, date: string, name = "Test Holiday"): Promise<void> {
-  await tx.insert(companyHolidays).values({ holidayDate: date, name });
+export async function seedHoliday(tx: Tx, officeId: string, date: string, name = "Test Holiday"): Promise<void> {
+  await tx.insert(companyHolidays).values({ officeId, holidayDate: date, name });
 }
 
 /** Actor shape for service calls (services trust the actor; requireActor resolves it in prod). */

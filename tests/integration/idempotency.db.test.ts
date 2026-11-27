@@ -16,6 +16,7 @@ import type { Tx } from "@/server/db/queries/types";
 import { dailyCheckins, slackSubmissions, timeEntries } from "@/server/db/schema";
 import { getTeamMonthRollup } from "@/server/services/rollup-service";
 import { submitSlackSubmission } from "@/server/services/standup-service";
+import { InvalidInputError } from "@/server/services/errors";
 import { InvalidSubmissionError } from "@/server/services/standup-rows";
 import { withRollback } from "./db";
 import { seedProject, seedUser } from "./fixtures";
@@ -43,7 +44,7 @@ describe("submitSlackSubmission idempotency (A1)", () => {
   it("same viewId twice → second call is duplicate and row counts are unchanged", async () => {
     await withRollback(async (tx) => {
       const u = await seedUser(tx);
-      const p = await seedProject(tx);
+      const p = await seedProject(tx, { members: [u.id] });
       const first = await submitSlackSubmission(standup(u.id, p));
       expect(first.status).toBe("created");
       if (first.status === "created") expect(first.entryIds).toHaveLength(2);
@@ -63,7 +64,7 @@ describe("submitSlackSubmission idempotency (A1)", () => {
   it("an invalid entry throws InvalidSubmissionError and writes nothing", async () => {
     await withRollback(async (tx) => {
       const u = await seedUser(tx);
-      const p = await seedProject(tx);
+      const p = await seedProject(tx, { members: [u.id] });
       const other = await seedUser(tx);
       const before = await counts(tx);
       const bad = standup(u.id, p);
@@ -82,9 +83,27 @@ describe("submitSlackSubmission idempotency (A1)", () => {
   it("a failing time-entry insert rolls back the ledger row too (one transaction)", async () => {
     await withRollback(async (tx) => {
       const u = await seedUser(tx);
-      const missingProject = "00000000-0000-4000-8000-000000000000"; // FK violation, passes Zod
-      await expect(submitSlackSubmission(standup(u.id, missingProject, "VTEST_FK"))).rejects.toThrow();
-      expect(await counts(tx)).toEqual({ submissions: 0, entries: 0, checkins: 0 });
+      const p = await seedProject(tx, { members: [u.id] });
+      const before = await counts(tx);
+      const input = standup(u.id, p, "VTEST_FK");
+      // A PTO row may carry a project id (Zod and the membership check only look at work rows),
+      // so a missing project reaches Postgres and fails the FK inside the transaction.
+      const missingProject = "00000000-0000-4000-8000-000000000000";
+      input.entries[1] = { ...input.entries[1], entryType: "vacation", hours: 0, projectId: missingProject };
+      await expect(submitSlackSubmission(input)).rejects.toThrow();
+      expect(await counts(tx)).toEqual(before);
+    });
+  });
+
+  it("A15: a work row for a project the user is not a member of → not_member, nothing written", async () => {
+    await withRollback(async (tx) => {
+      const u = await seedUser(tx);
+      const p = await seedProject(tx); // u is not a member
+      const before = await counts(tx);
+      const err = await submitSlackSubmission(standup(u.id, p, "VTEST_NOT_MEMBER")).catch((e) => e);
+      expect(err).toBeInstanceOf(InvalidInputError);
+      expect(err.fieldErrors).toEqual({ projectId: ["not_member"] });
+      expect(await counts(tx)).toEqual(before);
     });
   });
 });
@@ -118,7 +137,7 @@ describe("Stream B isolation", () => {
   it("check-in text never adds hours or ticket refs to the entries of the same submission", async () => {
     await withRollback(async (tx) => {
       const u = await seedUser(tx);
-      const p = await seedProject(tx);
+      const p = await seedProject(tx, { members: [u.id] });
       const input = standup(u.id, p, "VTEST_STREAM_B2");
       input.checkin = { userId: u.id, checkinDate: "2026-11-26", plannedToday: "QQQ-42 for 8h", blockers: "ZZZ-9 12h" };
       await submitSlackSubmission(input);

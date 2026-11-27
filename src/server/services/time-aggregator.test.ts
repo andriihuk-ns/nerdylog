@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aggregateMonth, computeTotals, projectCapUsage, type RollupEntry } from "./time-aggregator";
+import { aggregateMonth, computeTotals, projectHours, type RollupEntry } from "./time-aggregator";
 import { addDays, isWeekend } from "./calendar";
 
 const P1 = "p-dogteampro";
@@ -127,38 +127,29 @@ describe("aggregateMonth — edge cases", () => {
   });
 });
 
-describe("projectCapUsage", () => {
+describe("projectHours (A15)", () => {
   const projects = [
-    { id: P1, name: "DogTeamPro", monthlyHourCap: 40, isActive: true },
-    { id: P2, name: "CNG", monthlyHourCap: null, isActive: true },
-    { id: "p-old", name: "Archived", monthlyHourCap: 10, isActive: false },
-    { id: "p-old2", name: "Archived Quiet", monthlyHourCap: 10, isActive: false },
-    { id: "p-warn", name: "Warn Co", monthlyHourCap: 20, isActive: true },
+    { id: P1, name: "DogTeamPro" },
+    { id: P2, name: "CNG" },
+    { id: "p-quiet", name: "Quiet" },
   ];
 
-  it("sums work hours across users within the month and maps cap status", () => {
+  it("sums work hours per project within the month; PTO and other months ignored; zero-hour projects omitted", () => {
     const entries = [
-      work(sv.id, "2026-11-02", 30),
-      work(part.id, "2026-11-30", 2.5),
+      work(sv.id, "2026-11-02", 3.3),
+      work(sv.id, "2026-11-30", 2.5),
       work(sv.id, "2026-12-01", 8), // next month
+      work(sv.id, "2026-10-31", 8), // previous month
       work(sv.id, "2026-11-03", 5, P2),
-      work(sv.id, "2026-11-04", 12, "p-old"),
-      work(sv.id, "2026-11-05", 17, "p-warn"),
       pto(sv.id, "2026-11-06", "vacation"),
     ];
-    const usage = projectCapUsage("2026-11", projects, entries);
-    expect(usage.map((u) => [u.projectName, u.usedHours, u.status])).toEqual([
-      ["Archived", 12, "over"],
-      ["CNG", 5, "neutral"],
-      ["DogTeamPro", 32.5, "neutral"],
-      ["Warn Co", 17, "warning"],
+    expect(projectHours("2026-11", projects, entries)).toEqual([
+      { projectId: P2, projectName: "CNG", month: "2026-11", hours: 5 },
+      { projectId: P1, projectName: "DogTeamPro", month: "2026-11", hours: 5.8 },
     ]);
-    expect(usage.find((u) => u.projectId === P1)).toMatchObject({ capHours: 40, month: "2026-11" });
   });
 
-  it("lists active projects with zero usage", () => {
-    const usage = projectCapUsage("2026-11", projects, []);
-    expect(usage.map((u) => u.projectName)).toEqual(["CNG", "DogTeamPro", "Warn Co"]);
-    expect(usage.every((u) => u.usedHours === 0 && u.status === "neutral")).toBe(true);
+  it("returns [] without entries", () => {
+    expect(projectHours("2026-11", projects, [])).toEqual([]);
   });
 });

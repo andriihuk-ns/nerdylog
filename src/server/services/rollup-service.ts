@@ -1,10 +1,12 @@
-import type { Actor, GetProjectCapUsage, GetTeamMonthRollup } from "@/contracts";
+import type { Actor, GetProjectHours, GetTeamMonthRollup } from "@/contracts";
 import { getDb } from "@/server/db/client";
-import { listCapProjects } from "@/server/db/queries/projects";
-import { listEntriesInRange, listUserWorkProjectIds } from "@/server/db/queries/time-entries";
+import { listProjectNames } from "@/server/db/queries/projects";
+import { listEntriesInRange } from "@/server/db/queries/time-entries";
 import { listActiveRollupUsers } from "@/server/db/queries/users";
 import { monthRange } from "./calendar";
-import { aggregateMonth, projectCapUsage } from "./time-aggregator";
+import { assertCanActOnUser } from "./rbac";
+import { aggregateMonth, projectHours } from "./time-aggregator";
+import { isRowId } from "./validation";
 
 /** Amendment A5: managers and admins see the whole team; members see themselves. */
 export function canViewTeam(actor: Actor): boolean {
@@ -24,16 +26,16 @@ export const getTeamMonthRollup: GetTeamMonthRollup = async (actor, month) => {
 };
 
 /**
- * Contract GetProjectCapUsage. A client cap is a team-wide budget, so `usedHours` is
- * always the whole team's work on the project (archived users included).
- * manager/admin → every active project plus inactive ones with hours this month;
- * member → only projects they logged work on this month (no per-user breakdown).
+ * Contract GetProjectHours (A15, replaces cap usage). One user's `work` hours per project in the
+ * month (default: the actor). member → only themselves (ForbiddenError otherwise); manager/admin →
+ * anyone. Projects with no hours are omitted; sorted by name.
  */
-export const getProjectCapUsage: GetProjectCapUsage = async (actor, month) => {
+export const getProjectHours: GetProjectHours = async (actor, month, userId = actor.userId) => {
   const { start, end } = monthRange(month);
+  assertCanActOnUser(actor, userId);
+  if (!isRowId(userId)) return [];
   const db = getDb();
-  const projectIds = canViewTeam(actor) ? undefined : await listUserWorkProjectIds(db, actor.userId, start, end);
-  const projects = await listCapProjects(db, projectIds);
-  const entries = await listEntriesInRange(db, { start, end, projectIds: projects.map((p) => p.id) });
-  return projectCapUsage(month, projects, entries);
+  const entries = await listEntriesInRange(db, { start, end, userIds: [userId] });
+  const ids = [...new Set(entries.flatMap((e) => (e.entryType === "work" && e.projectId ? [e.projectId] : [])))];
+  return projectHours(month, await listProjectNames(db, ids), entries);
 };

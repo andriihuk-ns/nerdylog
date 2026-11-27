@@ -13,7 +13,9 @@ vi.mock("@/server/db/queries/time-entry-views", () => ({
   deleteEntry: vi.fn(),
   deleteDayEntries: vi.fn(),
 }));
+vi.mock("@/server/db/queries/projects", () => ({ isProjectMember: vi.fn() }));
 
+import { isProjectMember } from "@/server/db/queries/projects";
 import * as q from "@/server/db/queries/time-entry-views";
 import { ForbiddenError, InvalidInputError, NotFoundError } from "./errors";
 import { createTimeEntry, deleteTimeEntry, listWeekEntries, setDayStatus, updateTimeEntry } from "./time-entry-service";
@@ -44,6 +46,7 @@ beforeEach(() => {
   vi.mocked(q.listEntryViews).mockResolvedValue([]);
   vi.mocked(q.insertEntry).mockResolvedValue(ENTRY);
   vi.mocked(q.findEntryView).mockResolvedValue(view());
+  vi.mocked(isProjectMember).mockResolvedValue(true);
 });
 
 describe("listWeekEntries", () => {
@@ -83,6 +86,15 @@ describe("createTimeEntry", () => {
     await expect(createTimeEntry(member, { ...input, userId: OTHER })).rejects.toBeInstanceOf(ForbiddenError);
     await expect(createTimeEntry(manager, { ...input, userId: OTHER })).resolves.toBeDefined();
   });
+
+  it("A15: the owner must be a project member, even when a manager logs for them", async () => {
+    vi.mocked(isProjectMember).mockResolvedValue(false);
+    const err = await createTimeEntry(manager, { ...input, userId: OTHER }).catch((e) => e);
+    expect(err).toBeInstanceOf(InvalidInputError);
+    expect(err.fieldErrors).toEqual({ projectId: ["not_member"] });
+    expect(isProjectMember).toHaveBeenCalledWith(expect.anything(), OTHER, PROJECT);
+    expect(q.insertEntry).not.toHaveBeenCalled();
+  });
 });
 
 describe("updateTimeEntry / deleteTimeEntry", () => {
@@ -104,6 +116,17 @@ describe("updateTimeEntry / deleteTimeEntry", () => {
       ticketRefs: ["DOG-7"],
     });
     await expect(updateTimeEntry(manager, ENTRY, { projectId: null })).rejects.toBeInstanceOf(InvalidInputError);
+  });
+
+  it("A15: changing the project checks the owner's membership; keeping it does not", async () => {
+    vi.mocked(isProjectMember).mockResolvedValue(false);
+    await updateTimeEntry(manager, ENTRY, { hours: 5, projectId: PROJECT });
+    expect(isProjectMember).not.toHaveBeenCalled();
+    const NEW = "55555555-5555-4555-8555-555555555555";
+    const err = await updateTimeEntry(manager, ENTRY, { projectId: NEW }).catch((e) => e);
+    expect(err.fieldErrors).toEqual({ projectId: ["not_member"] });
+    expect(isProjectMember).toHaveBeenCalledWith(expect.anything(), OTHER, NEW);
+    expect(q.updateEntry).toHaveBeenCalledTimes(1);
   });
 
   it("keeps PTO rows at 0h", async () => {

@@ -5,9 +5,8 @@ vi.mock("@/server/db/queries/users", () => ({ findPtoAllowance: vi.fn(), listAct
 vi.mock("@/server/db/queries/time-entries", () => ({
   listUserPtoDates: vi.fn(),
   listEntriesInRange: vi.fn(),
-  listUserWorkProjectIds: vi.fn(),
 }));
-vi.mock("@/server/db/queries/projects", () => ({ listCapProjects: vi.fn() }));
+vi.mock("@/server/db/queries/projects", () => ({ listProjectNames: vi.fn() }));
 
 import { listUserPtoDates } from "@/server/db/queries/time-entries";
 import { findPtoAllowance } from "@/server/db/queries/users";

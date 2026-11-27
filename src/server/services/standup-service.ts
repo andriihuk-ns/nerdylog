@@ -9,6 +9,7 @@ import {
   type TimeEntryInsert,
 } from "@/server/db/schema";
 import { isUniqueViolation } from "./pg-errors";
+import { assertProjectMember } from "./project-service";
 import { prepareSubmission } from "./standup-rows";
 
 /** Default Postgres name of the slack_submissions primary key (drizzle/0000_init.sql). */
@@ -37,12 +38,18 @@ async function upsertDailyCheckin(tx: Tx, row: DailyCheckinInsert): Promise<void
 
 /**
  * Contract SubmitSlackSubmission (amendment A1). Validation runs before any write and
- * throws InvalidSubmissionError. Then ONE transaction: ledger row → time entries →
+ * throws InvalidSubmissionError; A15: a work row for a project the user is not a member of throws
+ * InvalidInputError { projectId: ["not_member"] } (AssertProjectMember), also before any write. Then ONE transaction: ledger row → time entries →
  * check-in upsert. A repeated `view_id` fails the first insert with SQLSTATE 23505,
  * rolls everything back and returns `{ status: "duplicate" }`. Other errors propagate.
  */
 export const submitSlackSubmission: SubmitSlackSubmission = async (input) => {
   const prepared = prepareSubmission(input);
+  const pairs = new Map<string, { userId: string; projectId: string }>();
+  for (const e of prepared.entries) {
+    if (e.entryType === "work" && e.projectId) pairs.set(`${e.userId}:${e.projectId}`, { userId: e.userId, projectId: e.projectId });
+  }
+  for (const { userId, projectId } of pairs.values()) await assertProjectMember(userId, projectId);
   try {
     const entryIds = await getDb().transaction(async (tx) => {
       await tx.insert(slackSubmissions).values(prepared.submission);

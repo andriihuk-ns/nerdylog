@@ -3,7 +3,7 @@ import { users } from "./users";
 
 /**
  * PRD §5.2 `daily_checkins` (Stream B, reference-only standup context).
- * Never joined into hour, day or cap calculations. A6: one check-in per user per day.
+ * Never joined into hour or day calculations. A6: one check-in per user per day.
  */
 export const dailyCheckins = pgTable(
   "daily_checkins",

@@ -1,16 +1,17 @@
 /**
- * DB constraints (PRD A6, A8, A9, A11): drizzle/0000_init.sql, 0002, 0003.
+ * DB constraints (PRD A6, A8, A9, A11, A15): drizzle/0000_init.sql, 0002, 0003, 0011.
  * Each violating statement runs in a savepoint so the test transaction stays usable.
  */
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import type { Tx } from "@/server/db/queries/types";
-import { dailyCheckins, projects, timeEntries, users } from "@/server/db/schema";
+import { companyHolidays, dailyCheckins, offices, projectMembers, projects, timeEntries, users } from "@/server/db/schema";
 import { expectPgFailure, withRollback } from "./db";
-import { seedProject, seedUser } from "./fixtures";
+import { seedHoliday, seedOffice, seedProject, seedUser } from "./fixtures";
 
 const CHECK = "23514";
 const UNIQUE = "23505";
+const FK = "23503";
 
 const entry = (tx: Tx, values: Partial<typeof timeEntries.$inferInsert> & { userId: string }) =>
   tx.insert(timeEntries).values({ workDate: "2026-11-02", hours: 0, entryType: "work", source: "web_ui", ...values });
@@ -100,6 +101,65 @@ describe("users.pto_allowance_days range (A9)", () => {
       await expectPgFailure(tx, (sp) => setAllowance(sp, 365.5), CHECK, "users_pto_allowance_days_range");
       const [row] = await tx.select({ v: users.ptoAllowanceDays }).from(users).where(eq(users.id, u.id));
       expect(row.v).toBe(24.5);
+    });
+  });
+});
+
+describe("offices, per-office holidays and project members (A15)", () => {
+  it("the migration seeded offices UA and PL", async () => {
+    await withRollback(async (tx) => {
+      const codes = (await tx.select({ code: offices.code }).from(offices)).map((o) => o.code);
+      expect(codes).toEqual(expect.arrayContaining(["UA", "PL"]));
+    });
+  });
+
+  it("holiday dates are unique per office, not globally", async () => {
+    await withRollback(async (tx) => {
+      const a = await seedOffice(tx);
+      const b = await seedOffice(tx);
+      await seedHoliday(tx, a, "2031-12-25");
+      await seedHoliday(tx, b, "2031-12-25");
+      await expectPgFailure(tx, (sp) => seedHoliday(sp, a, "2031-12-25"), UNIQUE, "company_holidays_office_date_unique");
+      expect(await tx.$count(companyHolidays, eq(companyHolidays.holidayDate, "2031-12-25"))).toBe(2);
+    });
+  });
+
+  it("an office with holidays cannot be deleted; deleting an office clears users.office_id", async () => {
+    await withRollback(async (tx) => {
+      const withHoliday = await seedOffice(tx);
+      await seedHoliday(tx, withHoliday, "2031-01-01");
+      await expectPgFailure(
+        tx,
+        (sp) => sp.delete(offices).where(eq(offices.id, withHoliday)),
+        FK,
+        "company_holidays_office_id_offices_id_fk",
+      );
+      const office = await seedOffice(tx);
+      const u = await seedUser(tx, { officeId: office });
+      await tx.delete(offices).where(eq(offices.id, office));
+      const [row] = await tx.select({ officeId: users.officeId }).from(users).where(eq(users.id, u.id));
+      expect(row.officeId).toBeNull();
+    });
+  });
+
+  it("project_members: one row per (project, user); cascades from project and user; created_by set null", async () => {
+    await withRollback(async (tx) => {
+      const keep = await seedUser(tx);
+      const creator = await seedUser(tx);
+      const p = await seedProject(tx, { members: [keep.id, creator.id] });
+      await tx.update(projects).set({ createdBy: creator.id }).where(eq(projects.id, p));
+      await expectPgFailure(
+        tx,
+        (sp) => sp.insert(projectMembers).values({ projectId: p, userId: keep.id }),
+        UNIQUE,
+        "project_members_pk",
+      );
+      await tx.delete(users).where(eq(users.id, creator.id)); // no time entries → deletable
+      const [proj] = await tx.select({ createdBy: projects.createdBy }).from(projects).where(eq(projects.id, p));
+      expect(proj.createdBy).toBeNull();
+      expect(await tx.$count(projectMembers, eq(projectMembers.projectId, p))).toBe(1);
+      await tx.delete(projects).where(eq(projects.id, p));
+      expect(await tx.$count(projectMembers, eq(projectMembers.userId, keep.id))).toBe(0);
     });
   });
 });

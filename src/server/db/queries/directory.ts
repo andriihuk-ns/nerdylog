@@ -15,23 +15,27 @@ const directoryColumns = {
   dailyNormHours: users.dailyNormHours,
   ptoAllowanceDays: users.ptoAllowanceDays,
   isActive: users.isActive,
+  officeId: users.officeId, // A15
 };
 
+/** Directory row before `projectIds` are attached (service joins project_members). */
+export type DirectoryRow = Omit<DirectoryUser, "projectIds">;
+
 /** Every user (active first, then by name) for the admin Team Directory. */
-export async function listDirectoryUsers(db: DbOrTx): Promise<DirectoryUser[]> {
+export async function listDirectoryUsers(db: DbOrTx): Promise<DirectoryRow[]> {
   return db
     .select(directoryColumns)
     .from(users)
     .orderBy(desc(users.isActive), asc(users.fullName), asc(users.id));
 }
 
-export async function findDirectoryUser(db: DbOrTx, id: string): Promise<DirectoryUser | undefined> {
+export async function findDirectoryUser(db: DbOrTx, id: string): Promise<DirectoryRow | undefined> {
   const [row] = await db.select(directoryColumns).from(users).where(eq(users.id, id)).limit(1);
   return row;
 }
 
 export type DirectoryPatch = Partial<
-  Pick<UserInsert, "role" | "dailyNormHours" | "ptoAllowanceDays" | "isActive" | "timezone">
+  Pick<UserInsert, "role" | "dailyNormHours" | "ptoAllowanceDays" | "isActive" | "timezone" | "officeId">
 >;
 
 /** Returns the updated row, or undefined when no such user. */
@@ -39,7 +43,7 @@ export async function updateDirectoryRow(
   db: DbOrTx,
   id: string,
   patch: DirectoryPatch,
-): Promise<DirectoryUser | undefined> {
+): Promise<DirectoryRow | undefined> {
   const [row] = await db.update(users).set(patch).where(eq(users.id, id)).returning(directoryColumns);
   return row;
 }

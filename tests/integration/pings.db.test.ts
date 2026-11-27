@@ -1,6 +1,6 @@
 /**
  * claimMorningPings against real SQL (A4 dedup, A10 window [09:30, 11:00) local weekday,
- * no company holiday, no PTO that local day). 2026-11-26 is a Thursday; Kyiv is UTC+2 in November.
+ * no holiday of the user's own office (A15), no PTO that local day). 2026-11-26 is a Thursday; Kyiv is UTC+2 in November.
  * The dev DB holds real users too, so every assertion is scoped to the ids this test seeded.
  */
 import { vi } from "vitest";
@@ -17,7 +17,7 @@ import type { Tx } from "@/server/db/queries/types";
 import { dailyPings } from "@/server/db/schema";
 import { claimMorningPings } from "@/server/services/ping-service";
 import { withRollback } from "./db";
-import { seedEntries, seedHoliday, seedUser, type SeededUser } from "./fixtures";
+import { seedEntries, seedHoliday, seedOffice, seedUser, type SeededUser } from "./fixtures";
 
 const KYIV_10_00 = new Date("2026-11-26T08:00:00Z");
 
@@ -39,6 +39,7 @@ describe("claimMorningPings (A10)", () => {
           userId: u.id,
           slackUserId: u.slackUserId,
           fullName: expect.any(String),
+          locale: "uk",
           timezone: "Europe/Kyiv",
           localDate: "2026-11-26",
           logDate: "2026-11-25",
@@ -60,14 +61,17 @@ describe("claimMorningPings (A10)", () => {
     });
   });
 
-  it("company holiday that day → nobody is claimed and no daily_pings rows are written", async () => {
+  it("holiday of the user's own office → not claimed; other office and no-office users are (A15)", async () => {
     await withRollback(async (tx) => {
-      await seedUser(tx);
-      await seedHoliday(tx, "2026-11-26");
-      // Global on purpose: a company holiday must stop every user, real ones included.
-      const before = await tx.$count(dailyPings);
-      expect(await claimMorningPings(KYIV_10_00)).toEqual([]);
-      expect(await tx.$count(dailyPings)).toBe(before);
+      const officeA = await seedOffice(tx);
+      const officeB = await seedOffice(tx);
+      await seedHoliday(tx, officeA, "2026-11-26");
+      const off = await seedUser(tx, { officeId: officeA });
+      const other = await seedUser(tx, { officeId: officeB });
+      const none = await seedUser(tx, { officeId: null });
+      const claimed = await claimFor([off, other, none], KYIV_10_00);
+      expect(claimed.map((c) => c.userId).sort()).toEqual([other.id, none.id].sort());
+      expect(await pingsOf(tx, [off])).toBe(0);
     });
   });
 
@@ -85,12 +89,16 @@ describe("claimMorningPings (A10)", () => {
     });
   });
 
-  it("Monday ping logs the previous Friday, skipping a Friday holiday", async () => {
+  it("Monday ping logs the previous Friday, skipping a Friday holiday of the user's office only", async () => {
     await withRollback(async (tx) => {
-      const u = await seedUser(tx);
-      await seedHoliday(tx, "2026-11-27");
-      const [target] = await claimFor([u], new Date("2026-11-30T08:00:00Z"));
-      expect(target).toMatchObject({ userId: u.id, localDate: "2026-11-30", logDate: "2026-11-26" });
+      const office = await seedOffice(tx);
+      await seedHoliday(tx, office, "2026-11-27");
+      const u = await seedUser(tx, { officeId: office });
+      const elsewhere = await seedUser(tx, { officeId: null });
+      const targets = await claimFor([u, elsewhere], new Date("2026-11-30T08:00:00Z"));
+      const byId = new Map(targets.map((t) => [t.userId, t]));
+      expect(byId.get(u.id)).toMatchObject({ localDate: "2026-11-30", logDate: "2026-11-26" });
+      expect(byId.get(elsewhere.id)).toMatchObject({ localDate: "2026-11-30", logDate: "2026-11-27" });
     });
   });
 });

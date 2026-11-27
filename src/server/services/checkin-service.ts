@@ -1,9 +1,9 @@
-import type { ListCheckinsForDate, SetCheckinChannelTs } from "@/contracts";
+import type { ListCheckinsForDate, ListCheckinsForUser, SetCheckinChannelTs } from "@/contracts";
 import { getDb } from "@/server/db/client";
-import { listCheckinRows, updateCheckinChannelTs } from "@/server/db/queries/checkins";
+import { listCheckinRows, listUserCheckinRows, updateCheckinChannelTs } from "@/server/db/queries/checkins";
 import { toCheckinView } from "./checkin-view";
 import { InvalidInputError } from "./errors";
-import { isManagerOrAdmin } from "./rbac";
+import { assertCanActOnUser, isManagerOrAdmin } from "./rbac";
 import { assertIsoDate, isRowId } from "./validation";
 
 /**
@@ -13,6 +13,19 @@ import { assertIsoDate, isRowId } from "./validation";
 export const listCheckinsForDate: ListCheckinsForDate = async (actor, date) => {
   assertIsoDate(date);
   const rows = await listCheckinRows(getDb(), date, isManagerOrAdmin(actor) ? undefined : actor.userId);
+  return rows.map(toCheckinView);
+};
+
+/**
+ * Contract ListCheckinsForUser (A15 people page, Stream B read-only): one user's check-ins in
+ * [from, to], newest first. member → only themselves; manager/admin → anyone. RangeError for bad dates.
+ */
+export const listCheckinsForUser: ListCheckinsForUser = async (actor, userId, from, to) => {
+  assertIsoDate(from, "from");
+  assertIsoDate(to, "to");
+  assertCanActOnUser(actor, userId);
+  if (!isRowId(userId) || from > to) return [];
+  const rows = await listUserCheckinRows(getDb(), userId, from, to);
   return rows.map(toCheckinView);
 };
 

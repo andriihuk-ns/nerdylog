@@ -38,27 +38,6 @@ export async function listEntriesInRange(db: DbOrTx, filter: EntryFilter): Promi
     .where(and(...conditions));
 }
 
-/** Distinct projects a user logged `work` on in [start, end]. */
-export async function listUserWorkProjectIds(
-  db: DbOrTx,
-  userId: string,
-  start: IsoDate,
-  end: IsoDate,
-): Promise<string[]> {
-  const rows = await db
-    .selectDistinct({ projectId: timeEntries.projectId })
-    .from(timeEntries)
-    .where(
-      and(
-        eq(timeEntries.userId, userId),
-        eq(timeEntries.entryType, "work"),
-        gte(timeEntries.workDate, start),
-        lte(timeEntries.workDate, end),
-      ),
-    );
-  return rows.flatMap((r) => (r.projectId ? [r.projectId] : []));
-}
-
 export interface PtoDateRow {
   workDate: IsoDate;
   entryType: "vacation" | "sick";
