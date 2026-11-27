@@ -18,7 +18,7 @@ export const en = {
   "common.saveFailedDm": "nerdylog could not save your last submission. Please try again or use the web panel.",
 
   // Modal titles (Slack caps titles at 24 characters)
-  "title.standup": "Daily standup",
+  "title.standup": "Daily status",
   "title.log": "Log time",
   "title.pto": "Quick PTO",
 
@@ -27,14 +27,10 @@ export const en = {
   "cmd.noTrigger": "Slack did not send a trigger. Please try again.",
   "cmd.openFailed": "nerdylog could not open the form. Please try again.",
 
-  // Morning DM
-  "dm.greeting": "Morning.",
-  "dm.greetingNamed": "Morning, {name}.",
-  "dm.prompt": "Log *{day}* and plan today.",
-  "dm.promptPlain": "Log {day} and plan today.",
-  "dm.openStandup": "Log Yesterday & Plan Today",
-  "dm.openPto": "Quick PTO (Vacation / Sick)",
-  "dm.footer": "Takes about 15 seconds. Hours go to your timesheet; plans are shared only as context.",
+  // A16 project channel prompt (ephemeral replies to the clicker)
+  "prompt.notMember": "Ask {creator} to add you to this project.",
+  "prompt.inactive": "This project is archived, so time can't be logged to it.",
+
 
   // Time / standup modal
   "time.workHeader": "Work · {date}",
@@ -45,13 +41,14 @@ export const en = {
   "time.hoursLabel": "Hours",
   "time.hoursPlaceholder": "e.g. 4 or 2.5",
   "time.taskLabel": "What did you do?",
-  "time.taskHint": "Ticket IDs like DOG-1364 are picked up automatically.",
+  "time.taskHint": "Paste links to Jira, Figma, Asana, Drive… — they show as previews in the channel",
   "time.addRow": "+ Add project",
   "time.removeRow": "Remove last",
   "time.offYesterday": "Off yesterday? Use Quick PTO instead.",
   "time.todayHeader": "Today (shared as context, not tracked)",
   "time.planLabel": "What are you planning today?",
   "time.blockersLabel": "Any blockers?",
+  "time.blockersHint": "Type “None” if nothing blocks you",
 
   // PTO modal
   "pto.vacation": "Vacation",
@@ -59,8 +56,8 @@ export const en = {
   "pto.holiday": "Holiday",
   "pto.type": "Type",
   "pto.date": "Date",
-  "pto.until": "Until (optional)",
-  "pto.untilHint": "Leave empty for a single day.",
+  "pto.until": "Last day",
+  "pto.untilHint": "Same as the first day for a single day off.",
   "pto.rules": "Up to {max} business days at a time. Weekends and your office's holidays are skipped.",
 
   // Validation errors (response_action "errors")
@@ -68,15 +65,17 @@ export const en = {
   "err.workDateFuture": "Work date cannot be in the future",
   "err.pickProject": "Pick a project for this row",
   "err.enterHours": "Enter hours for this project",
+  "err.enterTask": "Describe what you did",
   "err.hoursRange": "Hours must be between {min} and {max}",
   "err.quarterHours": "Use quarter hours, e.g. {a} or {b}",
   "err.tooLong": "Keep it under {max} characters",
   "err.totalOver": "Total hours for one day cannot exceed 24",
   "err.atLeastOne": "Add at least one project with hours",
   "err.planRequired": "Share at least one line about today",
+  "err.blockersRequired": "Type “None” if nothing blocks you",
   "err.ptoType": "Pick vacation or sick day",
   "err.ptoStart": "Pick a date",
-  "err.ptoEnd": "Pick a valid end date",
+  "err.ptoEnd": "Pick the last day (the same date for a single day)",
   "err.ptoOrder": "End date must be on or after the start date",
   "err.ptoMax": "Up to {max} business days at a time",
   "err.ptoNoBusinessDays": "That range has only weekends or holidays",

@@ -2,9 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { ProjectHours } from "@/contracts";
 import { ACTION, BLOCK, CALLBACK, MAX_PROJECT_ROWS, rowBlock } from "../ids";
 import { decodeMetadata, type ModalMetadata } from "../metadata";
-import { project, ptoBalance, USER_ID } from "../testing/fake-deps";
+import { otherProject, project, ptoBalance, USER_ID } from "../testing/fake-deps";
 import { buildAppHome } from "./app-home";
-import { buildMorningDm } from "./morning-dm";
 import { buildPtoModal } from "./pto-modal";
 import { buildStandupCard } from "./standup-card";
 import { buildTimeModal } from "./time-modal";
@@ -23,31 +22,11 @@ const meta = (over: Partial<ModalMetadata> = {}): ModalMetadata => ({
   ...over,
 });
 
-describe("buildMorningDm", () => {
-  it("has the two CTAs carrying the log date", () => {
-    const dm = buildMorningDm({ fullName: "Olena Petrenko", logDate: "2026-11-25", locale: "en" });
-    expect(dm.text).toContain("Morning, Olena.");
-    expect(dm.text).toContain("Wednesday");
-    const actions = json(dm.blocks).find((b) => b.type === "actions") as { elements: Json[] };
-    expect(actions.elements.map((e) => e.action_id)).toEqual([ACTION.openStandup, ACTION.openPto]);
-    expect(actions.elements.map((e) => (e.text as Json).text)).toEqual([
-      "Log Yesterday & Plan Today",
-      "Quick PTO (Vacation / Sick)",
-    ]);
-    expect(actions.elements.every((e) => e.value === "2026-11-25")).toBe(true);
-    expect(actions.elements[0].style).toBe("primary");
-  });
-
-  it("falls back to a generic greeting without a name", () => {
-    expect(buildMorningDm({ logDate: "2026-11-20", locale: "en" }).text).toBe("Morning. Log Friday and plan today.");
-  });
-});
-
 describe("buildTimeModal", () => {
-  it("standup: date, one row, add button, plan and optional blockers", () => {
+  it("standup: date, one row, add button, plan and blockers — all required (A16)", () => {
     const view = buildTimeModal({ meta: meta(), projects: [project], locale: "en" });
     expect(view.callback_id).toBe(CALLBACK.time);
-    expect(view.title.text).toBe("Daily standup");
+    expect(view.title.text).toBe("Daily status");
     expect(ids(view.blocks)).toEqual([
       BLOCK.workDate,
       rowBlock.project(1),
@@ -62,8 +41,9 @@ describe("buildTimeModal", () => {
     expect((date.element as Json).initial_date).toBe("2026-11-25");
     const hours = blocks.find((b) => b.block_id === rowBlock.hours(1))!;
     expect(hours.element).toMatchObject({ type: "plain_text_input" }); // A14: accepts "2.5" and "2,5"
-    expect(blocks.find((b) => b.block_id === BLOCK.blockers)!.optional).toBe(true);
-    expect(blocks.find((b) => b.block_id === BLOCK.plan)!.optional).toBeUndefined();
+    expect(blocks.filter((b) => b.type === "input" && b.optional !== undefined)).toEqual([]);
+    expect((blocks.find((b) => b.block_id === BLOCK.blockers)!.hint as Json).text).toBe("Type “None” if nothing blocks you");
+    expect(JSON.stringify(view)).not.toMatch(/optional/i);
     expect(decodeMetadata(view.private_metadata)).toEqual(meta());
   });
 
@@ -81,19 +61,38 @@ describe("buildTimeModal", () => {
     expect(actions.elements.map((e) => e.action_id)).toEqual([ACTION.removeRow]);
   });
 
-  it("shows an empty state instead of rows when there are no projects", () => {
+  it("A16: preselects meta.projectId in row 1 only; ignores an unknown id", () => {
+    const view = buildTimeModal({ meta: meta({ rows: 2, projectId: otherProject.id }), projects: [project, otherProject], locale: "en" });
+    const blocks = json(view.blocks);
+    const row1 = blocks.find((b) => b.block_id === rowBlock.project(1))!.element as Json;
+    const row2 = blocks.find((b) => b.block_id === rowBlock.project(2))!.element as Json;
+    expect(row1.initial_option).toEqual({ text: { type: "plain_text", text: "Changelly", emoji: true }, value: otherProject.id });
+    expect(row2.initial_option).toBeUndefined();
+    expect(decodeMetadata(view.private_metadata)?.projectId).toBe(otherProject.id);
+    const unknown = buildTimeModal({ meta: meta({ projectId: "nope" }), projects: [project], locale: "en" });
+    expect((json(unknown.blocks).find((b) => b.block_id === rowBlock.project(1))!.element as Json).initial_option).toBeUndefined();
+  });
+
+  it("shows an empty state instead of rows when there are no projects (rows 0; log has no submit)", () => {
     const view = buildTimeModal({ meta: meta(), projects: [], locale: "en" });
     expect(ids(view.blocks)).not.toContain(rowBlock.project(1));
     expect(JSON.stringify(view.blocks)).toContain("You're not in any project channel yet. Ask an admin to add you.");
+    expect(decodeMetadata(view.private_metadata)?.rows).toBe(0);
+    expect(view.submit).toBeDefined(); // standup can still share plan + blockers
+    expect(buildTimeModal({ meta: meta({ kind: "log" }), projects: [], locale: "en" }).submit).toBeUndefined();
   });
 });
 
 describe("buildPtoModal", () => {
-  it("has type, start and optional end with kind pto", () => {
+  it("has type, start and a required end defaulting to the start date (A16), kind pto", () => {
     const view = buildPtoModal(meta({ kind: "standup" }), "en");
     expect(view.callback_id).toBe(CALLBACK.pto);
     expect(ids(view.blocks)).toEqual([BLOCK.ptoType, BLOCK.ptoStart, BLOCK.ptoEnd]);
-    expect(json(view.blocks)[2].optional).toBe(true);
+    const end = json(view.blocks)[2];
+    expect(end.optional).toBeUndefined();
+    expect((end.element as Json).initial_date).toBe("2026-11-25");
+    expect((end.label as Json).text).toBe("Last day");
+    expect(JSON.stringify(view)).not.toMatch(/optional/i);
     expect(decodeMetadata(view.private_metadata)?.kind).toBe("pto");
   });
 });

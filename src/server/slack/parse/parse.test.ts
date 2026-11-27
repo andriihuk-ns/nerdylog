@@ -11,7 +11,7 @@ const meta = (over: Partial<ModalMetadata> = {}): ModalMetadata => ({
   logDate: "2026-11-25",
   userId: USER_ID,
   today: "2026-11-26",
-  rows: 3,
+  rows: 1,
   ...over,
 });
 
@@ -27,10 +27,11 @@ describe("parseTimeSubmission", () => {
       [rowBlock.hours(1)]: { value: "2.5" },
       [rowBlock.task(1)]: { value: "Map modal DOG-1364" },
       [BLOCK.plan]: { value: "Handler mobile flow" },
+      [BLOCK.blockers]: { value: "None" },
       ...extra,
     });
 
-  it("splits Stream A rows and Stream B check-in; empty rows are ignored", () => {
+  it("splits Stream A rows and Stream B check-in", () => {
     const res = parseTimeSubmission({ viewId: "V1", locale: "en", meta: meta(), values: values() });
     expect(res.ok).toBe(true);
     if (!res.ok) return;
@@ -51,16 +52,16 @@ describe("parseTimeSubmission", () => {
       userId: USER_ID,
       checkinDate: "2026-11-26",
       plannedToday: "Handler mobile flow",
-      blockers: "",
+      blockers: "None",
     });
     expect(JSON.stringify(res.value.entries)).not.toContain("Handler mobile flow");
   });
 
-  it("errors on a row with hours but no project, and a project without hours", () => {
+  it("A16: every rendered row needs project, hours and task; each empty field gets its own error", () => {
     const res = parseTimeSubmission({
       viewId: "V1",
       locale: "en",
-      meta: meta(),
+      meta: meta({ rows: 3 }),
       values: values({
         [rowBlock.hours(2)]: { value: "3" },
         [rowBlock.project(3)]: { selected_option: { value: PROJECT_ID } },
@@ -68,7 +69,36 @@ describe("parseTimeSubmission", () => {
     });
     expect(res).toEqual({
       ok: false,
-      errors: { [rowBlock.project(2)]: "Pick a project for this row", [rowBlock.hours(3)]: "Enter hours for this project" },
+      errors: {
+        [rowBlock.project(2)]: "Pick a project for this row",
+        [rowBlock.task(2)]: "Describe what you did",
+        [rowBlock.hours(3)]: "Enter hours for this project",
+        [rowBlock.task(3)]: "Describe what you did",
+      },
+    });
+  });
+
+  it("A16: an empty added row is an error, not ignored", () => {
+    const res = parseTimeSubmission({ viewId: "V1", locale: "en", meta: meta({ rows: 2 }), values: values() });
+    expect(res).toEqual({
+      ok: false,
+      errors: {
+        [rowBlock.project(2)]: "Pick a project for this row",
+        [rowBlock.hours(2)]: "Enter hours for this project",
+        [rowBlock.task(2)]: "Describe what you did",
+      },
+    });
+  });
+
+  it("A16: plan and blockers are required on the standup (localized)", () => {
+    const empty = { [BLOCK.plan]: { value: "  " }, [BLOCK.blockers]: { value: "" } };
+    expect(parseTimeSubmission({ viewId: "V", locale: "en", meta: meta(), values: values(empty) })).toEqual({
+      ok: false,
+      errors: { [BLOCK.plan]: "Share at least one line about today", [BLOCK.blockers]: "Type “None” if nothing blocks you" },
+    });
+    expect(parseTimeSubmission({ viewId: "V", locale: "uk", meta: meta(), values: values(empty) })).toEqual({
+      ok: false,
+      errors: { [BLOCK.plan]: "Напиши хоча б рядок про плани на сьогодні", [BLOCK.blockers]: "Напиши «Немає», якщо нічого не блокує" },
     });
   });
 
@@ -80,11 +110,12 @@ describe("parseTimeSubmission", () => {
     const total = parseTimeSubmission({
       viewId: "V",
       locale: "en",
-      meta: meta(),
+      meta: meta({ rows: 2 }),
       values: values({
         [rowBlock.hours(1)]: { value: "20" },
         [rowBlock.project(2)]: { selected_option: { value: PROJECT_ID } },
         [rowBlock.hours(2)]: { value: "5" },
+        [rowBlock.task(2)]: { value: "More" },
       }),
     });
     expect(total).toMatchObject({ ok: false, errors: { [rowBlock.hours(2)]: expect.stringContaining("24") } });
@@ -97,7 +128,7 @@ describe("parseTimeSubmission", () => {
     expect(future).toMatchObject({ ok: false, errors: { [BLOCK.workDate]: expect.any(String) } });
   });
 
-  it("log kind: no check-in, slack_command source, needs at least one row", () => {
+  it("log kind: no check-in, slack_command source, row 1 required; no rows rendered → nothing to save", () => {
     const ok = parseTimeSubmission({ viewId: "V", locale: "en", meta: meta({ kind: "log" }), values: values() });
     expect(ok.ok && ok.value.checkin).toBe(null);
     expect(ok.ok && ok.value.entries[0].source).toBe("slack_command");
@@ -107,15 +138,17 @@ describe("parseTimeSubmission", () => {
       meta: meta({ kind: "log" }),
       values: state({ [BLOCK.workDate]: { selected_date: "2026-11-25" } }),
     });
-    expect(empty).toMatchObject({ ok: false, errors: { [rowBlock.hours(1)]: expect.any(String) } });
+    expect(empty).toMatchObject({ ok: false, errors: { [rowBlock.project(1)]: expect.any(String), [rowBlock.hours(1)]: expect.any(String) } });
+    const none = parseTimeSubmission({ viewId: "V", locale: "en", meta: meta({ kind: "log", rows: 0 }), values: state({ [BLOCK.workDate]: { selected_date: "2026-11-25" } }) });
+    expect(none).toEqual({ ok: false, errors: { [BLOCK.workDate]: "Add at least one project with hours" } });
   });
 
-  it("standup with no work rows is allowed (plan only)", () => {
+  it("standup without rendered rows (user has no projects) saves plan and blockers only", () => {
     const res = parseTimeSubmission({
       viewId: "V",
       locale: "en",
-      meta: meta(),
-      values: state({ [BLOCK.workDate]: { selected_date: "2026-11-25" }, [BLOCK.plan]: { value: "Plan" } }),
+      meta: meta({ rows: 0 }),
+      values: state({ [BLOCK.workDate]: { selected_date: "2026-11-25" }, [BLOCK.plan]: { value: "Plan" }, [BLOCK.blockers]: { value: "None" } }),
     });
     expect(res.ok && res.value.entries).toEqual([]);
   });
@@ -135,8 +168,9 @@ describe("parsePtoSubmission", () => {
       }),
     });
 
-  it("single date → one 0h entry", () => {
-    const res = pto("2026-11-26", undefined, "sick");
+  it("A16: end date is required (localized); end may equal start → one 0h entry", () => {
+    expect(pto("2026-11-26")).toEqual({ ok: false, errors: { [BLOCK.ptoEnd]: "Pick the last day (the same date for a single day)" } });
+    const res = pto("2026-11-26", "2026-11-26", "sick");
     expect(res.ok && res.value.entries).toEqual([
       {
         userId: USER_ID,
@@ -162,6 +196,6 @@ describe("parsePtoSubmission", () => {
     expect(pto("2026-11-02", "2026-11-13").ok).toBe(true); // exactly 10
     expect(pto("2026-11-10", "2026-11-09")).toMatchObject({ ok: false, errors: { [BLOCK.ptoEnd]: expect.any(String) } });
     expect(pto("2026-11-28", "2026-11-29")).toMatchObject({ ok: false, errors: { [BLOCK.ptoStart]: expect.any(String) } });
-    expect(pto("2026-11-26", undefined, "holiday")).toMatchObject({ ok: false, errors: { [BLOCK.ptoType]: expect.any(String) } });
+    expect(pto("2026-11-26", "2026-11-26", "holiday")).toMatchObject({ ok: false, errors: { [BLOCK.ptoType]: expect.any(String) } });
   });
 });

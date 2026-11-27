@@ -1,4 +1,5 @@
 import { isoDateSchema } from "@/contracts";
+import { decodePromptValue } from "../blocks/project-prompt";
 import { ACTION, MAX_PROJECT_ROWS } from "../ids";
 import { decodeMetadata } from "../metadata";
 import {
@@ -9,6 +10,7 @@ import {
 } from "../payloads";
 import type { SlackDeps } from "../types";
 import { openModalFast, resizeTimeModal } from "./modal-loader";
+import { handlePromptClick } from "./project-prompt";
 import { handleViewSubmission } from "./view-submission";
 
 const OK = () => new Response(null, { status: 200 });
@@ -23,6 +25,14 @@ async function handleBlockActions(payload: BlockActionsPayload, deps: SlackDeps)
   const triggerId = payload.trigger_id;
 
   switch (action.action_id) {
+    case ACTION.projectStatusOpen: {
+      const value = decodePromptValue(action.value);
+      if (!triggerId || !value) return OK();
+      const channelId = payload.channel?.id ?? payload.container?.channel_id ?? null;
+      await handlePromptClick(deps, { slackUserId, triggerId, channelId, ...value });
+      return OK();
+    }
+    // openStandup / openPto: legacy buttons in pre-A16 morning DMs that users may still click.
     case ACTION.openStandup:
     case ACTION.openPto:
     case ACTION.homeLog:

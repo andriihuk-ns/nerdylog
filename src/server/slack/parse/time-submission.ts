@@ -31,9 +31,9 @@ export function parseHours(raw: string, locale: Locale): number | string {
 
 /**
  * Parses a time / standup `view_submission` into SlackSubmissionInput (FR-SLACK-02).
- * Empty rows are ignored. A row with hours or a task but no project, or a project
- * without valid hours, yields a field error on that block. Stream B text goes only
- * into `checkin`, never into `entries`.
+ * A16: every rendered row (1..meta.rows) needs a project, valid hours and a task summary; the
+ * standup also needs a plan and blockers ("None" when nothing blocks). Each empty field gets its
+ * own localized error. Stream B text goes only into `checkin`, never into `entries`.
  */
 export function parseTimeSubmission({ viewId, meta, values, locale }: TimeSubmissionArgs): ParseResult<SlackSubmissionInput> {
   const errors: FieldErrors = {};
@@ -50,25 +50,20 @@ export function parseTimeSubmission({ viewId, meta, values, locale }: TimeSubmis
     const projectId = optionValue(values, rowBlock.project(n));
     const rawHours = textValue(values, rowBlock.hours(n));
     const task = textValue(values, rowBlock.task(n));
-    if (!projectId && !rawHours && !task) continue;
+    const hours = rawHours ? parseHours(rawHours, locale) : t(locale, "err.enterHours");
 
     if (!projectId) {
       errors[rowBlock.project(n)] = t(locale, "err.pickProject");
-      continue;
     }
-    if (!rawHours) {
-      errors[rowBlock.hours(n)] = t(locale, "err.enterHours");
-      continue;
-    }
-    const hours = parseHours(rawHours, locale);
     if (typeof hours === "string") {
       errors[rowBlock.hours(n)] = hours;
-      continue;
     }
-    if (task.length > TASK_MAX_LENGTH) {
+    if (!task) {
+      errors[rowBlock.task(n)] = t(locale, "err.enterTask");
+    } else if (task.length > TASK_MAX_LENGTH) {
       errors[rowBlock.task(n)] = t(locale, "err.tooLong", { max: TASK_MAX_LENGTH });
-      continue;
     }
+    if (!projectId || typeof hours === "string" || !task || task.length > TASK_MAX_LENGTH) continue;
     total += hours;
     lastHoursBlock = rowBlock.hours(n);
     entries.push({
@@ -84,9 +79,8 @@ export function parseTimeSubmission({ viewId, meta, values, locale }: TimeSubmis
   }
 
   if (lastHoursBlock && total > 24) errors[lastHoursBlock] = t(locale, "err.totalOver");
-  if (meta.kind === "log" && entries.length === 0 && Object.keys(errors).length === 0) {
-    errors[rowBlock.hours(1)] = t(locale, "err.atLeastOne");
-  }
+  // rows === 0: the user has no projects, so no rows were rendered; a log has nothing to save.
+  if (meta.kind === "log" && meta.rows === 0) errors[BLOCK.workDate] = t(locale, "err.atLeastOne");
 
   let checkin: SlackSubmissionInput["checkin"] = null;
   if (meta.kind === "standup") {
@@ -94,6 +88,7 @@ export function parseTimeSubmission({ viewId, meta, values, locale }: TimeSubmis
     const blockers = textValue(values, BLOCK.blockers);
     if (!plannedToday) errors[BLOCK.plan] = t(locale, "err.planRequired");
     if (plannedToday.length > PLAN_MAX_LENGTH) errors[BLOCK.plan] = t(locale, "err.tooLong", { max: PLAN_MAX_LENGTH });
+    if (!blockers) errors[BLOCK.blockers] = t(locale, "err.blockersRequired");
     if (blockers.length > PLAN_MAX_LENGTH) errors[BLOCK.blockers] = t(locale, "err.tooLong", { max: PLAN_MAX_LENGTH });
     checkin = { userId: meta.userId, checkinDate: meta.today, plannedToday, blockers };
   }

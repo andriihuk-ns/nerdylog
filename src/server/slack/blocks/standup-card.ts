@@ -1,7 +1,7 @@
 import { formatHours } from "../dates";
 import type { SlackBlock } from "../types";
-import { context, escapeMrkdwn } from "./common";
-import type { SlackMessage } from "./morning-dm";
+import { context, escapeMrkdwn, linkifyMrkdwn } from "./common";
+import type { SlackMessage } from "./common";
 
 export interface StandupCardInput {
   fullName: string;
@@ -11,9 +11,13 @@ export interface StandupCardInput {
   blockers: string;
 }
 
-/** Slack section fields are capped at 2000 characters. */
+/** Slack section fields are capped at 2000 characters. Never cuts a `<url|label>` link in half. */
 function clip(text: string, max = 1900): string {
-  return text.length > max ? `${text.slice(0, max - 1)}…` : text;
+  if (text.length <= max) return text;
+  let cut = text.slice(0, max - 1);
+  const open = cut.lastIndexOf("<");
+  if (open > cut.lastIndexOf(">")) cut = cut.slice(0, open);
+  return `${cut}…`;
 }
 
 function yesterdayText(rows: StandupCardInput["yesterday"]): string {
@@ -21,7 +25,7 @@ function yesterdayText(rows: StandupCardInput["yesterday"]): string {
   return rows
     .map((r) => {
       const task = r.taskSummary.trim();
-      return `${formatHours(r.hours)} ${escapeMrkdwn(r.projectName)}${task ? ` — ${escapeMrkdwn(task)}` : ""}`;
+      return `${formatHours(r.hours)} ${escapeMrkdwn(r.projectName)}${task ? ` — ${linkifyMrkdwn(task)}` : ""}`;
     })
     .join("\n");
 }
@@ -29,6 +33,7 @@ function yesterdayText(rows: StandupCardInput["yesterday"]): string {
 /**
  * Design system 7.3 (FR-SLACK-03). Stream B text is shown as context only.
  * A14: SHARED channel post, so it stays English for everyone (no locale, no i18n).
+ * A17: URLs in the task, plan and blockers become `<url|Provider · label>` links.
  */
 export function buildStandupCard(input: StandupCardInput): SlackMessage {
   const name = escapeMrkdwn(input.fullName || "Someone");
@@ -50,10 +55,10 @@ export function buildStandupCard(input: StandupCardInput): SlackMessage {
         type: "section",
         fields: [
           { type: "mrkdwn", text: clip(`*Yesterday*\n${yesterday}`) },
-          { type: "mrkdwn", text: clip(`*Today*\n${plan ? escapeMrkdwn(plan) : "—"}`) },
+          { type: "mrkdwn", text: clip(`*Today*\n${plan ? linkifyMrkdwn(plan) : "—"}`) },
         ],
       },
-      context(blockers ? clip(`:warning: Blocker: ${escapeMrkdwn(blockers)}`) : "No blockers"),
+      context(blockers ? clip(`:warning: Blocker: ${linkifyMrkdwn(blockers)}`) : "No blockers"),
     ],
   };
 }

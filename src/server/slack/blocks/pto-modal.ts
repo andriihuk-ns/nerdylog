@@ -36,10 +36,10 @@ export function buildPtoModal(meta: ModalMetadata, locale: Locale): ModalView {
       {
         type: "input",
         block_id: BLOCK.ptoEnd,
-        optional: true,
         label: plain(t(locale, "pto.until")),
         hint: plain(t(locale, "pto.untilHint")),
-        element: { type: "datepicker", action_id: INPUT_ACTION },
+        // A16: required; defaults to the start date (a single day).
+        element: { type: "datepicker", action_id: INPUT_ACTION, initial_date: meta.logDate },
       },
       context(t(locale, "pto.rules", { max: MAX_PTO_BUSINESS_DAYS })),
     ],

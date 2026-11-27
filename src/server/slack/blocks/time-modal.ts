@@ -24,24 +24,26 @@ function projectOptions(projects: ProjectView[]) {
   }));
 }
 
-function projectRow(n: number, projects: ProjectView[], locale: Locale): SlackBlock[] {
+/** A16: every rendered input is required (no `optional`); the server re-checks empty values. */
+function projectRow(n: number, projects: ProjectView[], locale: Locale, preselectId?: string): SlackBlock[] {
+  const options = projectOptions(projects);
+  const initial = preselectId ? options.find((o) => o.value === preselectId) : undefined;
   return [
     {
       type: "input",
       block_id: rowBlock.project(n),
-      optional: true,
       label: plain(t(locale, "time.projectLabel", { n })),
       element: {
         type: "static_select",
         action_id: INPUT_ACTION,
         placeholder: plain(t(locale, "time.projectPlaceholder")),
-        options: projectOptions(projects),
+        options,
+        ...(initial ? { initial_option: initial } : {}),
       },
     },
     {
       type: "input",
       block_id: rowBlock.hours(n),
-      optional: true,
       label: plain(t(locale, "time.hoursLabel")),
       // A14: plain text (not number_input) so both "2.5" and "2,5" reach the parser; it validates the range.
       element: {
@@ -54,7 +56,6 @@ function projectRow(n: number, projects: ProjectView[], locale: Locale): SlackBl
     {
       type: "input",
       block_id: rowBlock.task(n),
-      optional: true,
       label: plain(t(locale, "time.taskLabel")),
       hint: plain(t(locale, "time.taskHint")),
       element: { type: "plain_text_input", action_id: INPUT_ACTION, max_length: TASK_MAX_LENGTH },
@@ -89,7 +90,7 @@ function workSection(meta: ModalMetadata, projects: ProjectView[], locale: Local
   }
   for (let n = 1; n <= meta.rows; n += 1) {
     if (n > 1) blocks.push(divider());
-    blocks.push(...projectRow(n, projects, locale));
+    blocks.push(...projectRow(n, projects, locale, n === 1 ? meta.projectId : undefined));
   }
   const actions = rowActions(meta.rows, locale);
   if (actions) blocks.push(actions);
@@ -110,26 +111,29 @@ function standupSection(locale: Locale): SlackBlock[] {
     {
       type: "input",
       block_id: BLOCK.blockers,
-      optional: true,
       label: plain(t(locale, "time.blockersLabel")),
+      hint: plain(t(locale, "time.blockersHint")),
       element: { type: "plain_text_input", action_id: INPUT_ACTION, multiline: true, max_length: PLAN_MAX_LENGTH },
     },
   ];
 }
 
 /**
- * Design system 7.2. kind "standup" = morning modal (Stream A rows + Stream B plan/blockers);
- * kind "log" = /log, time rows only. Row inputs are optional so empty rows can be ignored.
+ * Design system 7.2. kind "standup" = status modal (Stream A rows + Stream B plan/blockers);
+ * kind "log" = /log, time rows only. A16: every rendered row is required. Without projects no
+ * rows are rendered (`rows: 0` in the metadata); the log modal then has nothing to submit.
  */
-export function buildTimeModal({ meta, projects, locale }: TimeModalInput): ModalView {
-  const standup = meta.kind === "standup";
+export function buildTimeModal({ meta: input, projects, locale }: TimeModalInput): ModalView {
+  const standup = input.kind === "standup";
+  const meta: ModalMetadata = projects.length === 0 ? { ...input, rows: 0 } : { ...input, rows: Math.max(1, input.rows) };
   const blocks = [...workSection(meta, projects, locale), ...(standup ? standupSection(locale) : [])];
+  const canSubmit = standup || meta.rows > 0;
   return {
     type: "modal",
     callback_id: CALLBACK.time,
     private_metadata: encodeMetadata(meta),
     title: modalTitle(t(locale, standup ? "title.standup" : "title.log")),
-    submit: plain(t(locale, "common.submit")),
+    ...(canSubmit ? { submit: plain(t(locale, "common.submit")) } : {}),
     close: plain(t(locale, "common.cancel")),
     blocks,
   };

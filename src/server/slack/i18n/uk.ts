@@ -19,7 +19,7 @@ export const uk: Messages = {
   "common.saveFailedDm": "nerdylog не зміг зберегти твій останній запис. Спробуй ще раз або скористайся веб-панеллю.",
 
   // Modal titles (≤ 24 characters)
-  "title.standup": "Щоденний стендап",
+  "title.standup": "Щоденний статус",
   "title.log": "Записати час",
   "title.pto": "Відпустка / лікарняний",
 
@@ -28,14 +28,10 @@ export const uk: Messages = {
   "cmd.noTrigger": "Slack не передав потрібних даних. Спробуй ще раз.",
   "cmd.openFailed": "nerdylog не зміг відкрити форму. Спробуй ще раз.",
 
-  // Morning DM ({day} is the weekday in the accusative: "середу", "пʼятницю")
-  "dm.greeting": "Доброго ранку!",
-  "dm.greetingNamed": "Доброго ранку, {name}!",
-  "dm.prompt": "Запиши роботу за *{day}* і сплануй сьогодні.",
-  "dm.promptPlain": "Запиши роботу за {day} і сплануй сьогодні.",
-  "dm.openStandup": "Записати вчора й спланувати сьогодні",
-  "dm.openPto": "Швидка відпустка / лікарняний",
-  "dm.footer": "Це займе секунд 15. Години підуть у твій табель, а плани побачить команда лише як контекст.",
+  // A16 project channel prompt
+  "prompt.notMember": "Попроси {creator} додати тебе до цього проєкту.",
+  "prompt.inactive": "Цей проєкт в архіві, тож час на нього записати не можна.",
+
 
   // Time / standup modal
   "time.workHeader": "Робота · {date}",
@@ -46,13 +42,14 @@ export const uk: Messages = {
   "time.hoursLabel": "Години",
   "time.hoursPlaceholder": "напр. 4 або 2,5",
   "time.taskLabel": "Опис задачі",
-  "time.taskHint": "Номери тікетів на кшталт DOG-1364 підхопляться автоматично.",
+  "time.taskHint": "Встав посилання на Jira, Figma, Asana, Drive… — у каналі вони покажуться як прев’ю",
   "time.addRow": "+ Додати проєкт",
   "time.removeRow": "Прибрати останній",
   "time.offYesterday": "Вчора був вихідний? Тоді обери швидку відпустку / лікарняний.",
   "time.todayHeader": "Сьогодні (лише контекст, години не рахуються)",
   "time.planLabel": "Що плануєш сьогодні?",
   "time.blockersLabel": "Є блокери?",
+  "time.blockersHint": "Напиши «Немає», якщо нічого не блокує",
 
   // PTO modal
   "pto.vacation": "Відпустка",
@@ -60,8 +57,8 @@ export const uk: Messages = {
   "pto.holiday": "Свято",
   "pto.type": "Тип",
   "pto.date": "Дата",
-  "pto.until": "Останній день (необовʼязково)",
-  "pto.untilHint": "Залиш порожнім, якщо це лише один день.",
+  "pto.until": "Останній день",
+  "pto.untilHint": "Та сама дата, що й перший день, якщо це лише один день.",
   "pto.rules": "До {max} робочих днів за раз. Вихідні та свята твого офісу не рахуються.",
 
   // Validation errors
@@ -69,15 +66,17 @@ export const uk: Messages = {
   "err.workDateFuture": "Дата роботи не може бути в майбутньому",
   "err.pickProject": "Обери проєкт для цього рядка",
   "err.enterHours": "Вкажи години для цього проєкту",
+  "err.enterTask": "Коротко опиши, що зроблено",
   "err.hoursRange": "Години мають бути від {min} до {max}",
   "err.quarterHours": "Вказуй години кроком у чверть години, напр. {a} або {b}",
   "err.tooLong": "Не більше {max} символів",
   "err.totalOver": "За один день не можна записати більше 24 годин",
   "err.atLeastOne": "Додай хоча б один проєкт із годинами",
   "err.planRequired": "Напиши хоча б рядок про плани на сьогодні",
+  "err.blockersRequired": "Напиши «Немає», якщо нічого не блокує",
   "err.ptoType": "Обери: відпустка чи лікарняний",
   "err.ptoStart": "Обери дату",
-  "err.ptoEnd": "Обери коректну дату завершення",
+  "err.ptoEnd": "Обери останній день (ту саму дату, якщо це один день)",
   "err.ptoOrder": "Останній день не може бути раніше за перший",
   "err.ptoMax": "Не більше {max} робочих днів за раз",
   "err.ptoNoBusinessDays": "У цьому проміжку лише вихідні або свята",

@@ -2,7 +2,7 @@ import "server-only";
 import { after } from "next/server";
 import { serverEnv } from "@/lib/env";
 import { listHolidayDatesForUser, listHolidays } from "@/server/services/holiday-service";
-import { claimMorningPings } from "@/server/services/ping-service";
+import { claimProjectPrompts } from "@/server/services/project-prompt-service";
 import { listProjects } from "@/server/services/project-service";
 import { getPtoBalance } from "@/server/services/pto-service";
 import { getProjectHours } from "@/server/services/rollup-service";
@@ -26,7 +26,7 @@ export function createTempoPorts(): TempoPorts {
     listWeekEntries,
     getProjectHours: (actor, month) => getProjectHours(actor, month),
     getPtoBalance,
-    claimMorningPings,
+    claimProjectPrompts,
     getStandupChannelId,
     listProjectChannels,
     setCheckinChannelTs,

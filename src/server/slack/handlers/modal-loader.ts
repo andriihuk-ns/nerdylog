@@ -7,14 +7,16 @@ import { localIsoDate, yearOf } from "../dates";
 import { localeOf, t, type MessageKey } from "../i18n";
 import type { ModalMetadata } from "../metadata";
 import type { SlackDeps, TempoPorts } from "../types";
-import { selectableProjects } from "./project-access";
+import { promptDenial, selectableProjects } from "./project-access";
 
 export interface OpenModalRequest {
   kind: SlackSubmissionKind;
   slackUserId: string;
   triggerId: string;
-  /** Pre-computed default date (from the morning DM button); otherwise derived. */
+  /** Pre-computed default date (from the project prompt button); otherwise derived. */
   logDate?: IsoDate | null;
+  /** A16: project to preselect in row 1 (project prompt button). */
+  projectId?: string | null;
 }
 
 const TITLES: Record<SlackSubmissionKind, MessageKey> = { standup: "title.standup", log: "title.log", pto: "title.pto" };
@@ -65,6 +67,15 @@ async function fillModal(deps: SlackDeps, req: OpenModalRequest, viewId: string)
       return;
     }
     const projects = await deps.tempo.listProjects(profile);
+    if (req.projectId) {
+      // A16: reached only when the click's pre-check timed out; show the denial in the modal.
+      const denial = promptDenial(profile, projects.find((p) => p.id === req.projectId), deps.appBaseUrl);
+      if (denial) {
+        await deps.slack.updateView(viewId, noticeModal(t(locale, TITLES[req.kind]), denial.text, locale));
+        return;
+      }
+      meta.projectId = req.projectId;
+    }
     await deps.slack.updateView(viewId, buildTimeModal({ meta, projects: selectableProjects(projects), locale }));
   } catch (error) {
     console.error("slack: modal load failed", error instanceof Error ? error.message : error);
@@ -74,7 +85,10 @@ async function fillModal(deps: SlackDeps, req: OpenModalRequest, viewId: string)
   }
 }
 
-/** "+ Add project" / "Remove last": rebuild the time modal with a new row count, keeping block ids. */
+/**
+ * "+ Add project" / "Remove last": rebuild the time modal with a new row count, keeping block ids
+ * (and the row-1 preselection) so Slack keeps what the user already typed.
+ */
 export async function resizeTimeModal(
   deps: SlackDeps,
   args: { slackUserId: string; viewId: string; hash?: string; meta: ModalMetadata; rows: number },

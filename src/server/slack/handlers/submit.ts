@@ -16,6 +16,7 @@ function isNotMemberError(error: unknown): boolean {
 
 /**
  * A14: project-lines and standup-card posts go to SHARED channels and stay English on purpose.
+ * A17: both are posted with unfurls on, so linked Jira / Figma / Asana / Drive items preview.
  * Only the personal failure DM below uses the recipient's locale.
  *
  * A11 project channels: each project that has a channel gets one message with only that
@@ -34,7 +35,7 @@ export async function postProjectLines(
     .map(async (c) => {
       const msg = buildProjectLinesMessage(grouped.get(c.projectId)!);
       try {
-        await deps.slack.postMessage(c.slackChannelId, msg.text, msg.blocks);
+        await deps.slack.postMessage(c.slackChannelId, msg.text, msg.blocks, { unfurl: true });
       } catch (error) {
         console.error("slack: project post failed", c.slackChannelId, errorMessage(error));
       }
@@ -71,7 +72,7 @@ export async function broadcastStandup(
   });
   let ts: string | null;
   try {
-    ts = await deps.slack.postMessage(channel, card.text, card.blocks);
+    ts = await deps.slack.postMessage(channel, card.text, card.blocks, { unfurl: true });
   } catch (error) {
     console.error("slack: standup post failed", channel, errorMessage(error));
     return null;

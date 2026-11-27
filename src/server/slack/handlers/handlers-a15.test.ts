@@ -41,6 +41,7 @@ const goodValues = {
   [rowBlock.hours(1)]: field({ value: "4" }),
   [rowBlock.task(1)]: field({ value: "Map modal DOG-1364" }),
   [BLOCK.plan]: field({ value: "Handler mobile flow" }),
+  [BLOCK.blockers]: field({ value: "None" }),
 };
 
 describe("A15 project access", () => {

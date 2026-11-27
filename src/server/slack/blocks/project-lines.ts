@@ -1,7 +1,7 @@
 import { extractTicketRefs, type TimeEntryInput } from "@/contracts";
 import { formatHours } from "../dates";
-import { escapeMrkdwn } from "./common";
-import type { SlackMessage } from "./morning-dm";
+import { linkifyMrkdwn } from "./common";
+import type { SlackMessage } from "./common";
 
 type LineEntry = Pick<TimeEntryInput, "entryType" | "projectId" | "hours" | "taskSummary">;
 
@@ -28,7 +28,7 @@ export function groupProjectLines(fullName: string, entries: readonly LineEntry[
   return byProject;
 }
 
-/** Message for one project channel: only that project's lines, mrkdwn-escaped. */
+/** Message for one project channel: only that project's lines, mrkdwn-escaped, URLs as Slack links (A17). */
 export function buildProjectLinesMessage(lines: readonly string[]): SlackMessage {
-  return { text: lines.map(escapeMrkdwn).join("\n"), blocks: [] };
+  return { text: lines.map(linkifyMrkdwn).join("\n"), blocks: [] };
 }

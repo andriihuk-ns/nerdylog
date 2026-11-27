@@ -19,7 +19,7 @@ display_information:
 features:
   app_home:
     home_tab_enabled: true # App Home "Home" tab: today's status + quick actions (app_home_opened)
-    messages_tab_enabled: true # DM thread with nerdylog: morning ping + confirmations
+    messages_tab_enabled: true # DM thread with nerdylog: save-failure notices (A16: no morning DM ping)
     messages_tab_read_only_enabled: false # users may reply / trigger shortcuts in the DM
   bot_user:
     display_name: nerdylog
@@ -45,14 +45,15 @@ oauth_config:
       - email # email claim → users.email
       - profile # name, picture, https://slack.com/user_id claims → users row
     bot:
-      - chat:write # post the morning ping, confirmations, project lines and the standup card as nerdylog.
+      - chat:write # A16 daily status prompt per project channel, ephemeral replies (chat.postEphemeral), project lines
+      #   and the standup card (A17: posted with unfurl_links/unfurl_media), plus failure DMs, as nerdylog.
       #   Channels (general standup + one per project) are chosen in /admin (amendment A11). nerdylog
       #   joins public ones itself; private ones need `/invite @nerdylog`. No chat:write.public, so
       #   nerdylog only posts in channels it is a member of.
       - channels:read # /admin channel picker (conversations.list/info); A15 project members = public channel members (conversations.members)
       - groups:read # /admin channel picker + A15 members of private project channels nerdylog was invited to
       - channels:join # join a public channel when an admin picks it in /admin (conversations.join)
-      - im:write # open a DM channel with a user (conversations.open) for the morning ping
+      - im:write # open a DM channel with a user (conversations.open) for save-failure notices
       - users:read # "Sync from Slack": list members, read tz + avatar
       - users:read.email # "Sync from Slack": match members to nerdylog users by email
       - commands # register /log and /pto

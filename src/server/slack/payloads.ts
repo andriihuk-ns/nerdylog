@@ -21,6 +21,8 @@ const blockActionsSchema = z
     user: userSchema,
     actions: z.array(z.object({ action_id: z.string(), value: z.string().optional() }).loose()).min(1),
     view: viewSchema.optional(),
+    channel: z.object({ id: z.string().min(1) }).loose().optional(), // message buttons only
+    container: z.object({ channel_id: z.string().optional() }).loose().optional(),
   })
   .loose();
 

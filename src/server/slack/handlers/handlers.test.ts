@@ -6,7 +6,6 @@ import { fakeDeps, OTHER_PROJECT_ID, profile, PROJECT_ID, USER_ID } from "../tes
 import { handleSlashCommand } from "./commands";
 import { handleEvent } from "./events";
 import { handleInteraction } from "./interactions";
-import { runMorningPings } from "./morning-ping";
 import { routeSubmission } from "./submit";
 
 const form = (fields: Record<string, string>) => new URLSearchParams(fields);
@@ -31,6 +30,7 @@ const goodValues = {
   [rowBlock.hours(1)]: field({ value: "4" }),
   [rowBlock.task(1)]: field({ value: "Map modal DOG-1364" }),
   [BLOCK.plan]: field({ value: "Handler mobile flow" }),
+  [BLOCK.blockers]: field({ value: "None" }),
 };
 
 describe("slash commands", () => {
@@ -70,7 +70,7 @@ describe("slash commands", () => {
 });
 
 describe("interactions", () => {
-  it("morning DM button opens the standup modal with the button's log date", async () => {
+  it("legacy morning DM button (pre-A16 DMs) still opens the standup modal with the button's log date", async () => {
     const { deps, slack, flush } = fakeDeps();
     await handleInteraction(
       payload({ type: "block_actions", trigger_id: "T9", user: { id: "U123" }, actions: [{ action_id: ACTION.openStandup, value: "2026-11-20" }] }),
@@ -317,34 +317,5 @@ describe("events", () => {
     expect((await handleEvent(body, new Headers(), deps)).status).toBe(200);
     await flush();
     expect(slack.publishHome).toHaveBeenCalledWith("U123", expect.objectContaining({ type: "home" }));
-  });
-});
-
-describe("morning ping", () => {
-  const target = (id: string, locale: "en" | "uk" = "en") => ({
-    userId: USER_ID,
-    slackUserId: id,
-    fullName: "Olena Petrenko",
-    locale,
-    timezone: "Europe/Kyiv",
-    localDate: "2026-11-26",
-    logDate: "2026-11-25",
-  });
-
-  it("DMs each claimed user and continues past failures", async () => {
-    const { deps, slack, tempo } = fakeDeps();
-    tempo.claimMorningPings.mockResolvedValueOnce([target("U1"), target("U2"), target("U3")]);
-    slack.openDm.mockRejectedValueOnce(new Error("user_not_found"));
-    expect(await runMorningPings(deps)).toEqual({ claimed: 3, sent: 2, failed: 1 });
-    expect(slack.postMessage).toHaveBeenCalledTimes(2);
-  });
-
-  it("A15: uses PingTarget.locale without a per-target user lookup", async () => {
-    const { deps, slack, tempo } = fakeDeps();
-    tempo.claimMorningPings.mockResolvedValueOnce([target("U1", "en"), target("U2", "uk")]);
-    await runMorningPings(deps);
-    const texts = slack.postMessage.mock.calls.map((c) => (c as unknown[])[1] as string);
-    expect(texts).toEqual(["Morning, Olena. Log Wednesday and plan today.", "Доброго ранку, Olena! Запиши роботу за середу і сплануй сьогодні."]);
-    expect(tempo.resolveUser).not.toHaveBeenCalled();
   });
 });

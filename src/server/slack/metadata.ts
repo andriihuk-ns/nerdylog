@@ -11,7 +11,10 @@ export const modalMetadataSchema = z.object({
   logDate: isoDateSchema, // default work date (time modal) or first PTO date
   userId: z.uuid(),
   today: isoDateSchema, // user-local date when the modal opened → check-in date
-  rows: z.number().int().min(1).max(MAX_PROJECT_ROWS).default(1),
+  // A16: every rendered row is required; 0 = no project rows rendered (user has no projects).
+  rows: z.number().int().min(0).max(MAX_PROJECT_ROWS).default(1),
+  /** A16: project preselected in row 1 (opened from the project channel prompt). */
+  projectId: z.string().min(1).optional(),
 });
 export type ModalMetadata = z.infer<typeof modalMetadataSchema>;
 

@@ -3,8 +3,8 @@ import type {
   Actor,
   HolidayView,
   IsoDate,
-  PingTarget,
   ProjectHours,
+  ProjectPromptTarget,
   ProjectView,
   PtoBalance,
   SlackActorProfile,
@@ -28,12 +28,19 @@ export interface SlackApi {
   openView(triggerId: string, view: ModalView): Promise<string>;
   updateView(viewId: string, view: ModalView, hash?: string): Promise<void>;
   publishHome(slackUserId: string, view: HomeView): Promise<void>;
-  /** chat.postMessage; returns the message ts. */
-  postMessage(channel: string, text: string, blocks: SlackBlock[]): Promise<string | null>;
-  /** conversations.open for a DM; returns the channel id. */
+  /** chat.postMessage; returns the message ts. `unfurl` (A17) sets unfurl_links + unfurl_media. */
+  postMessage(channel: string, text: string, blocks: SlackBlock[], options?: PostOptions): Promise<string | null>;
+  /** chat.postEphemeral: a message only `slackUserId` sees in `channel`. */
+  postEphemeral(channel: string, slackUserId: string, text: string): Promise<void>;
+  /** conversations.open for a DM (failure notices); returns the channel id. */
   openDm(slackUserId: string): Promise<string>;
   /** conversations.info → channel name without "#"; null on any error or timeout. Never throws. */
   channelName(channelId: string): Promise<string | null>;
+}
+
+export interface PostOptions {
+  /** A17: let Slack (and installed apps: Jira, Figma, Asana, Drive) unfurl links in the post. */
+  unfurl?: boolean;
 }
 
 /** Tempo service calls the Slack layer needs (all writes go through src/server/services). */
@@ -50,7 +57,8 @@ export interface TempoPorts {
   /** A15: the actor's hours per project in the month. */
   getProjectHours(actor: Actor, month: string): Promise<ProjectHours[]>;
   getPtoBalance(actor: Actor, userId: string, year: number): Promise<PtoBalance>;
-  claimMorningPings(now: Date): Promise<PingTarget[]>;
+  /** A16: claim the projects whose channel status prompt is due now (project_prompts dedup). */
+  claimProjectPrompts(now: Date): Promise<ProjectPromptTarget[]>;
   /** A11/A15: the general standup channel; null → no card. */
   getStandupChannelId(): Promise<string | null>;
   /** A11: active projects that have a Slack channel. */

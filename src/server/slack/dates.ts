@@ -49,14 +49,6 @@ export function weekdayName(date: IsoDate, locale: Locale = "en"): string {
   return formatDate(date, locale, { weekday: "long" });
 }
 
-/** Ukrainian weekdays in the accusative ("за середу"), which Intl does not provide. Sunday first. */
-const UK_WEEKDAYS_ACCUSATIVE = ["неділю", "понеділок", "вівторок", "середу", "четвер", "пʼятницю", "суботу"];
-
-/** Weekday for "Log {day}" / "Запиши роботу за {day}". */
-export function weekdayForPrompt(date: IsoDate, locale: Locale): string {
-  return locale === "uk" ? UK_WEEKDAYS_ACCUSATIVE[dayOfWeek(date)] : weekdayName(date, locale);
-}
-
 /** "Wednesday 25 November" / "середа, 25 листопада". */
 export function longDate(date: IsoDate, locale: Locale = "en"): string {
   return formatDate(date, locale, { weekday: "long", day: "numeric", month: "long" });
@@ -90,8 +82,4 @@ export function formatHours(hours: number, locale: Locale = "en"): string {
 /** Cap telemetry: one decimal, `32.0h` / `32,0 год`. */
 export function formatHoursFixed(hours: number, locale: Locale = "en"): string {
   return t(locale, "unit.hours", { n: formatNumber(hours, locale, { min: 1, max: 1 }) });
-}
-
-export function firstName(fullName: string | null | undefined): string {
-  return (fullName ?? "").trim().split(/\s+/)[0] ?? "";
 }

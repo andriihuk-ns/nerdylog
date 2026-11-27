@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { buildAppHome } from "../blocks/app-home";
-import { buildMorningDm } from "../blocks/morning-dm";
 import { buildPtoModal } from "../blocks/pto-modal";
 import { buildTimeModal } from "../blocks/time-modal";
 import { formatHours, longDate, monthName, weekdayName } from "../dates";
@@ -10,7 +9,6 @@ import { parseHours, parseTimeSubmission } from "../parse/time-submission";
 import { fakeDeps, profile, project, PROJECT_ID, ptoBalance, USER_ID } from "../testing/fake-deps";
 import { handleSlashCommand } from "../handlers/commands";
 import { publishHome } from "../handlers/home";
-import { runMorningPings } from "../handlers/morning-ping";
 import { en } from "./en";
 import { localeOf, t, tPlural } from "./index";
 import { uk } from "./uk";
@@ -95,7 +93,9 @@ describe("hours parsing (A14)", () => {
       [BLOCK.workDate]: { [INPUT_ACTION]: { selected_date: "2026-11-25" } },
       [rowBlock.project(1)]: { [INPUT_ACTION]: { selected_option: { value: PROJECT_ID } } },
       [rowBlock.hours(1)]: { [INPUT_ACTION]: { value: hours } },
+      [rowBlock.task(1)]: { [INPUT_ACTION]: { value: "Map modal" } },
       [BLOCK.plan]: { [INPUT_ACTION]: { value: "" } },
+      [BLOCK.blockers]: { [INPUT_ACTION]: { value: "Немає" } },
     });
     const bad = parseTimeSubmission({ viewId: "V", meta: meta(), values: values("2,5"), locale: "uk" });
     expect(bad).toEqual({ ok: false, errors: { [BLOCK.plan]: "Напиши хоча б рядок про плани на сьогодні" } });
@@ -105,21 +105,13 @@ describe("hours parsing (A14)", () => {
 });
 
 describe("Ukrainian surfaces", () => {
-  it("morning DM: greeting, accusative weekday and both buttons", () => {
-    const dm = buildMorningDm({ fullName: "Олена Петренко", logDate: "2026-11-20", locale: "uk" });
-    expect(dm.text).toBe("Доброго ранку, Олена! Запиши роботу за пʼятницю і сплануй сьогодні.");
-    const texts = JSON.stringify(dm.blocks);
-    expect(texts).toContain("Записати вчора й спланувати сьогодні");
-    expect(texts).toContain("Швидка відпустка / лікарняний");
-  });
-
   it("standup modal renders fully in Ukrainian", () => {
     const view = buildTimeModal({ meta: meta(), projects: [project], locale: "uk" });
     const text = JSON.stringify(view);
-    expect(view.title.text).toBe("Щоденний стендап");
+    expect(view.title.text).toBe("Щоденний статус");
     expect(view.submit?.text).toBe("Надіслати");
     expect(view.close?.text).toBe("Скасувати");
-    for (const s of ["Робота · середа, 25 листопада", "Проєкт 1", "Години", "напр. 4 або 2,5", "Опис задачі", "Що плануєш сьогодні?", "Є блокери?", "+ Додати проєкт"]) {
+    for (const s of ["Робота · середа, 25 листопада", "Проєкт 1", "Години", "напр. 4 або 2,5", "Опис задачі", "Що плануєш сьогодні?", "Є блокери?", "Напиши «Немає», якщо нічого не блокує", "+ Додати проєкт"]) {
       expect(text).toContain(s);
     }
     expect(text).not.toMatch(/Hours|Project|Pick a|Submit|Cancel/);
@@ -132,6 +124,8 @@ describe("Ukrainian surfaces", () => {
     expect(text).toContain("Відпустка");
     expect(text).toContain("Лікарняний");
     expect(text).toContain("До 10 робочих днів за раз");
+    expect(text).toContain("Останній день");
+    expect(text).not.toContain("необовʼязково");
   });
 
   it("App Home renders in Ukrainian with uk dates and numbers", () => {
@@ -209,13 +203,4 @@ describe("handlers pick the recipient's locale", () => {
     expect(view.title.text).toBe("Записати час");
   });
 
-  it("morning DM uses each target's locale", async () => {
-    const { deps, slack, tempo } = fakeDeps();
-    const target = (slackUserId: string, locale: "en" | "uk") => ({ userId: USER_ID, slackUserId, fullName: "Olena Petrenko", locale, timezone: "Europe/Kyiv", localDate: "2026-11-26", logDate: "2026-11-25" });
-    tempo.claimMorningPings.mockResolvedValueOnce([target("U123", "en"), target("U_OTHER", "uk")]);
-    await runMorningPings(deps);
-    const texts = slack.postMessage.mock.calls.map((c) => (c as unknown[])[1] as string);
-    expect(texts).toContain("Morning, Olena. Log Wednesday and plan today.");
-    expect(texts).toContain("Доброго ранку, Olena! Запиши роботу за середу і сплануй сьогодні.");
-  });
 });

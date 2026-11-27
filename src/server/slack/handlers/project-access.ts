@@ -1,5 +1,6 @@
-import type { Locale, ProjectView } from "@/contracts";
-import { t } from "../i18n";
+import { DEFAULT_LOCALE, type Locale, type ProjectView } from "@/contracts";
+import { notLinkedMessage } from "../blocks/common";
+import { localeOf, t } from "../i18n";
 import { rowBlock } from "../ids";
 import { optionValue, type FieldErrors, type ViewStateValues } from "../parse/state";
 import type { SlackActorProfile, SlackDeps } from "../types";
@@ -56,4 +57,18 @@ export async function projectAccessErrors(
     errors[rowBlock.project(n)] = await messages.get(projectId)!;
   }
   return Object.keys(errors).length > 0 ? errors : null;
+}
+
+/** Why a clicker may not open the status modal for a project; null = allowed. */
+export function promptDenial(
+  profile: SlackActorProfile | null,
+  project: ProjectView | undefined,
+  appBaseUrl: string,
+): { locale: Locale; text: string } | null {
+  if (!profile) return { locale: DEFAULT_LOCALE, text: notLinkedMessage(appBaseUrl, DEFAULT_LOCALE) };
+  const locale = localeOf(profile);
+  if (!project || !project.isActive) return { locale, text: t(locale, "prompt.inactive") };
+  if (project.isMember) return null;
+  const creator = project.createdBy?.fullName || t(locale, "err.anAdmin");
+  return { locale, text: t(locale, "prompt.notMember", { creator }) };
 }

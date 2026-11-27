@@ -1,4 +1,4 @@
-import type { Locale } from "@/contracts";
+import { PROVIDER_NAMES, segmentTextWithLinks, type Locale } from "@/contracts";
 import { t } from "../i18n";
 import { CALLBACK } from "../ids";
 import type { ModalView, SlackBlock } from "../types";
@@ -6,6 +6,12 @@ import type { ModalView, SlackBlock } from "../types";
 type PlainTextElement = ModalView["title"];
 
 /** Small Block Kit helpers. Pure functions; no Slack calls. */
+
+/** A channel or DM message: notification / fallback text plus Block Kit blocks. */
+export interface SlackMessage {
+  text: string;
+  blocks: SlackBlock[];
+}
 
 export function plain(text: string): PlainTextElement {
   return { type: "plain_text", text, emoji: true };
@@ -30,6 +36,22 @@ export function divider(): SlackBlock {
 /** Escape user text for mrkdwn (Slack only requires &, <, >). */
 export function escapeMrkdwn(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/**
+ * A17: user text for a SHARED channel post. Plain parts are mrkdwn-escaped; URLs become
+ * `<url|Provider · label>` (label parsed from the URL, no network) so Slack can unfurl them.
+ */
+export function linkifyMrkdwn(text: string): string {
+  return segmentTextWithLinks(text)
+    .map((segment) => {
+      if (segment.type === "text") return escapeMrkdwn(segment.text);
+      const { url, provider, label } = segment.link;
+      const href = escapeMrkdwn(url).replace(/\|/g, "%7C");
+      const name = escapeMrkdwn(`${PROVIDER_NAMES[provider]} · ${label}`).replace(/\|/g, "/");
+      return `<${href}|${name}>`;
+    })
+    .join("");
 }
 
 /** Slack caps modal titles at 24 characters. */

@@ -24,14 +24,13 @@ function isPtoType(value: string | null): value is PtoType {
   return PTO_TYPES.some((t) => t.value === value);
 }
 
-/** The start/end dates picked in the PTO modal, before holidays are known. */
+/** The start/end dates picked in the PTO modal, before holidays are known. A16: both required. */
 export function ptoRange(values: ViewStateValues): { start: string | null; end: string | null } {
-  const start = dateValue(values, BLOCK.ptoStart);
-  return { start, end: dateValue(values, BLOCK.ptoEnd) ?? start };
+  return { start: dateValue(values, BLOCK.ptoStart), end: dateValue(values, BLOCK.ptoEnd) };
 }
 
 /**
- * Quick PTO: one 0h `vacation` / `sick` entry per business day in [start, end],
+ * Quick PTO: one 0h `vacation` / `sick` entry per business day in [start, end] (end may equal start),
  * skipping weekends and company holidays, at most 10 business days.
  */
 export function parsePtoSubmission(args: PtoSubmissionArgs): ParseResult<SlackSubmissionInput> {

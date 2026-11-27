@@ -8,8 +8,11 @@ export const CALLBACK = {
 } as const;
 
 export const ACTION = {
+  /** Legacy (pre-A16 morning DM buttons still in users' DMs); still opens the modal. */
   openStandup: "open_standup",
   openPto: "open_pto",
+  /** A16: "Log time & status" on the per-project channel prompt; value = JSON {projectId, logDate}. */
+  projectStatusOpen: "project_status_open",
   homeLog: "home_log",
   homePto: "home_pto",
   openWeb: "open_web",

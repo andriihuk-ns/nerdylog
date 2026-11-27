@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { businessDaysInRange, firstName, formatHours, localIsoDate, mondayOf, spanDays } from "./dates";
+import { businessDaysInRange, formatHours, localIsoDate, mondayOf, spanDays } from "./dates";
 import { decodeMetadata, encodeMetadata } from "./metadata";
 import { toDirectoryMembers } from "./directory-members";
 
@@ -18,10 +18,9 @@ describe("dates", () => {
     expect(businessDaysInRange("2026-11-27", "2026-11-30", new Set())).toEqual(["2026-11-27", "2026-11-30"]);
   });
 
-  it("formats hours and names", () => {
+  it("formats hours", () => {
     expect(formatHours(4)).toBe("4h");
     expect(formatHours(2.5)).toBe("2.5h");
-    expect(firstName("  Olena Petrenko ")).toBe("Olena");
   });
 });
 
