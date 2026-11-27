@@ -7,8 +7,10 @@ import {
   checklistItemLinks,
   MAX_CHECKLIST_ITEMS,
   MAX_TASK_SUMMARY_LENGTH,
+  MAX_TASK_TEXT_LENGTH,
   serializeChecklist,
   taskSummaryToItems,
+  taskTextLength,
   type ChecklistItem,
 } from "@/contracts";
 import { Button } from "@/components/ui/button";
@@ -50,7 +52,7 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
   const tc = useTranslations("common");
   const { confirm, dialog } = useConfirm();
   const parsedHours = parseHoursInput(hours);
-  const canSave = parsedHours.ok && parsedHours.value > 0 && items.length > 0 && items.every((item) => item.text.trim());
+  const canSave = parsedHours.ok && parsedHours.value > 0 && items.length > 0 && items.every((item) => item.text.trim() && taskTextLength(item.text) <= MAX_TASK_TEXT_LENGTH);
 
   async function deleteLog() {
     const confirmed = await confirm({
@@ -76,6 +78,8 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
       setFormError(t("note.taskRequired"));
       return;
     }
+    // The editor shows which task is over the limit.
+    if (items.some((item) => taskTextLength(item.text) > MAX_TASK_TEXT_LENGTH)) return;
     const cleaned = items
       .map((item) => {
         const [link, ...additionalLinks] = checklistItemLinks(item).map((value) => value.trim()).filter(Boolean);

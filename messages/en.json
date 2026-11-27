@@ -513,6 +513,7 @@
     "removeSpecificLink": "Remove link {number}",
     "itemPlaceholder": "What did you work on?",
     "linkPlaceholder": "https://...",
-    "toggleDone": "Mark task {number} done"
+    "toggleDone": "Mark task {number} done",
+    "textTooLong": "Task text is {count} of {max} characters (links not counted). Shorten it to save."
   }
 }

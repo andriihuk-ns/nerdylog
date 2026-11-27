@@ -5,6 +5,7 @@ import {
   parseChecklist,
   serializeChecklist,
   taskSummaryDisplayText,
+  taskTextLength,
   textToChecklist,
 } from "./checklist";
 
@@ -47,3 +48,20 @@ describe("checklist helpers", () => {
   });
 });
 
+
+describe("inline links (A28)", () => {
+  const url = `https://example.com/${"x".repeat(300)}`;
+  const text = `Overhaul (${url}) of React (https://react.dev) done`;
+
+  it("counts task text without its links", () => {
+    expect(taskTextLength(text)).toBe("Overhaul () of React () done".length);
+    expect(taskTextLength("plain")).toBe(5);
+  });
+
+  it("keeps links in place through save and display, even past 500 raw characters", () => {
+    const long = `${text} ${url}`;
+    const json = serializeChecklist([{ text: long, done: false }]);
+    expect(parseChecklist(json)?.[0].text).toBe(long);
+    expect(taskSummaryDisplayText(json)).toBe(`• ${long}`);
+  });
+});

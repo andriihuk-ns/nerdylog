@@ -513,6 +513,7 @@
     "removeSpecificLink": "Прибрати посилання {number}",
     "itemPlaceholder": "Коротко опиши, що зроблено",
     "linkPlaceholder": "https://...",
-    "toggleDone": "Позначити задачу {number} виконаною"
+    "toggleDone": "Позначити задачу {number} виконаною",
+    "textTooLong": "Текст задачі: {count} з {max} символів (посилання не враховано). Скороти, щоб зберегти."
   }
 }

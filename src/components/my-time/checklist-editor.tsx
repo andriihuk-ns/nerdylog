@@ -1,13 +1,11 @@
 "use client";
 
-import type { ClipboardEvent } from "react";
 import { Link as LinkIcon, Plus, Trash2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { checklistItemLinks, MAX_LINK_LENGTH, type ChecklistItem } from "@/contracts";
+import { checklistItemLinks, MAX_LINK_LENGTH, MAX_TASK_TEXT_LENGTH, taskTextLength, type ChecklistItem } from "@/contracts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { splitPastedLinks } from "./paste-links";
 
 interface Props {
   items: ChecklistItem[];
@@ -42,17 +40,6 @@ export function ChecklistEditor({ items, onChange, maxItems = 20 }: Props) {
     });
   }
 
-  function paste(index: number, event: ClipboardEvent<HTMLTextAreaElement>) {
-    const item = items[index];
-    const result = splitPastedLinks(event.clipboardData.getData("text/plain"), checklistItemLinks(item));
-    if (!result) return;
-    event.preventDefault();
-    const { selectionStart, selectionEnd } = event.currentTarget;
-    const text = item.text.slice(0, selectionStart) + result.text + item.text.slice(selectionEnd);
-    const [link, ...additionalLinks] = result.links;
-    update(index, { text: text.slice(0, 500), link, additionalLinks: additionalLinks.length ? additionalLinks : undefined });
-  }
-
   function remove(index: number) {
     onChange(items.filter((_, i) => i !== index));
   }
@@ -61,6 +48,8 @@ export function ChecklistEditor({ items, onChange, maxItems = 20 }: Props) {
     <div className="flex flex-col items-start gap-2.5">
       {items.map((item, index) => {
         const links = checklistItemLinks(item);
+        const length = taskTextLength(item.text);
+        const tooLong = length > MAX_TASK_TEXT_LENGTH;
         return (
           <fieldset key={index} className="flex w-full min-w-0 flex-col gap-2 rounded-lg border p-3">
             <legend className="px-1 text-xs font-medium text-muted-foreground">
@@ -69,15 +58,19 @@ export function ChecklistEditor({ items, onChange, maxItems = 20 }: Props) {
             <Textarea
               value={item.text}
               onChange={(event) => update(index, { text: event.target.value })}
-              onPaste={(event) => paste(index, event)}
               rows={3}
               ref={(element) => fitToContent(element)}
               placeholder={t("itemPlaceholder")}
-              maxLength={500}
+              aria-invalid={tooLong || undefined}
               aria-label={t("itemLabel", { number: index + 1 })}
               // The fieldset is the card, so the description has no border or focus ring of its own.
               className="min-h-19 w-full resize-none rounded-none border-0 bg-transparent px-1 py-2 text-sm hover:border-0 focus-visible:ring-0 focus-visible:outline-none dark:bg-transparent"
             />
+            {tooLong ? (
+              <p role="alert" className="px-1 text-xs text-destructive">
+                {t("textTooLong", { count: length, max: MAX_TASK_TEXT_LENGTH })}
+              </p>
+            ) : null}
             {links.map((link, linkIndex) => (
               <div key={linkIndex} className="flex min-w-0 items-center gap-2">
                 <LinkIcon aria-hidden className="ml-1 size-4 shrink-0 text-muted-foreground" />

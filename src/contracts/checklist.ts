@@ -1,11 +1,21 @@
 import { z } from "zod";
+import { segmentTextWithLinks } from "./links";
+import { MAX_TASK_SUMMARY_LENGTH } from "./time";
 
 /** A27: any number of links per task; only each URL and the whole summary are bounded. */
 export const MAX_LINK_LENGTH = 2000;
 
+/** A28: links stay inside the task text where they were typed and do not count toward its limit. */
+export const MAX_TASK_TEXT_LENGTH = 500;
+
+export function taskTextLength(text: string): number {
+  return segmentTextWithLinks(text).reduce((sum, segment) => sum + (segment.type === "text" ? segment.text.length : 0), 0);
+}
+
 /** One item in a task description checklist. */
 export const checklistItemSchema = z.object({
-  text: z.string().max(500),
+  // Bounded by the whole summary: a tighter limit here would make saved JSON unreadable.
+  text: z.string().max(MAX_TASK_SUMMARY_LENGTH),
   link: z.string().max(MAX_LINK_LENGTH).optional(),
   additionalLinks: z.array(z.string().max(MAX_LINK_LENGTH)).optional(),
   done: z.boolean().default(false),
