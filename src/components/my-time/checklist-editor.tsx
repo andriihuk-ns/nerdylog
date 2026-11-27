@@ -65,7 +65,6 @@ export function ChecklistEditor({ items, onChange, maxItems = 20 }: Props) {
             </legend>
             <div className="flex min-w-0 items-center gap-2">
               <Input
-                autoFocus={index === 0}
                 value={item.text}
                 onChange={(event) => update(index, { text: event.target.value })}
                 placeholder={t("itemPlaceholder")}

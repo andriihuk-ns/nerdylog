@@ -63,7 +63,7 @@ export function ProjectMemberAllocationControl({ projectId, projectName, member,
                   disabled={pending}
                   onClick={() => save(hours)}
                 >
-                  <Check aria-hidden className={percent === value ? "size-3.5" : "size-3.5 invisible"} />
+                  {percent === value ? <Check aria-hidden className="size-3.5" /> : null}
                   {value}%
                 </Button>
               );

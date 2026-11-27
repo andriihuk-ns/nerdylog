@@ -78,7 +78,7 @@ export function DatePicker({ value, mode = "date", label, onChange, id, classNam
           variant={iconOnly ? "ghost" : "outline"}
           size={iconOnly ? "icon" : "default"}
           aria-label={label}
-          className={cn("hit-target h-11 bg-card", iconOnly ? "w-11 shrink-0 p-0" : "w-full justify-between px-3 text-left font-normal", className)}
+          className={cn("hit-target h-11 rounded-lg bg-card", iconOnly ? "w-11 shrink-0 p-0" : "w-full justify-between px-3 text-left font-normal", className)}
         >
           {iconOnly ? <CalendarDays aria-hidden className="size-4" /> : <><span className="truncate">{display}</span><CalendarDays aria-hidden className="size-4 shrink-0 text-muted-foreground" /></>}
         </Button>
