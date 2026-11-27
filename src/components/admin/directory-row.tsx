@@ -2,6 +2,7 @@
 
 import { useOptimistic, useTransition, type ReactNode } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   ROLES,
@@ -47,6 +48,8 @@ export function DirectoryRow({
   const tRole = useTranslations("roles");
   const f = useFormat();
   const { confirm, dialog } = useConfirm();
+  const router = useRouter();
+  const href = `/people/${user.id}?from=directory`;
 
   function update(patch: DirectoryPatch) {
     startTransition(async () => {
@@ -71,8 +74,15 @@ export function DirectoryRow({
 
   return (
     <tr
+      onClick={(event) => {
+        const { target, currentTarget } = event;
+        // Select lists and dialogs are portals: their clicks bubble here without being inside the row.
+        if (!(target instanceof Element) || !currentTarget.contains(target)) return;
+        if (target.closest("a, button, input")) return;
+        router.push(href);
+      }}
       className={cn(
-        "h-11 border-b md:last:border-b-0",
+        "group h-11 cursor-pointer border-b hover:bg-muted/50 md:last:border-b-0",
         "max-md:relative max-md:grid max-md:grid-cols-2 max-md:gap-3",
         CARD_ROW,
         !view.isActive && "text-muted-foreground",
@@ -90,11 +100,11 @@ export function DirectoryRow({
       </Cell>
       <th
         scope="row"
-        className="bg-card text-left align-middle font-medium max-md:col-span-2 max-md:min-w-0 max-md:pr-12 md:sticky md:left-0 md:z-10 md:px-2 md:py-1"
+        className="bg-card text-left align-middle group-hover:bg-[color-mix(in_oklab,var(--muted)_50%,var(--card))] font-medium max-md:col-span-2 max-md:min-w-0 max-md:pr-12 md:sticky md:left-0 md:z-10 md:px-2 md:py-1"
       >
         <Link
-          href={`/people/${view.id}?from=directory`}
-          className="flex min-h-11 items-center gap-3 rounded-md md:min-h-9 md:px-2 hover:bg-muted/60 hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          href={href}
+          className="flex min-h-11 items-center gap-3 rounded-md md:min-h-9 md:px-2 group/name hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           <Avatar size="sm">
             {view.avatarUrl ? (
@@ -103,7 +113,7 @@ export function DirectoryRow({
             <AvatarFallback>{initials(view.fullName)}</AvatarFallback>
           </Avatar>
           <span className="flex min-w-0 flex-col leading-tight">
-            <span className="truncate">{view.fullName}</span>
+            <span className="truncate underline-offset-4 group-hover/name:underline">{view.fullName}</span>
             {view.email ? (
               <span className="truncate text-xs font-normal text-muted-foreground">
                 {view.email}
