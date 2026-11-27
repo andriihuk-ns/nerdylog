@@ -58,7 +58,7 @@ function SignInButton({ href, label }: { href: string; label: string }) {
     // Plain <a>: /auth/sign-in is a route handler that redirects to Slack.
     <a
       href={href}
-      className={cn(buttonVariants(), "h-11 w-[318px] max-w-full")}
+      className={cn(buttonVariants(), "h-11 self-center px-6")}
     >
       <span className="flex size-5 shrink-0 items-center justify-center" aria-hidden>
         {/* eslint-disable-next-line @next/next/no-img-element -- static multicolour mark from the design */}
