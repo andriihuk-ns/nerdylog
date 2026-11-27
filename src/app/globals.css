@@ -275,36 +275,36 @@
 }
 
 /*
- * Table headers pinned under the app header (hooks/use-sticky-head). `isolate` keeps the table's own
- * z-indexes below that header. Cells move, so their hairlines are redrawn while stuck.
+ * Long tables scroll inside their own frame so the header can be pinned by CSS alone. A script that
+ * follows page scrolling always lags behind it.
  */
+[data-sticky-head] {
+  overflow: auto;
+  max-height: calc(100dvh - 5.5rem); /* app header plus breathing room */
+  isolation: isolate; /* table z-indexes stay below the app header */
+  scroll-padding-top: 5rem; /* focused cells are not hidden under the table header */
+}
+[data-sticky-head] thead {
+  position: sticky;
+  top: 0;
+  z-index: 25; /* above the pinned body columns (10–20) */
+}
 @layer base {
   [data-sticky-head] thead tr > * {
     background-color: var(--card);
   }
 }
-[data-sticky-head] {
-  isolation: isolate;
+/*
+ * Separate borders: collapsed ones stay behind when the head sticks and leave see-through seams.
+ * Separate tables ignore row borders, so rows that relied on them get cell borders.
+ */
+[data-sticky-head] table {
+  border-collapse: separate;
+  border-spacing: 0;
 }
-[data-sticky-head] thead tr > * {
-  translate: 0 var(--head-offset, 0px);
-}
-[data-sticky-head] thead tr > *:not(.sticky) {
-  position: relative;
-  z-index: 21; /* above the pinned body columns (10–20) */
-}
-[data-sticky-head] thead tr > .sticky {
-  z-index: 22;
-}
-[data-sticky-head][data-stuck] {
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
-}
-[data-sticky-head][data-stuck] thead tr > * {
-  box-shadow: inset 0 -1px var(--border);
-}
-[data-sticky-head][data-stuck] thead tr > .border-l {
-  box-shadow: inset 0 -1px var(--border), inset 1px 0 var(--border);
+[data-sticky-head] thead tr:last-child > *,
+[data-sticky-head] tbody tr:not(:last-child) > * {
+  border-bottom-width: 1px;
 }
 
 /* Reduced motion: keep state changes, drop movement */

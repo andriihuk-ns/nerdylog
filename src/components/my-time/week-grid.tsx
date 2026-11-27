@@ -6,7 +6,6 @@ import { useTranslations } from "next-intl";
 import type { IsoDate } from "@/contracts";
 import { cn } from "@/lib/utils";
 import { useGridNavigation } from "@/hooks/use-grid-navigation";
-import { useStickyHead } from "@/hooks/use-sticky-head";
 import { isWeekend } from "@/components/lib/dates";
 import { useFormat } from "@/hooks/use-format";
 import { AddProjectRow } from "./add-project-row";
@@ -43,7 +42,6 @@ export function WeekGrid({ matrix, display, holidayNames, addable, pendingKeys, 
   const [note, setNote] = useState<Draft>(null);
   const t = useTranslations("myTime");
   const f = useFormat();
-  const stickyHead = useStickyHead();
   const holidayNameByDate = new Map(holidayNames.map(({ date, name }) => [date, name]));
 
   function close(row: number, col: number, move: CommitMove) {
@@ -61,7 +59,7 @@ export function WeekGrid({ matrix, display, holidayNames, addable, pendingKeys, 
   }
 
   return (
-    <div ref={stickyHead} data-sticky-head className="overflow-x-auto rounded-lg border bg-card">
+    <div data-sticky-head className="rounded-lg border bg-card">
       <table ref={gridRef} role="grid" aria-label={t("grid.label")} className={`${WEEK_TABLE_WIDTH} border-collapse ${TABLE_EDGE_PADDING}`}>
         <colgroup>
           <col className="w-[132px] sm:w-[200px]" />

@@ -57,6 +57,19 @@ describe("parseTimeSubmission", () => {
     expect(JSON.stringify(res.value.entries)).not.toContain("Handler mobile flow");
   });
 
+  it("A27: keeps every link typed in the links field", () => {
+    const links = Array.from({ length: 5 }, (_, i) => `https://example.com/${i}`);
+    const res = parseTimeSubmission({
+      viewId: "V1",
+      locale: "en",
+      meta: meta({ tasks: [{ count: 1, links: [1] }] }),
+      values: values({ [rowBlock.taskLink(1, 1)]: { value: links.join("\n") } }),
+    });
+    expect(res.ok && JSON.parse(res.value.entries[0].taskSummary ?? "")).toEqual([
+      { text: "Map modal DOG-1364", link: links[0], additionalLinks: links.slice(1), done: false },
+    ]);
+  });
+
   it("A16: every rendered row needs project, hours and task; each empty field gets its own error", () => {
     const res = parseTimeSubmission({
       viewId: "V1",

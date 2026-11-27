@@ -1,10 +1,13 @@
-import { MAX_TASK_SUMMARY_LENGTH, type Locale, type ProjectView } from "@/contracts";
+import { type Locale, type ProjectView } from "@/contracts";
 import { longDate } from "../dates";
 import { t } from "../i18n";
 import { ACTION, BLOCK, CALLBACK, INPUT_ACTION, MAX_PROJECT_ROWS, MAX_TASK_ITEMS, rowBlock } from "../ids";
 import { encodeMetadata, getRowTaskMeta, type ModalMetadata } from "../metadata";
 import type { ModalView, SlackBlock } from "../types";
 import { context, divider, header, modalTitle, mrkdwnSection, plain } from "./common";
+
+/** Slack's own ceiling for a plain_text_input; the field holds any number of links. */
+const LINKS_MAX_LENGTH = 3000;
 
 /** Slack allows at most 100 options in a static_select. */
 const MAX_OPTIONS = 100;
@@ -88,7 +91,8 @@ function projectRow(
         element: {
           type: "plain_text_input",
           action_id: INPUT_ACTION,
-          max_length: MAX_TASK_SUMMARY_LENGTH,
+          multiline: true,
+          max_length: LINKS_MAX_LENGTH,
           placeholder: plain(t(locale, "time.taskLinkPlaceholder")),
         },
       });

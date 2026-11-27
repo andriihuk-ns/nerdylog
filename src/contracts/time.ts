@@ -7,7 +7,7 @@ export type IsoDate = z.infer<typeof isoDateSchema>;
 
 /** Ticket references like DOG-1364 or CNG-009 (PRD FR-SLACK-02). */
 export const TICKET_REF_REGEX = /\b[A-Z][A-Z0-9]*-\d+\b/g;
-export const MAX_TASK_SUMMARY_LENGTH = 2000;
+export const MAX_TASK_SUMMARY_LENGTH = 10_000;
 
 export function extractTicketRefs(text: string): string[] {
   return [...new Set(text.match(TICKET_REF_REGEX) ?? [])];

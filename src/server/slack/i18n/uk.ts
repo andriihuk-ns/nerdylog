@@ -47,7 +47,7 @@ export const uk: Messages = {
   "time.taskLabel": "Опис задачі",
   "time.taskItemLabel": "Задача {i}",
   "time.taskPlaceholder": "Коротко опиши, що зроблено",
-  "time.taskLinkLabel": "Посилання до задачі {i}",
+  "time.taskLinkLabel": "Посилання до задачі {i} (по одному в рядку)",
   "time.taskLinkPlaceholder": "https://...",
   "time.taskHint": "Можна прикріпити посилання на Jira, Figma, Asana, Drive…",
   "time.addTaskItem": "+ Додати задачу",

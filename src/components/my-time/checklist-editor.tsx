@@ -3,7 +3,7 @@
 import type { ClipboardEvent } from "react";
 import { Link as LinkIcon, Plus, Trash2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { checklistItemLinks, MAX_CHECKLIST_LINKS, type ChecklistItem } from "@/contracts";
+import { checklistItemLinks, MAX_LINK_LENGTH, type ChecklistItem } from "@/contracts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -44,7 +44,7 @@ export function ChecklistEditor({ items, onChange, maxItems = 20 }: Props) {
 
   function paste(index: number, event: ClipboardEvent<HTMLTextAreaElement>) {
     const item = items[index];
-    const result = splitPastedLinks(event.clipboardData.getData("text/plain"), checklistItemLinks(item), MAX_CHECKLIST_LINKS);
+    const result = splitPastedLinks(event.clipboardData.getData("text/plain"), checklistItemLinks(item));
     if (!result) return;
     event.preventDefault();
     const { selectionStart, selectionEnd } = event.currentTarget;
@@ -86,7 +86,7 @@ export function ChecklistEditor({ items, onChange, maxItems = 20 }: Props) {
                   value={link}
                   onChange={(event) => updateLinks(index, links.map((value, current) => current === linkIndex ? event.target.value : value))}
                   placeholder={t("linkPlaceholder")}
-                  maxLength={2000}
+                  maxLength={MAX_LINK_LENGTH}
                   aria-label={t("linkLabel", { number: index + 1, link: linkIndex + 1 })}
                   className="h-11 min-w-0 flex-1 text-sm"
                 />
@@ -103,18 +103,16 @@ export function ChecklistEditor({ items, onChange, maxItems = 20 }: Props) {
               </div>
             ))}
             <div className="flex items-center gap-2">
-              {links.length < MAX_CHECKLIST_LINKS ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="hit-target h-11 gap-1.5 px-2 text-sm"
-                  onClick={() => updateLinks(index, [...links, ""])}
-                  aria-label={t("addLink", { number: index + 1 })}
-                >
-                  <LinkIcon className="size-4" aria-hidden />
-                  {t("linkAction")}
-                </Button>
-              ) : null}
+              <Button
+                type="button"
+                variant="ghost"
+                className="hit-target h-11 gap-1.5 px-2 text-sm"
+                onClick={() => updateLinks(index, [...links, ""])}
+                aria-label={t("addLink", { number: index + 1 })}
+              >
+                <LinkIcon className="size-4" aria-hidden />
+                {t("linkAction")}
+              </Button>
               {items.length > 1 ? (
                 <Button
                   type="button"

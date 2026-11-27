@@ -1,12 +1,10 @@
-import { segmentTextWithLinks } from "@/contracts";
-
-const MAX_LINK_LENGTH = 2000;
+import { MAX_LINK_LENGTH, segmentTextWithLinks } from "@/contracts";
 
 /**
  * Splits pasted task text: URLs move to the task's link fields, the rest stays in the description.
- * A URL stays in the text when no link field is left for it or it is too long for one.
+ * A URL stays in the text only when it is too long for a link field.
  */
-export function splitPastedLinks(pasted: string, current: readonly string[], maxLinks: number) {
+export function splitPastedLinks(pasted: string, current: readonly string[]) {
   const links = current.filter((link) => link.trim());
   let moved = false;
   const text = segmentTextWithLinks(pasted)
@@ -14,7 +12,7 @@ export function splitPastedLinks(pasted: string, current: readonly string[], max
       if (segment.type === "text") return segment.text;
       const { url } = segment.link;
       const known = links.includes(url);
-      if (!known && (links.length >= maxLinks || url.length > MAX_LINK_LENGTH)) return url;
+      if (!known && url.length > MAX_LINK_LENGTH) return url;
       if (!known) links.push(url);
       moved = true;
       return "";

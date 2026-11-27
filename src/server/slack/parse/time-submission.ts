@@ -1,4 +1,4 @@
-import { isoDateSchema, MAX_TASK_SUMMARY_LENGTH, serializeChecklist, type ChecklistItem, type Locale, type SlackSubmissionInput, type TimeEntryInput } from "@/contracts";
+import { isoDateSchema, MAX_LINK_LENGTH, MAX_TASK_SUMMARY_LENGTH, serializeChecklist, type ChecklistItem, type Locale, type SlackSubmissionInput, type TimeEntryInput } from "@/contracts";
 import { formatNumber } from "../dates";
 import { t } from "../i18n";
 import { PLAN_MAX_LENGTH } from "../blocks/time-modal";
@@ -65,12 +65,18 @@ export function parseTimeSubmission({ viewId, meta, values, locale }: TimeSubmis
         taskInvalid = true;
       }
       const hasLink = taskMeta.links.includes(i);
-      const link = hasLink ? textValue(values, rowBlock.taskLink(n, i)) : "";
+      // A27: any number of links, separated by new lines or spaces.
+      const links = hasLink ? textValue(values, rowBlock.taskLink(n, i)).split(/\s+/).filter(Boolean) : [];
+      const [link, ...additionalLinks] = links;
+      if (links.some((url) => url.length > MAX_LINK_LENGTH)) {
+        errors[rowBlock.taskLink(n, i)] = t(locale, "err.tooLong", { max: MAX_LINK_LENGTH });
+        taskInvalid = true;
+      }
       if (hasLink && !link) {
         errors[rowBlock.taskLink(n, i)] = t(locale, "err.enterLink");
         taskInvalid = true;
       }
-      items.push({ text, ...(link ? { link } : {}), done: false });
+      items.push({ text, ...(link ? { link } : {}), ...(additionalLinks.length ? { additionalLinks } : {}), done: false });
     }
 
     const taskSummary = serializeChecklist(items);

@@ -11,7 +11,7 @@ import { ShellNav, ShellNavSkeleton } from "@/components/shell/shell-nav";
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-full flex-1 flex-col">
-      <header data-app-header className="sticky top-0 z-30 border-b bg-background">
+      <header className="sticky top-0 z-30 border-b bg-background">
         <div className="mx-auto flex h-14 w-full max-w-[1280px] items-center gap-6 px-4 sm:px-6">
           <Link
             href="/my-time"

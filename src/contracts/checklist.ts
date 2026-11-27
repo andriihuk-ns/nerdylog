@@ -1,16 +1,18 @@
 import { z } from "zod";
 
+/** A27: any number of links per task; only each URL and the whole summary are bounded. */
+export const MAX_LINK_LENGTH = 2000;
+
 /** One item in a task description checklist. */
 export const checklistItemSchema = z.object({
   text: z.string().max(500),
-  link: z.string().max(2000).optional(),
-  additionalLinks: z.array(z.string().max(2000)).max(2).optional(),
+  link: z.string().max(MAX_LINK_LENGTH).optional(),
+  additionalLinks: z.array(z.string().max(MAX_LINK_LENGTH)).optional(),
   done: z.boolean().default(false),
 });
 export type ChecklistItem = z.infer<typeof checklistItemSchema>;
 
 export const MAX_CHECKLIST_ITEMS = 10;
-export const MAX_CHECKLIST_LINKS = 3;
 
 /** Keep the original `link` field stable for saved logs and older Slack submissions. */
 export function checklistItemLinks(item: ChecklistItem): string[] {
