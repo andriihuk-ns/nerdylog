@@ -2,7 +2,7 @@
  * DB constraints (PRD A6, A8, A9, A11, A15): drizzle/0000_init.sql, 0002, 0003, 0011.
  * Each violating statement runs in a savepoint so the test transaction stays usable.
  */
-import { eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import type { Tx } from "@/server/db/queries/types";
 import { companyHolidays, dailyCheckins, offices, projectMembers, projects, timeEntries, users } from "@/server/db/schema";
@@ -26,7 +26,7 @@ describe("time_entries checks (A8)", () => {
       await entry(tx, { userId: u.id, projectId: p, hours: 24 });
       await entry(tx, { userId: u.id, projectId: p, hours: 0 });
       await entry(tx, { userId: u.id, projectId: p, hours: 2.5 });
-      expect(await tx.$count(timeEntries)).toBe(3);
+      expect(await tx.$count(timeEntries, eq(timeEntries.userId, u.id))).toBe(3);
     });
   });
 
@@ -42,7 +42,7 @@ describe("time_entries checks (A8)", () => {
       const u = await seedUser(tx);
       await expectPgFailure(tx, (sp) => entry(sp, { userId: u.id, entryType: type, hours: 8 }), CHECK, "time_entries_pto_zero_hours");
       await entry(tx, { userId: u.id, entryType: type, hours: 0 });
-      expect(await tx.$count(timeEntries)).toBe(1);
+      expect(await tx.$count(timeEntries, eq(timeEntries.userId, u.id))).toBe(1);
     });
   });
 
@@ -52,7 +52,9 @@ describe("time_entries checks (A8)", () => {
       const p = await seedProject(tx);
       await entry(tx, { userId: u.id, projectId: p, hours: 2, slackViewId: "VTEST_MULTI" });
       await entry(tx, { userId: u.id, projectId: p, hours: 3, slackViewId: "VTEST_MULTI" });
-      expect(await tx.$count(timeEntries, eq(timeEntries.slackViewId, "VTEST_MULTI"))).toBe(2);
+      expect(
+        await tx.$count(timeEntries, and(eq(timeEntries.userId, u.id), eq(timeEntries.slackViewId, "VTEST_MULTI"))),
+      ).toBe(2);
     });
   });
 });
@@ -73,7 +75,7 @@ describe("daily_checkins unique (user, date) (A6)", () => {
         { userId: a.id, checkinDate: "2026-11-03" },
         { userId: b.id, checkinDate: "2026-11-02" },
       ]);
-      expect(await tx.$count(dailyCheckins)).toBe(3);
+      expect(await tx.$count(dailyCheckins, inArray(dailyCheckins.userId, [a.id, b.id]))).toBe(3);
     });
   });
 });
@@ -81,11 +83,11 @@ describe("daily_checkins unique (user, date) (A6)", () => {
 describe("projects.slack_channel_id unique (A11)", () => {
   it("one channel = one project; many projects may have no channel", async () => {
     await withRollback(async (tx) => {
-      await seedProject(tx, { slackChannelId: "CTEST00001" });
+      const ids = [await seedProject(tx, { slackChannelId: "CTEST00001" })];
       await expectPgFailure(tx, (sp) => seedProject(sp, { slackChannelId: "CTEST00001" }), UNIQUE, "projects_slack_channel_id_unique");
-      await seedProject(tx, { slackChannelId: null });
-      await seedProject(tx, { slackChannelId: null });
-      expect(await tx.$count(projects)).toBe(3);
+      ids.push(await seedProject(tx, { slackChannelId: null }));
+      ids.push(await seedProject(tx, { slackChannelId: null }));
+      expect(await tx.$count(projects, inArray(projects.id, ids))).toBe(3);
     });
   });
 });
@@ -120,7 +122,9 @@ describe("offices, per-office holidays and project members (A15)", () => {
       await seedHoliday(tx, a, "2031-12-25");
       await seedHoliday(tx, b, "2031-12-25");
       await expectPgFailure(tx, (sp) => seedHoliday(sp, a, "2031-12-25"), UNIQUE, "company_holidays_office_date_unique");
-      expect(await tx.$count(companyHolidays, eq(companyHolidays.holidayDate, "2031-12-25"))).toBe(2);
+      expect(
+        await tx.$count(companyHolidays, and(inArray(companyHolidays.officeId, [a, b]), eq(companyHolidays.holidayDate, "2031-12-25"))),
+      ).toBe(2);
     });
   });
 

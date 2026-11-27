@@ -10,6 +10,7 @@ vi.mock("@/server/db/client", async () => {
   return { getDb: () => activeTx(), closeDb: async () => {} };
 });
 
+import { eq, inArray } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import type { SlackSubmissionInput } from "@/contracts";
 import type { Tx } from "@/server/db/queries/types";
@@ -21,10 +22,11 @@ import { InvalidSubmissionError } from "@/server/services/standup-rows";
 import { withRollback } from "./db";
 import { seedProject, seedUser } from "./fixtures";
 
-const counts = async (tx: Tx) => ({
-  submissions: await tx.$count(slackSubmissions),
-  entries: await tx.$count(timeEntries),
-  checkins: await tx.$count(dailyCheckins),
+/** Row counts scoped to the fixture users of a test; never global (the dev DB holds real rows). */
+const counts = async (tx: Tx, userIds: readonly string[]) => ({
+  submissions: await tx.$count(slackSubmissions, inArray(slackSubmissions.userId, [...userIds])),
+  entries: await tx.$count(timeEntries, inArray(timeEntries.userId, [...userIds])),
+  checkins: await tx.$count(dailyCheckins, inArray(dailyCheckins.userId, [...userIds])),
 });
 
 function standup(userId: string, projectId: string, viewId = "VTEST_STANDUP_1"): SlackSubmissionInput {
@@ -48,14 +50,14 @@ describe("submitSlackSubmission idempotency (A1)", () => {
       const first = await submitSlackSubmission(standup(u.id, p));
       expect(first.status).toBe("created");
       if (first.status === "created") expect(first.entryIds).toHaveLength(2);
-      const after = await counts(tx);
+      const after = await counts(tx, [u.id]);
       expect(after).toEqual({ submissions: 1, entries: 2, checkins: 1 });
 
       const second = await submitSlackSubmission(standup(u.id, p));
       expect(second).toEqual({ status: "duplicate" });
-      expect(await counts(tx)).toEqual(after);
+      expect(await counts(tx, [u.id])).toEqual(after);
 
-      const rows = await tx.select().from(timeEntries);
+      const rows = await tx.select().from(timeEntries).where(eq(timeEntries.userId, u.id));
       expect(rows.every((r) => r.slackViewId === "VTEST_STANDUP_1")).toBe(true);
       expect(rows.map((r) => r.ticketRefs).sort()).toEqual([["CNG-009"], ["DOG-1364"]]);
     });
@@ -66,7 +68,7 @@ describe("submitSlackSubmission idempotency (A1)", () => {
       const u = await seedUser(tx);
       const p = await seedProject(tx, { members: [u.id] });
       const other = await seedUser(tx);
-      const before = await counts(tx);
+      const before = await counts(tx, [u.id, other.id]);
       const bad = standup(u.id, p);
       bad.entries[1] = { ...bad.entries[1], hours: 25 };
       await expect(submitSlackSubmission(bad)).rejects.toBeInstanceOf(InvalidSubmissionError);
@@ -76,7 +78,7 @@ describe("submitSlackSubmission idempotency (A1)", () => {
       const ptoWithHours = standup(u.id, p, "VTEST_STANDUP_3");
       ptoWithHours.entries = [{ ...ptoWithHours.entries[0], entryType: "vacation", projectId: null, hours: 8 }];
       await expect(submitSlackSubmission(ptoWithHours)).rejects.toBeInstanceOf(InvalidSubmissionError);
-      expect(await counts(tx)).toEqual(before);
+      expect(await counts(tx, [u.id, other.id])).toEqual(before);
     });
   });
 
@@ -84,14 +86,14 @@ describe("submitSlackSubmission idempotency (A1)", () => {
     await withRollback(async (tx) => {
       const u = await seedUser(tx);
       const p = await seedProject(tx, { members: [u.id] });
-      const before = await counts(tx);
+      const before = await counts(tx, [u.id]);
       const input = standup(u.id, p, "VTEST_FK");
       // A PTO row may carry a project id (Zod and the membership check only look at work rows),
       // so a missing project reaches Postgres and fails the FK inside the transaction.
       const missingProject = "00000000-0000-4000-8000-000000000000";
       input.entries[1] = { ...input.entries[1], entryType: "vacation", hours: 0, projectId: missingProject };
       await expect(submitSlackSubmission(input)).rejects.toThrow();
-      expect(await counts(tx)).toEqual(before);
+      expect(await counts(tx, [u.id])).toEqual(before);
     });
   });
 
@@ -99,11 +101,11 @@ describe("submitSlackSubmission idempotency (A1)", () => {
     await withRollback(async (tx) => {
       const u = await seedUser(tx);
       const p = await seedProject(tx); // u is not a member
-      const before = await counts(tx);
+      const before = await counts(tx, [u.id]);
       const err = await submitSlackSubmission(standup(u.id, p, "VTEST_NOT_MEMBER")).catch((e) => e);
       expect(err).toBeInstanceOf(InvalidInputError);
       expect(err.fieldErrors).toEqual({ projectId: ["not_member"] });
-      expect(await counts(tx)).toEqual(before);
+      expect(await counts(tx, [u.id])).toEqual(before);
     });
   });
 });
@@ -125,8 +127,8 @@ describe("Stream B isolation", () => {
         },
       });
       expect(result).toEqual({ status: "created", entryIds: [] });
-      expect(await counts(tx)).toEqual({ submissions: 1, entries: 0, checkins: 1 });
-      const [checkin] = await tx.select().from(dailyCheckins);
+      expect(await counts(tx, [u.id])).toEqual({ submissions: 1, entries: 0, checkins: 1 });
+      const [checkin] = await tx.select().from(dailyCheckins).where(eq(dailyCheckins.userId, u.id));
       expect(checkin.plannedToday).toContain("DOG-1364");
 
       const [row] = await getTeamMonthRollup({ userId: u.id, role: "member" }, "2026-11");
@@ -141,7 +143,7 @@ describe("Stream B isolation", () => {
       const input = standup(u.id, p, "VTEST_STREAM_B2");
       input.checkin = { userId: u.id, checkinDate: "2026-11-26", plannedToday: "QQQ-42 for 8h", blockers: "ZZZ-9 12h" };
       await submitSlackSubmission(input);
-      const rows = await tx.select().from(timeEntries);
+      const rows = await tx.select().from(timeEntries).where(eq(timeEntries.userId, u.id));
       expect(rows.reduce((s, r) => s + r.hours, 0)).toBe(6.5);
       expect(rows.flatMap((r) => r.ticketRefs)).not.toContain("QQQ-42");
       expect(rows.flatMap((r) => r.ticketRefs)).not.toContain("ZZZ-9");
