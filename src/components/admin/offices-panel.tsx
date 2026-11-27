@@ -99,8 +99,10 @@ export function OfficesPanel({ offices }: { offices: OfficeView[] }) {
                       <GripVertical aria-hidden />
                     </Button>
                   </td>
-                  <td className="font-mono text-xs font-medium md:pr-2 md:pl-4">{o.code}</td>
-                  <th scope="row" className="min-w-0 text-left font-medium md:px-4">
+                  <td className="md:w-px md:pr-3">
+                    <span className="inline-block min-w-10 rounded-md bg-muted px-2 py-1 text-center font-mono text-xs font-medium">{o.code}</span>
+                  </td>
+                  <th scope="row" className="min-w-0 text-left font-medium md:pr-4">
                     <Link href={officeHref(o.id)} className="rounded-sm underline-offset-4 hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                       {o.name}
                     </Link>
