@@ -13,7 +13,7 @@ export interface NavItem {
 export function NavLinks({ items, label }: { items: NavItem[]; label: string }) {
   const pathname = usePathname();
   return (
-    <nav aria-label={label} className="hidden items-center gap-1 sm:flex">
+    <nav aria-label={label} className="hidden h-full items-stretch gap-1 sm:flex">
       {items.map((item) => {
         const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
         return (
@@ -22,11 +22,11 @@ export function NavLinks({ items, label }: { items: NavItem[]; label: string }) 
             href={item.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "hit-target inline-flex items-center rounded-md px-3 font-medium text-muted-foreground transition-colors duration-[var(--duration-fast)] ease-standard hover:text-primary",
+              "hit-target inline-flex h-full items-center rounded-none px-3 font-medium text-muted-foreground transition-colors duration-[var(--duration-fast)] ease-standard hover:text-primary",
               active && "text-primary",
             )}
           >
-            <span className={cn("border-b-2 border-transparent py-1", active && "border-primary")}>
+            <span className={cn("flex h-full items-center border-b-2 border-transparent", active && "border-primary")}>
               {item.label}
             </span>
           </Link>
