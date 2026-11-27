@@ -12,22 +12,29 @@ import { useTranslations } from "next-intl";
 import type { DirectoryUser, OfficeView } from "@/contracts";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { initials } from "@/components/lib/format";
+import { officeHref } from "@/components/admin/admin-tab";
 
-/** People page header: identity and icon-led metadata; back to Team or Directory. */
-export function PersonHeader({ user, office, from }: { user: DirectoryUser; office: OfficeView | undefined; from: "team" | "directory" }) {
+/** People page header: identity and icon-led metadata; back to Team, Directory or their office. */
+export function PersonHeader({ user, office, from }: { user: DirectoryUser; office: OfficeView | undefined; from: "team" | "directory" | "office" }) {
   const t = useTranslations("people");
   const tRole = useTranslations("roles");
   const tc = useTranslations("common");
   const officeValue = office ? `${office.code} · ${office.name}` : t("noOffice");
   const statusValue = user.isActive ? tc("active") : tc("archived");
+  const back =
+    from === "office" && office
+      ? { href: officeHref(office.id), label: t("backOffice", { name: office.name }) }
+      : from === "directory"
+        ? { href: "/admin?tab=directory", label: t("backDirectory") }
+        : { href: "/team", label: t("backTeam") };
   return (
     <header className="flex flex-col gap-4">
       <Link
-        href={from === "directory" ? "/admin?tab=directory" : "/team"}
+        href={back.href}
         className="hit-target inline-flex w-fit items-center gap-1 rounded-md text-muted-foreground hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
       >
         <ChevronLeft aria-hidden className="size-4" />
-        {from === "directory" ? t("backDirectory") : t("backTeam")}
+        {back.label}
       </Link>
       <div className="flex flex-wrap items-center gap-4">
         <Avatar className="size-14">

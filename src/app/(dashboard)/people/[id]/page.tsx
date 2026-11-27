@@ -59,9 +59,12 @@ export default async function PersonPage({ params, searchParams }: { params: Par
   const options = await projectOptions(projects, (p) => p.memberIds.includes(user.id), { kind: "other", name: user.fullName });
   const totals = rollup.find((r) => r.userId === user.id)?.total ?? null;
 
+  // Directory and office pages are admin-only, so only an admin gets a link back to them.
+  const from = actor.role === "admin" && (query.from === "directory" || query.from === "office") ? query.from : "team";
+
   return (
     <div className="flex flex-col gap-8">
-      <PersonHeader user={user} office={offices.find((o) => o.id === user.officeId)} from={query.from === "directory" && actor.role === "admin" ? "directory" : "team"} />
+      <PersonHeader user={user} office={offices.find((o) => o.id === user.officeId)} from={from} />
       <div className="grid gap-6 lg:grid-cols-3">
         <MonthTotalsCard totals={totals} month={month} />
         <ProjectHoursCard items={hours} month={month} />
@@ -76,7 +79,7 @@ export default async function PersonPage({ params, searchParams }: { params: Par
         projects={options}
         userId={user.id}
         basePath={`/people/${user.id}`}
-        preserveParams={query.from === "team" || query.from === "directory" ? { from: query.from } : undefined}
+        preserveParams={query.from === "team" || query.from === "directory" || query.from === "office" ? { from: query.from } : undefined}
         title={t("week", { name: user.fullName })}
         showTitle={false}
         actions={<ExportMenus groups={rangeExports({ from: weekStart, to: weekEnd }, month, { userIds: user.id })} />}

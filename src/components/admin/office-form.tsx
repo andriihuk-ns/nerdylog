@@ -44,9 +44,8 @@ export function OfficeForm({ office, onDone, onCancel }: Props) {
   return (
     <form
       onSubmit={submit}
-      onKeyDown={(e) => e.key === "Escape" && onCancel()}
       aria-label={office ? t("editLabel", { name: office.name }) : t("newLabel")}
-      className="flex flex-wrap items-end gap-3 p-4"
+      className="grid grid-cols-[6rem_minmax(0,1fr)] gap-4 p-4 sm:px-6 sm:pb-6"
     >
       <div className="flex flex-col gap-1.5">
         <Label htmlFor={`${id}-code`}>{t("code")}</Label>
@@ -58,28 +57,30 @@ export function OfficeForm({ office, onDone, onCancel }: Props) {
           required
           maxLength={8}
           placeholder="UA"
-          className="h-11 w-24 font-mono uppercase"
+          className="h-11 font-mono uppercase"
         />
       </div>
-      <div className="flex min-w-48 flex-1 flex-col gap-1.5">
+      <div className="flex min-w-0 flex-col gap-1.5">
         <Label htmlFor={`${id}-name`}>{t("name")}</Label>
         <Input id={`${id}-name`} value={name} onChange={(e) => setName(e.target.value)} required maxLength={120} placeholder={t("namePlaceholder")} className="h-11" />
       </div>
-      <div className="flex w-full flex-col gap-1.5 sm:w-64">
+      <div className="col-span-2 flex flex-col gap-1.5">
         <Label htmlFor={`${id}-tz`}>{t("timezone")}</Label>
         <TimezonePicker id={`${id}-tz`} value={timezone} onChange={setTimezone} />
       </div>
-      <Button type="button" variant="ghost" className="hit-target" onClick={onCancel}>
-        {tc("cancel")}
-      </Button>
-      <Button type="submit" className="hit-target" disabled={pending}>
-        {pending ? tc("saving") : office ? tc("save") : t("create")}
-      </Button>
       {error ? (
-        <p role="alert" className="w-full text-destructive">
+        <p role="alert" className="col-span-2 text-destructive">
           {error}
         </p>
       ) : null}
+      <div className="col-span-2 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <Button type="button" variant="ghost" className="hit-target" onClick={onCancel}>
+          {tc("cancel")}
+        </Button>
+        <Button type="submit" className="hit-target" disabled={pending}>
+          {pending ? tc("saving") : office ? tc("save") : t("create")}
+        </Button>
+      </div>
     </form>
   );
 }

@@ -278,8 +278,7 @@
     "tabs": {
       "directory": "Directory",
       "projects": "Projects",
-      "offices": "Offices",
-      "holidays": "Holidays"
+      "offices": "Offices"
     },
     "directory": {
       "counts": "<n>{active}</n> active · <n>{archived}</n> archived",
@@ -393,16 +392,15 @@
       "removeFailed": "Couldn't remove {name}. {reason}",
       "empty": "No {office} holidays in {year}.",
       "remove": "Remove {name}",
-      "officeFilter": "Office",
       "copyFrom": "Copy from {year}",
       "copying": "Copying…",
       "copied": "Copied {copied}, skipped {skipped}.",
       "copyFailed": "Couldn't copy holidays. {reason}",
-      "noOffices": "Add an office first.",
       "addFor": "Add a holiday for {office}",
-      "addTo": "Add to {code}",
       "listLabel": "{office} holidays in {year}",
-      "confirmRemove": "Delete holiday “{name}”?"
+      "confirmRemove": "Delete holiday “{name}”?",
+      "new": "New holiday",
+      "create": "Add holiday"
     },
     "settings": {
       "title": "Settings",
@@ -478,7 +476,15 @@
         "timezone": "Timezone"
       },
       "timezone": "Timezone",
-      "confirmDeleteBody": "Remove its holidays first. This can't be undone."
+      "confirmDeleteBody": "Remove its holidays first. This can't be undone.",
+      "backToOffices": "Back to offices",
+      "tabsLabel": "Office sections",
+      "tabs": {
+        "people": "People",
+        "holidays": "Holidays"
+      },
+      "noPeople": "No one is in this office yet. Assign people in the Directory.",
+      "memberCount": "{count, plural, one {# person} other {# people}}"
     }
   },
   "exports": {
@@ -514,7 +520,8 @@
       "holidays": "Holidays"
     },
     "backTeam": "Team",
-    "backDirectory": "People"
+    "backDirectory": "People",
+    "backOffice": "Back to {name}"
   },
   "checklist": {
     "itemLabel": "Task {number}",

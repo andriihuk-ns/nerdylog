@@ -1,61 +1,41 @@
 "use client";
 
-import { useOptimistic, useState, useTransition, type FormEvent } from "react";
-import { Trash2 } from "lucide-react";
+import { useOptimistic, useState, useTransition } from "react";
+import { Plus, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { HolidayView, OfficeView } from "@/contracts";
-import { addHolidayAction, removeHolidayAction } from "@/app/(dashboard)/admin/holiday-actions";
+import { removeHolidayAction } from "@/app/(dashboard)/admin/holiday-actions";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { DatePicker } from "@/components/ui/date-picker";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Toast } from "@/components/ui/toast";
-import { isIsoDate } from "@/components/lib/dates";
 import { useFormat } from "@/hooks/use-format";
 import { useConfirm } from "@/hooks/use-confirm";
+import { HolidayForm } from "./holiday-form";
 import { HolidayToolbar } from "./holiday-toolbar";
 
 interface Props {
+  office: OfficeView;
   holidays: HolidayView[];
-  offices: OfficeView[];
-  officeId: string | null; // null → no offices yet
   year: number;
   currentYear: number;
 }
 
-/** FR-WEB-06 Holiday Calendar per office (A15): list by office + year, add, remove (optimistic), copy last year. */
-export function HolidaysPanel({ holidays, offices, officeId, year, currentYear }: Props) {
+/** FR-WEB-06 Holiday Calendar of one office (A15, A37): list by year, add in a modal, remove (optimistic), copy last year. */
+export function HolidaysPanel({ office, holidays, year, currentYear }: Props) {
   const [list, removeOptimistic] = useOptimistic(holidays, (cur: HolidayView[], id: string) => cur.filter((h) => h.id !== id));
-  const [date, setDate] = useState("");
-  const [name, setName] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [adding, startAdd] = useTransition();
+  const [adding, setAdding] = useState(false);
   const [, startRemove] = useTransition();
   const { toast, show, dismiss } = useToast();
   const t = useTranslations("admin.holidays");
   const f = useFormat();
   const tc = useTranslations("common");
   const { confirm, dialog } = useConfirm();
-  const office = offices.find((o) => o.id === officeId);
   const sorted = [...list].sort((a, b) => a.holidayDate.localeCompare(b.holidayDate));
 
-  if (!officeId || !office) {
-    return <p className="rounded-lg border bg-card p-6 text-muted-foreground">{t("noOffices")}</p>;
-  }
-  const selectedOfficeId = officeId;
-
-  function add(e: FormEvent) {
-    e.preventDefault();
-    if (!isIsoDate(date)) return setError(t("pickDate"));
-    if (!name.trim()) return setError(t("nameRequired"));
-    setError(null);
-    startAdd(async () => {
-      const res = await addHolidayAction({ officeId: selectedOfficeId, holidayDate: date, name });
-      if (!res.ok) return setError(res.message);
-      setName("");
-      show(t("added", { name: res.data.name, day: f.dayLong(res.data.holidayDate) }));
-    });
+  function added(holiday: HolidayView) {
+    setAdding(false);
+    show(t("added", { name: holiday.name, day: f.dayLong(holiday.holidayDate) }));
   }
 
   async function confirmRemove(h: HolidayView) {
@@ -73,32 +53,17 @@ export function HolidaysPanel({ holidays, offices, officeId, year, currentYear }
 
   return (
     <section aria-label={t("title")} className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-end gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <HolidayToolbar
-          offices={offices}
-          officeId={officeId}
+          officeId={office.id}
           year={year}
           currentYear={currentYear}
           onToast={(message, tone = "neutral") => show(message, { tone })}
         />
-        <form onSubmit={add} aria-label={t("addFor", { office: office.name })} className="flex min-w-0 flex-1 flex-wrap items-end gap-3">
-          <div className="flex w-full flex-col gap-1.5 sm:w-auto">
-            <Label htmlFor="holiday-date" className="sr-only">{t("date")}</Label>
-            <DatePicker id="holiday-date" value={date} label={t("date")} placeholder={t("pickDate")} onChange={setDate} className="w-full sm:w-44" />
-          </div>
-          <div className="flex min-w-48 flex-1 flex-col gap-1.5">
-            <Label htmlFor="holiday-name" className="sr-only">{t("name")}</Label>
-            <Input id="holiday-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={120} placeholder={t("placeholder")} className="h-11" />
-          </div>
-          <Button type="submit" disabled={adding} className="hit-target w-full sm:w-auto">
-            {adding ? t("adding") : t("addTo", { code: office.code })}
-          </Button>
-          {error ? (
-            <p role="alert" className="w-full text-destructive">
-              {error}
-            </p>
-          ) : null}
-        </form>
+        <Button onClick={() => setAdding(true)} className="hit-target w-full sm:w-auto">
+          <Plus aria-hidden />
+          {t("new")}
+        </Button>
       </div>
       {sorted.length === 0 ? (
         <p className="rounded-lg border bg-card p-6 text-muted-foreground">{t("empty", { year: String(year), office: office.name })}</p>
@@ -117,6 +82,14 @@ export function HolidaysPanel({ holidays, offices, officeId, year, currentYear }
           ))}
         </ul>
       )}
+      <Dialog open={adding} onOpenChange={setAdding}>
+        <DialogContent aria-describedby={undefined} className="overflow-y-auto p-0 sm:max-w-md">
+          <DialogHeader className="px-4 pt-5 sm:px-6">
+            <DialogTitle>{t("new")}</DialogTitle>
+          </DialogHeader>
+          <HolidayForm office={office} year={year} currentYear={currentYear} onDone={added} onCancel={() => setAdding(false)} />
+        </DialogContent>
+      </Dialog>
       <Toast toast={toast} onDismiss={dismiss} />
       {dialog}
     </section>

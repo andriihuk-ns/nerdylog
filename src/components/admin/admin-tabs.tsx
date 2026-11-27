@@ -10,12 +10,10 @@ import { ADMIN_TABS, adminHref, type AdminTab } from "./admin-tab";
 /** Tabs synced to `?tab=` so reloads and links keep the panel. Panels are server-rendered. */
 interface Props {
   tab: AdminTab;
-  year: number;
-  officeId: string | null;
   panels: Record<AdminTab, ReactNode>;
 }
 
-export function AdminTabs({ tab, year, officeId, panels }: Props) {
+export function AdminTabs({ tab, panels }: Props) {
   const router = useRouter();
   const t = useTranslations("admin");
 
@@ -24,7 +22,7 @@ export function AdminTabs({ tab, year, officeId, panels }: Props) {
       defaultValue={tab}
       onValueChange={(value) => {
         const y = window.scrollY;
-        router.replace(adminHref(value as AdminTab, year, officeId), { scroll: false });
+        router.replace(adminHref(value as AdminTab), { scroll: false });
         requestAnimationFrame(() => window.scrollTo({ top: y }));
       }}
       className="flex flex-col gap-6"

@@ -278,8 +278,7 @@
     "tabs": {
       "directory": "Люди",
       "projects": "Проєкти",
-      "offices": "Офіси",
-      "holidays": "Свята"
+      "offices": "Офіси"
     },
     "directory": {
       "counts": "<n>{active}</n> активних · <n>{archived}</n> в архіві",
@@ -393,16 +392,15 @@
       "removeFailed": "Не вдалося видалити: {name}. {reason}",
       "empty": "Немає свят {office} у {year}.",
       "remove": "Видалити {name}",
-      "officeFilter": "Офіс",
       "copyFrom": "Скопіювати з {year}",
       "copying": "Копіюю…",
       "copied": "Скопійовано: {copied}, пропущено: {skipped}.",
       "copyFailed": "Не вдалося скопіювати свята. {reason}",
-      "noOffices": "Спершу додай офіс.",
       "addFor": "Додати свято для {office}",
-      "addTo": "Додати в {code}",
       "listLabel": "Свята {office} у {year}",
-      "confirmRemove": "Видалити свято «{name}»?"
+      "confirmRemove": "Видалити свято «{name}»?",
+      "new": "Нове свято",
+      "create": "Додати свято"
     },
     "settings": {
       "title": "Налаштування",
@@ -478,7 +476,15 @@
         "timezone": "Часовий пояс"
       },
       "timezone": "Часовий пояс",
-      "confirmDeleteBody": "Спершу прибери його свята. Це не можна скасувати."
+      "confirmDeleteBody": "Спершу прибери його свята. Це не можна скасувати.",
+      "backToOffices": "До офісів",
+      "tabsLabel": "Розділи офісу",
+      "tabs": {
+        "people": "Люди",
+        "holidays": "Свята"
+      },
+      "noPeople": "У цьому офісі ще нікого немає. Признач людей у довіднику.",
+      "memberCount": "{count, plural, one {# людина} few {# людини} many {# людей} other {# людини}}"
     }
   },
   "exports": {
@@ -514,7 +520,8 @@
       "holidays": "Свята"
     },
     "backTeam": "Команда",
-    "backDirectory": "Люди"
+    "backDirectory": "Люди",
+    "backOffice": "Назад: {name}"
   },
   "checklist": {
     "itemLabel": "Задача {number}",
