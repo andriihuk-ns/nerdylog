@@ -31,12 +31,14 @@
   .login-shimmer::after {
     content: "";
     position: absolute;
-    inset: 0;
+    /* Taller than the button so the blur does not fade at the top and bottom. */
+    inset: -12px 0;
+    filter: blur(10px);
     pointer-events: none;
     background: linear-gradient(
       105deg,
       transparent 5%,
-      color-mix(in srgb, var(--primary-foreground) 24%, transparent) 50%,
+      color-mix(in srgb, var(--primary-foreground) 38%, transparent) 50%,
       transparent 95%
     );
     transform: translateX(-100%);
