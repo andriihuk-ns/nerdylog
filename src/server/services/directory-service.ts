@@ -72,9 +72,11 @@ export const updateDirectoryUser: UpdateDirectoryUser = async (actor, userId, pa
   }
   const row = await db.transaction(async (tx) => {
     const updated = await updateDirectoryRow(tx, userId, parsed);
-    // Office change (or re-activation): bring the user's auto-filled office holidays in line.
+    // Office change (or re-activation): bring the user's auto-filled office holidays in line for this & next year.
     if (updated && (parsed.officeId !== undefined || parsed.isActive === true)) {
-      await syncUserHolidayEntries(tx, userId, updated.officeId, new Date().getUTCFullYear());
+      const thisYear = new Date().getUTCFullYear();
+      await syncUserHolidayEntries(tx, userId, updated.officeId, thisYear);
+      await syncUserHolidayEntries(tx, userId, updated.officeId, thisYear + 1);
     }
     return updated;
   });

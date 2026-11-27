@@ -1,4 +1,4 @@
-import { extractTicketRefs, type TimeEntryInput } from "@/contracts";
+import { extractTicketRefs, taskSummaryDisplayText, type TimeEntryInput } from "@/contracts";
 import { formatHours } from "../dates";
 import { linkifyMrkdwn } from "./common";
 import type { SlackMessage } from "./common";
@@ -7,7 +7,7 @@ type LineEntry = Pick<TimeEntryInput, "entryType" | "projectId" | "hours" | "tas
 
 /** A14: SHARED channel post, stays English (formatHours without a locale). One A11 project-channel line: `<Name> · 4h · <task summary> (DOG-1, DOG-2)`. Plain text. */
 export function formatProjectLine(fullName: string, entry: Pick<LineEntry, "hours" | "taskSummary">): string {
-  const task = entry.taskSummary.trim();
+  const task = taskSummaryDisplayText(entry.taskSummary).trim();
   const refs = extractTicketRefs(task);
   const name = fullName.trim() || "Someone";
   return `${name} · ${formatHours(entry.hours)} · ${task}${refs.length > 0 ? ` (${refs.join(", ")})` : ""}`;

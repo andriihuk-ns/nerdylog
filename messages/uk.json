@@ -469,5 +469,14 @@
     },
     "backTeam": "Команда",
     "backDirectory": "Люди"
+  },
+  "checklist": {
+    "addItem": "Додати пункт",
+    "removeItem": "Видалити пункт",
+    "addLink": "Додати посилання",
+    "removeLink": "Видалити посилання",
+    "itemPlaceholder": "Що зробив?",
+    "linkPlaceholder": "https://...",
+    "toggleDone": "Позначити виконаним"
   }
 }

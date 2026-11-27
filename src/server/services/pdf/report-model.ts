@@ -1,4 +1,4 @@
-import type { EntryType, IsoDate, RollupTotals } from "@/contracts";
+import { taskSummaryDisplayText, type EntryType, type IsoDate, type RollupTotals } from "@/contracts";
 import type { LedgerRow } from "@/server/db/queries/ledger";
 import { computeTotals } from "../time-aggregator";
 
@@ -68,7 +68,7 @@ function employeeReport(rows: readonly LedgerRow[]): EmployeeReport {
       project: r.projectName ?? "",
       entryType: r.entryType,
       hours: r.hours,
-      tasks: r.taskSummary,
+      tasks: taskSummaryDisplayText(r.taskSummary),
       tickets: r.ticketRefs.join(", "),
     })),
     months: [...byMonth.entries()]

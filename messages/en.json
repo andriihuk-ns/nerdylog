@@ -469,5 +469,14 @@
     },
     "backTeam": "Team",
     "backDirectory": "People"
+  },
+  "checklist": {
+    "addItem": "Add item",
+    "removeItem": "Remove item",
+    "addLink": "Add link",
+    "removeLink": "Remove link",
+    "itemPlaceholder": "What did you do?",
+    "linkPlaceholder": "https://...",
+    "toggleDone": "Mark done"
   }
 }

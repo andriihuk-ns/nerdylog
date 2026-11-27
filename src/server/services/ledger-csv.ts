@@ -1,4 +1,4 @@
-import type { UserMonthRollup } from "@/contracts";
+import { taskSummaryDisplayText, type UserMonthRollup } from "@/contracts";
 import type { LedgerRow } from "@/server/db/queries/ledger";
 import { isoWeek, monthWeeks } from "./calendar";
 import { formatNumber, safeText, type CsvCell } from "./csv";
@@ -37,7 +37,7 @@ export function buildLedgerRows(rows: readonly LedgerRow[]): CsvCell[][] {
       r.entryType,
       formatNumber(r.hours, 2),
       formatNumber(dayEquivalent(r.hours, r.dailyNormHours), 4),
-      safeText(r.taskSummary),
+      safeText(taskSummaryDisplayText(r.taskSummary)),
       r.ticketRefs.join("; "),
       r.source,
     ]),

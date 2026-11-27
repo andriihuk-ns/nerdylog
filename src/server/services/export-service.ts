@@ -28,7 +28,7 @@ export const buildLedgerCsv: BuildLedgerCsv = async (actor, range) => {
     projectIds: scope.projectIds,
   });
   return {
-    filename: `tempo-ledger_${scope.from}_${scope.to}.csv`,
+    filename: `nerdylog-ledger_${scope.from}_${scope.to}.csv`,
     contentType: CSV_CONTENT_TYPE,
     body: encodeCsv(buildLedgerRows(rows)),
   };
@@ -42,7 +42,7 @@ export const buildSummaryCsv: BuildSummaryCsv = async (actor, month) => {
   monthRange(month);
   const rollups = await getTeamMonthRollup(actor, month);
   return {
-    filename: `tempo-summary_${month}.csv`,
+    filename: `nerdylog-summary_${month}.csv`,
     contentType: CSV_CONTENT_TYPE,
     body: encodeCsv(buildSummaryRows(month, rollups)),
   };
@@ -61,7 +61,7 @@ export const buildReportPdf: BuildReportPdf = async (actor, range) => {
   const projectNames = scope.projectIds ? await listProjectNames(db, scope.projectIds) : [];
   const model = buildReportModel(rows, { from: scope.from, to: scope.to, generatedOn: todayUtc(), projectNames });
   return {
-    filename: `tempo-report_${scope.from}_${scope.to}.pdf`,
+    filename: `nerdylog-report_${scope.from}_${scope.to}.pdf`,
     contentType: "application/pdf",
     body: await renderReportPdf(model),
   };

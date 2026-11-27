@@ -1,3 +1,4 @@
+import { parseChecklist } from "@/contracts";
 import { formatHours } from "../dates";
 import type { SlackBlock } from "../types";
 import { context, escapeMrkdwn, linkifyMrkdwn } from "./common";
@@ -20,12 +21,27 @@ function clip(text: string, max = 1900): string {
   return `${cut}…`;
 }
 
+function formatTaskForSlack(raw: string): string {
+  const items = parseChecklist(raw);
+  if (!items) return linkifyMrkdwn(raw.trim());
+  return items
+    .filter((i) => i.text.trim() || i.link?.trim())
+    .map((i) => {
+      const box = i.done ? "☑" : "☐";
+      const text = i.text.trim() ? linkifyMrkdwn(i.text.trim()) : "";
+      const link = i.link?.trim() ? ` ${linkifyMrkdwn(i.link.trim())}` : "";
+      return `  ${box} ${text}${link}`.trimEnd();
+    })
+    .join("\n");
+}
+
 function yesterdayText(rows: StandupCardInput["yesterday"]): string {
   if (rows.length === 0) return "Nothing logged";
   return rows
     .map((r) => {
-      const task = r.taskSummary.trim();
-      return `${formatHours(r.hours)} ${escapeMrkdwn(r.projectName)}${task ? ` — ${linkifyMrkdwn(task)}` : ""}`;
+      const task = formatTaskForSlack(r.taskSummary);
+      const sep = task.includes("\n") ? "\n" : " — ";
+      return `${formatHours(r.hours)} ${escapeMrkdwn(r.projectName)}${task ? `${sep}${task}` : ""}`;
     })
     .join("\n");
 }

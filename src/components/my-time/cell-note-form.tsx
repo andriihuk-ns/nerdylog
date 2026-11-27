@@ -2,13 +2,21 @@
 
 import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
-import { extractArtifactLinks, extractTicketRefs } from "@/contracts";
+import {
+  checklistSearchText,
+  extractArtifactLinks,
+  extractTicketRefs,
+  parseChecklist,
+  serializeChecklist,
+  textToChecklist,
+  type ChecklistItem,
+} from "@/contracts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { parseHoursInput } from "@/components/lib/format";
 import { ArtifactChip, ArtifactText } from "@/components/shell/artifact-text";
+import { ChecklistEditor } from "./checklist-editor";
 
 interface Props {
   title: string; // "DogTeamPro · Tue, Nov 24"
@@ -19,13 +27,19 @@ interface Props {
   onCancel: () => void;
 }
 
-/** Shift+Enter popover: hours + task note, with live ticket-ref detection (DOG-1364). */
+function initialItems(raw: string): ChecklistItem[] {
+  if (!raw.trim()) return [{ text: "", done: false }];
+  return parseChecklist(raw) ?? textToChecklist(raw);
+}
+
+/** Shift+Enter popover: hours + checklist task note with optional links and live ticket-ref detection. */
 export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onCancel }: Props) {
   const [hours, setHours] = useState(hoursDraft);
-  const [note, setNote] = useState(notes[0] ?? "");
+  const [items, setItems] = useState<ChecklistItem[]>(() => initialItems(notes[0] ?? ""));
   const [error, setError] = useState<string | null>(null);
-  const refs = extractTicketRefs(note);
-  const links = extractArtifactLinks(note);
+  const searchText = checklistSearchText(items);
+  const refs = extractTicketRefs(searchText);
+  const links = extractArtifactLinks(searchText);
   const t = useTranslations("myTime");
   const tc = useTranslations("common");
 
@@ -33,7 +47,14 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
     e.preventDefault();
     const parsed = parseHoursInput(hours);
     if (!parsed.ok) return setError(t(`input.${parsed.error}`));
-    onSave(parsed.value, note.trim());
+    const cleaned = items
+      .map((item) => ({
+        text: item.text.trim(),
+        ...(item.link?.trim() ? { link: item.link.trim() } : {}),
+        done: item.done,
+      }))
+      .filter((item) => item.text.length > 0 || Boolean(item.link));
+    onSave(parsed.value, cleaned.length > 0 ? serializeChecklist(cleaned) : "");
   }
 
   return (
@@ -48,7 +69,7 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
           value={hours}
           aria-invalid={error ? true : undefined}
           onChange={(e) => {
-            setHours(e.target.value);
+            setHours(e.target.value.replace(/[^0-9.,]/g, ""));
             setError(null);
           }}
           className="tabular h-11 text-right"
@@ -60,20 +81,8 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
         ) : null}
       </div>
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="cell-note">{entryCount > 1 ? t("note.taskNoteFirst") : t("note.taskNote")}</Label>
-        <Textarea
-          id="cell-note"
-          autoFocus
-          rows={3}
-          value={note}
-          maxLength={2000}
-          onChange={(e) => setNote(e.target.value)}
-          placeholder={t("note.placeholder")}
-          aria-describedby="cell-note-hint"
-        />
-        <p id="cell-note-hint" className="text-xs text-muted-foreground">
-          {t("note.linksHint")}
-        </p>
+        <Label>{entryCount > 1 ? t("note.taskNoteFirst") : t("note.taskNote")}</Label>
+        <ChecklistEditor items={items} onChange={setItems} />
         {links.length > 0 ? (
           <ul className="flex flex-wrap gap-1" aria-label={t("note.links")}>
             {links.map((l) => (

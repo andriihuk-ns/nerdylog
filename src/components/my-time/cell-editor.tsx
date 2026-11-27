@@ -66,7 +66,7 @@ export function CellEditor({ initial, label, onCommit, onCancel, onOpenNote }: P
         aria-describedby={error ? errorId : undefined}
         value={value}
         onChange={(e) => {
-          setValue(e.target.value);
+          setValue(e.target.value.replace(/[^0-9.,]/g, ""));
           setError(null);
         }}
         onKeyDown={onKeyDown}

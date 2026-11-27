@@ -1,0 +1,71 @@
+import { z } from "zod";
+
+/** One item in a task description checklist. */
+export const checklistItemSchema = z.object({
+  text: z.string().max(500),
+  link: z.string().max(2000).optional(),
+  done: z.boolean().default(false),
+});
+export type ChecklistItem = z.infer<typeof checklistItemSchema>;
+
+/** Parse `taskSummary`: returns checklist items if stored as JSON array, or `null` for plain text. */
+export function parseChecklist(taskSummary: string): ChecklistItem[] | null {
+  const trimmed = taskSummary.trim();
+  if (!trimmed.startsWith("[")) return null;
+  try {
+    const parsed: unknown = JSON.parse(trimmed);
+    if (!Array.isArray(parsed)) return null;
+    const result = z.array(checklistItemSchema).safeParse(parsed);
+    return result.success ? result.data : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Serialize checklist items to a `taskSummary` string. */
+export function serializeChecklist(items: readonly ChecklistItem[]): string {
+  return JSON.stringify(items);
+}
+
+/** Convert plain text (e.g. legacy or Slack multiline) into checklist items. */
+export function textToChecklist(text: string): ChecklistItem[] {
+  const lines = text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (lines.length === 0) return [{ text: "", done: false }];
+  return lines.map((line) => {
+    const doneMatch = line.match(/^\[[xX]\]\s*(.*)$/);
+    if (doneMatch) return { text: doneMatch[1], done: true };
+    const openMatch = line.match(/^(?:\[\s*\]|[-*•])\s*(.*)$/);
+    if (openMatch) return { text: openMatch[1], done: false };
+    return { text: line, done: false };
+  });
+}
+
+/** Render checklist items as Latin-1 safe bulleted text (for PDF, CSV, and plain-text views). */
+export function checklistToText(items: readonly ChecklistItem[]): string {
+  return items
+    .filter((item) => item.text.trim() || item.link?.trim())
+    .map((item) => {
+      const prefix = item.done ? "[x]" : "•";
+      const text = item.text.trim();
+      const link = item.link?.trim() ? ` (${item.link.trim()})` : "";
+      return `${prefix} ${text}${link}`.trim();
+    })
+    .join("\n");
+}
+
+/** Get human-readable text from `taskSummary`, whether checklist JSON or plain text. */
+export function taskSummaryDisplayText(taskSummary: string): string {
+  const items = parseChecklist(taskSummary);
+  return items ? checklistToText(items) : taskSummary;
+}
+
+/** Plain text combining all checklist items and links (for ticket/link extraction). */
+export function checklistSearchText(items: readonly ChecklistItem[]): string {
+  return items
+    .map((item) => [item.text, item.link].filter(Boolean).join(" "))
+    .join("\n");
+}
+
