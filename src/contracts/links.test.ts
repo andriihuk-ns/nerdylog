@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractArtifactLinks, inlineLinks, parseArtifactLink, removeInlineLink, segmentTextWithLinks } from "./links";
+import { extractArtifactLinks, inlineLinks, parseArtifactLink, removeInlineLink, replaceInlineLink, segmentTextWithLinks } from "./links";
 
 describe("parseArtifactLink", () => {
   it.each([
@@ -66,5 +66,13 @@ describe("typed links (A36)", () => {
     expect(removeInlineLink("https://a.dev first\nsecond", 0)).toBe("first\nsecond");
     expect(removeInlineLink("one\nhttps://a.dev two", 0)).toBe("one\ntwo");
     expect(removeInlineLink("no links", 0)).toBe("no links");
+  });
+});
+
+describe("replaceInlineLink", () => {
+  it("changes only the chosen URL", () => {
+    const text = "a https://a.dev b https://a.dev.";
+    expect(replaceInlineLink(text, 1, "https://c.dev")).toBe("a https://a.dev b https://c.dev.");
+    expect(replaceInlineLink(text, 5, "https://c.dev")).toBe(text);
   });
 });

@@ -164,3 +164,9 @@ export function removeInlineLink(text: string, index: number): string {
   if (!before || before.endsWith("\n")) after = after.replace(/^[ \t]+/, "");
   return before + after;
 }
+
+/** Swaps the n-th typed URL for another one, leaving the rest of the text as it is. */
+export function replaceInlineLink(text: string, index: number, url: string): string {
+  const match = [...text.matchAll(URL_REGEX)][index];
+  return match ? text.slice(0, match.index) + url + text.slice(match.index + match[0].length) : text;
+}
