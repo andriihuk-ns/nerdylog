@@ -132,6 +132,7 @@
     "note": {
       "hours": "Hours",
       "taskNote": "Task details",
+      "modalDescription": "Adjust hours and manage task descriptions with optional links.",
       "taskNoteFirst": "Note (first entry)",
       "editTasks": "Edit tasks",
       "addTasks": "Add tasks",

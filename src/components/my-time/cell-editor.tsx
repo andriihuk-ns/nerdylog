@@ -16,7 +16,7 @@ interface Props {
 
 /**
  * Inline hours input. Enter commits + moves down, Tab commits + moves right,
- * Shift+Enter opens the note popover, Esc cancels. Blur commits in place.
+ * Shift+Enter opens the task editor dialog, Esc cancels. Blur commits in place.
  */
 export function CellEditor({ initial, label, onCommit, onCancel, onOpenNote }: Props) {
   const [value, setValue] = useState(initial);

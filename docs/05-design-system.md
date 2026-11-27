@@ -7,7 +7,7 @@ Owner: Designer. Source of truth for tokens: `src/app/globals.css`. Product rule
 1. **Less, but better (Rams).** One surface, one ink, four meaning colours. Colour carries state, never decoration.
 2. **Numbers first.** Hours, totals, dates and percentages are the content. They are tabular, right-aligned, and never truncated.
 3. **Two streams, two looks.** Stream A (tracked time) lives in grids and numbers. Stream B (plan, blockers) lives in prose cards and the drawer. A standup card never shows an hour total next to plan text.
-4. **Deference (HIG).** Chrome recedes: hairline borders, no shadows on grids, one elevation (popover/drawer).
+4. **Deference (HIG).** Chrome recedes: hairline borders, no shadows on grids, one elevation (popover/dialog/drawer).
 5. **Fast and forgiving.** Every edit is optimistic, every error is recoverable in place, and nothing needs a mouse.
 
 ## 2. Colour tokens
@@ -130,7 +130,7 @@ Keyboard (grid uses `role="grid"`, roving tabindex):
 - Arrows move focus; Home/End = first/last day; Ctrl+Home/End = first/last cell.
 - Enter or typing a digit starts editing; Enter commits and moves down; Tab commits and moves right; Esc cancels.
 - `.` or `,` accepted as decimal; values snap to 0.25 h; > 24 → inline error "Max 24h a day".
-- Shift+Enter opens the cell popover (task note, ticket refs detected, split across projects).
+- Shift+Enter opens the centered task editor dialog; it fills the screen under 640 px. Cancel/save actions stay pinned below the scrollable form.
 - Each work cell shows up to two lines of its task/link groups below the hours, with a card-colored fade and chevron to expand longer details. “Add tasks” / “Edit tasks” opens a group editor with up to 10 tasks, one optional link per task, and a save that preserves the hours. When several time entries share a project/day cell, their groups are combined for editing and saved together.
 - `[` / `]` previous / next week. `T` today.
 - Day pill: Space cycles Work → Vac → Sick → Hol; changing to PTO with logged hours asks once "Clear 6.0h on Wed?".

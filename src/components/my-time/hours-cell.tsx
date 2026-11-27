@@ -4,7 +4,7 @@ import type { KeyboardEvent } from "react";
 import { PencilLine, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
-import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useFormat } from "@/hooks/use-format";
 import { taskSummaryDisplayText } from "@/contracts";
@@ -16,7 +16,7 @@ import type { MatrixCell } from "./week-matrix";
 export interface HoursCellProps {
   cell: MatrixCell;
   label: string; // "DogTeamPro, Tue, Nov 24"
-  title: string; // "DogTeamPro · Tue, Nov 24" (note popover heading)
+  title: string; // "DogTeamPro · Tue, Nov 24" (task editor heading)
   readOnly: boolean; // PTO day or locked weekend
   weekendLocked?: boolean; // A16: Sat/Sun still on "Weekend"
   weekend: boolean;
@@ -92,48 +92,46 @@ export function HoursCell(p: HoursCellProps) {
         p.failed && "ring-1 ring-destructive ring-inset",
       )}
     >
-      <Popover open={p.noteDraft !== null} onOpenChange={(open) => !open && p.onCancel()}>
-        <PopoverAnchor asChild>
-          <div className="min-h-11">
-            {p.editing !== null ? (
-              <CellEditor
-                initial={p.editing}
-                label={t("hoursInput", { label: p.label })}
-                onCommit={(h, move) => p.onCommit(h, move)}
-                onCancel={p.onCancel}
-                onOpenNote={p.onOpenNote}
-              />
-            ) : (
-              <div className="flex min-h-11 flex-col items-end justify-center gap-1 px-2 py-2 sm:px-3">
-                <span className={cn("tabular font-medium", p.cell.hours === 0 && "text-muted-foreground")}>
-                  {p.weekendLocked ? "" : p.readOnly ? "—" : p.cell.hours > 0 ? hours : "·"}
-                </span>
-                {p.cell.notes.length > 0 ? (
-                  <div onClick={(event) => event.stopPropagation()}>
-                    <TaskGroupList summaries={p.cell.notes} />
-                  </div>
-                ) : null}
-                {!p.readOnly && p.cell.hours > 0 ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="hit-target h-11 w-full justify-start gap-1.5 px-1.5 text-xs text-muted-foreground"
-                    aria-label={`${p.label}: ${tm(p.cell.notes.length > 0 ? "note.editTasks" : "note.addTasks")}`}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      p.onOpenNote(current);
-                    }}
-                  >
-                    {p.cell.notes.length > 0 ? <PencilLine aria-hidden className="size-3.5" /> : <Plus aria-hidden className="size-3.5" />}
-                    {tm(p.cell.notes.length > 0 ? "note.editTasks" : "note.addTasks")}
-                  </Button>
-                ) : null}
+      <div className="min-h-11">
+        {p.editing !== null ? (
+          <CellEditor
+            initial={p.editing}
+            label={t("hoursInput", { label: p.label })}
+            onCommit={(h, move) => p.onCommit(h, move)}
+            onCancel={p.onCancel}
+            onOpenNote={p.onOpenNote}
+          />
+        ) : (
+          <div className="flex min-h-11 flex-col items-end justify-center gap-1 px-2 py-2 sm:px-3">
+            <span className={cn("tabular font-medium", p.cell.hours === 0 && "text-muted-foreground")}>
+              {p.weekendLocked ? "" : p.readOnly ? "—" : p.cell.hours > 0 ? hours : "·"}
+            </span>
+            {p.cell.notes.length > 0 ? (
+              <div onClick={(event) => event.stopPropagation()}>
+                <TaskGroupList summaries={p.cell.notes} />
               </div>
-            )}
+            ) : null}
+            {!p.readOnly && p.cell.hours > 0 ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="hit-target h-11 w-full justify-start gap-1.5 px-1.5 text-xs text-muted-foreground"
+                aria-label={`${p.label}: ${tm(p.cell.notes.length > 0 ? "note.editTasks" : "note.addTasks")}`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  p.onOpenNote(current);
+                }}
+              >
+                {p.cell.notes.length > 0 ? <PencilLine aria-hidden className="size-3.5" /> : <Plus aria-hidden className="size-3.5" />}
+                {tm(p.cell.notes.length > 0 ? "note.editTasks" : "note.addTasks")}
+              </Button>
+            ) : null}
           </div>
-        </PopoverAnchor>
-        <PopoverContent align="end" className="w-[min(24rem,calc(100vw-2rem))]">
+        )}
+      </div>
+      <Dialog open={p.noteDraft !== null} onOpenChange={(open) => !open && p.onCancel()}>
+        <DialogContent>
           {p.noteDraft !== null ? (
             <CellNoteForm
               title={p.title}
@@ -144,8 +142,8 @@ export function HoursCell(p: HoursCellProps) {
               onCancel={p.onCancel}
             />
           ) : null}
-        </PopoverContent>
-      </Popover>
+        </DialogContent>
+      </Dialog>
     </td>
   );
 }
