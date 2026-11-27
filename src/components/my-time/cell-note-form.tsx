@@ -107,44 +107,47 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
       </DialogHeader>
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">
         <div className="flex flex-col gap-6">
-          <div className="flex max-w-sm flex-col gap-1.5">
+          <div className="flex flex-col gap-1.5">
             <Label htmlFor="cell-hours">
               {t("note.hours")}
               <span aria-hidden="true"> *</span>
             </Label>
-            <Input
-              id="cell-hours"
-              inputMode="decimal"
-              autoComplete="off"
-              autoFocus
-              required
-              value={hours}
-              aria-required="true"
-              aria-invalid={hoursError ? true : undefined}
-              onChange={(event) => {
-                const raw = event.target.value;
-                const cleaned = raw.replace(/[^0-9.,]/g, "");
-                setHours(cleaned);
-                setHoursError(cleaned !== raw ? t("input.numbersOnly") : null);
-              }}
-              className="tabular h-11 w-40 text-left"
-            />
-            <div role="group" aria-label={t("note.quickDurations")} className="flex max-w-sm flex-wrap gap-1.5">
-              {QUICK_HOURS.map((option) => (
-                <Button
-                  key={option.label}
-                  type="button"
-                  size="sm"
-                  variant={hours === String(option.value) ? "secondary" : "outline"}
-                  aria-pressed={hours === String(option.value)}
-                  onClick={() => {
-                    setHours(String(option.value));
-                    setHoursError(null);
-                  }}
-                >
-                  {option.label}
-                </Button>
-              ))}
+            <div className="flex flex-wrap items-center gap-2">
+              <Input
+                id="cell-hours"
+                inputMode="decimal"
+                autoComplete="off"
+                autoFocus
+                required
+                value={hours}
+                aria-required="true"
+                aria-invalid={hoursError ? true : undefined}
+                onChange={(event) => {
+                  const raw = event.target.value;
+                  const cleaned = raw.replace(/[^0-9.,]/g, "");
+                  setHours(cleaned);
+                  setHoursError(cleaned !== raw ? t("input.numbersOnly") : null);
+                }}
+                className="tabular h-11 w-24 text-left"
+              />
+              <div role="group" aria-label={t("note.quickDurations")} className="flex flex-wrap items-center gap-1">
+                {QUICK_HOURS.map((option) => (
+                  <Button
+                    key={option.label}
+                    type="button"
+                    size="sm"
+                    variant={hours === String(option.value) ? "secondary" : "outline"}
+                    className="min-h-11 w-[4.5rem] px-2"
+                    aria-pressed={hours === String(option.value)}
+                    onClick={() => {
+                      setHours(String(option.value));
+                      setHoursError(null);
+                    }}
+                  >
+                    {option.label}
+                  </Button>
+                ))}
+              </div>
             </div>
             {hoursError ? (
               <p role="alert" className="text-xs text-destructive">
