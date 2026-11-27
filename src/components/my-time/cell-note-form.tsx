@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { X } from "lucide-react";
+import { Trash2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
   checklistSearchText,
@@ -14,10 +14,11 @@ import {
   type ChecklistItem,
 } from "@/contracts";
 import { Button } from "@/components/ui/button";
-import { DialogClose, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DialogClose, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { parseHoursInput } from "@/components/lib/format";
+import { useConfirm } from "@/hooks/use-confirm";
 import { ArtifactChip } from "@/components/shell/artifact-text";
 import { ChecklistEditor } from "./checklist-editor";
 
@@ -53,9 +54,19 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
   const links = extractArtifactLinks(searchText);
   const t = useTranslations("myTime");
   const tc = useTranslations("common");
+  const { confirm, dialog } = useConfirm();
   const isNewEntry = entryCount === 0;
   const parsedHours = parseHoursInput(hours);
   const canSave = parsedHours.ok && (!isNewEntry || parsedHours.value > 0);
+
+  async function deleteLog() {
+    const confirmed = await confirm({
+      title: t("note.confirmDelete"),
+      description: t("note.confirmDeleteBody"),
+      confirmLabel: t("note.delete"),
+    });
+    if (confirmed) onSave(0, "");
+  }
 
   function submit(e: FormEvent) {
     e.preventDefault();
@@ -96,7 +107,6 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
     <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
       <DialogHeader className="relative shrink-0 border-b px-5 py-4 pr-16 sm:px-6">
         <DialogTitle>{title}</DialogTitle>
-        <DialogDescription>{t("note.modalDescription")}</DialogDescription>
         <DialogClose asChild>
           <Button type="button" variant="ghost" size="icon" className="absolute top-3 right-3 hit-target size-11" aria-label={tc("cancel")}>
             <X aria-hidden className="size-4" />
@@ -189,14 +199,23 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
           </section>
         </div>
       </div>
-      <div className="flex shrink-0 flex-col-reverse gap-2 border-t px-5 py-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:flex-row sm:justify-end sm:px-6">
-        <Button type="button" variant="ghost" className="hit-target w-full sm:w-auto" onClick={onCancel}>
-          {tc("cancel")}
-        </Button>
-        <Button type="submit" className="hit-target w-full sm:w-auto" disabled={!canSave}>
-          {tc("save")}
-        </Button>
+      <div className="flex shrink-0 flex-col gap-2 border-t px-5 py-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:flex-row sm:items-center sm:px-6">
+        {entryCount > 0 ? (
+          <Button type="button" variant="destructive" className="hit-target w-full sm:mr-auto sm:w-auto" onClick={() => void deleteLog()}>
+            <Trash2 aria-hidden className="size-4" />
+            {t("note.delete")}
+          </Button>
+        ) : null}
+        <div className="flex flex-col-reverse gap-2 sm:ml-auto sm:flex-row">
+          <Button type="button" variant="ghost" className="hit-target w-full sm:w-auto" onClick={onCancel}>
+            {tc("cancel")}
+          </Button>
+          <Button type="submit" className="hit-target w-full sm:w-auto" disabled={!canSave}>
+            {tc("save")}
+          </Button>
+        </div>
       </div>
+      {dialog}
     </form>
   );
 }

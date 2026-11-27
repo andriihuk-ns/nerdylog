@@ -21,7 +21,7 @@ export function FilterSelect({ label, value, options, onChange, className }: Pro
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger aria-label={label} className={cn("hit-target w-48", className)}>
-        <SelectValue />
+        <SelectValue className="min-w-0 flex-1 truncate" />
       </SelectTrigger>
       <SelectContent>
         {options.map((o) => (
