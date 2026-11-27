@@ -52,7 +52,14 @@ export async function seedUser(tx: Tx, opts: SeedUserOpts = {}): Promise<SeededU
 
 export async function seedProject(
   tx: Tx,
-  opts: { name?: string; isActive?: boolean; slackChannelId?: string | null; members?: readonly string[] } = {},
+  opts: {
+    name?: string;
+    isActive?: boolean;
+    slackChannelId?: string | null;
+    members?: readonly string[];
+    statusPromptTime?: string; // A16
+    statusPromptOfficeId?: string | null; // A16
+  } = {},
 ): Promise<string> {
   const [row] = await tx
     .insert(projects)
@@ -60,6 +67,8 @@ export async function seedProject(
       name: opts.name ?? `Test Project ${next()}`,
       isActive: opts.isActive ?? true,
       slackChannelId: opts.slackChannelId ?? null,
+      statusPromptTime: opts.statusPromptTime,
+      statusPromptOfficeId: opts.statusPromptOfficeId ?? null,
     })
     .returning({ id: projects.id });
   if (opts.members?.length) await seedProjectMembers(tx, row.id, opts.members);
@@ -71,9 +80,9 @@ export async function seedProjectMembers(tx: Tx, projectId: string, userIds: rea
   await tx.insert(projectMembers).values(userIds.map((userId) => ({ projectId, userId })));
 }
 
-/** A15: a synthetic office (codes never collide with the real UA / PL rows). */
-export async function seedOffice(tx: Tx, name = "Test Office"): Promise<string> {
-  const [row] = await tx.insert(offices).values({ code: `T${next()}`, name }).returning({ id: offices.id });
+/** A15: a synthetic office (codes never collide with the real UA / PL rows). A16: with an IANA timezone. */
+export async function seedOffice(tx: Tx, name = "Test Office", timezone = "Europe/Kyiv"): Promise<string> {
+  const [row] = await tx.insert(offices).values({ code: `T${next()}`, name, timezone }).returning({ id: offices.id });
   return row.id;
 }
 

@@ -1,11 +1,11 @@
 /**
- * DB constraints (PRD A6, A8, A9, A11, A15): drizzle/0000_init.sql, 0002, 0003, 0011.
+ * DB constraints (PRD A6, A8, A9, A11, A15, A16): drizzle/0000_init.sql, 0002, 0003, 0011, 0014.
  * Each violating statement runs in a savepoint so the test transaction stays usable.
  */
 import { and, eq, inArray } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import type { Tx } from "@/server/db/queries/types";
-import { companyHolidays, dailyCheckins, offices, projectMembers, projects, timeEntries, users } from "@/server/db/schema";
+import { companyHolidays, dailyCheckins, offices, projectMembers, projectPrompts, projects, timeEntries, users } from "@/server/db/schema";
 import { expectPgFailure, withRollback } from "./db";
 import { seedHoliday, seedOffice, seedProject, seedUser } from "./fixtures";
 
@@ -164,6 +164,55 @@ describe("offices, per-office holidays and project members (A15)", () => {
       expect(await tx.$count(projectMembers, eq(projectMembers.projectId, p))).toBe(1);
       await tx.delete(projects).where(eq(projects.id, p));
       expect(await tx.$count(projectMembers, eq(projectMembers.userId, keep.id))).toBe(0);
+    });
+  });
+});
+
+describe("A16: office timezone, project prompt columns, project_prompts", () => {
+  it("the migration backfilled UA → Europe/Kyiv and PL → Europe/Warsaw", async () => {
+    await withRollback(async (tx) => {
+      const rows = await tx
+        .select({ code: offices.code, timezone: offices.timezone })
+        .from(offices)
+        .where(inArray(offices.code, ["UA", "PL"]));
+      expect(Object.fromEntries(rows.map((r) => [r.code, r.timezone]))).toEqual({ UA: "Europe/Kyiv", PL: "Europe/Warsaw" });
+    });
+  });
+
+  it("status_prompt_time defaults to 10:00 and must be HH:MM (00:00–23:59)", async () => {
+    await withRollback(async (tx) => {
+      const p = await seedProject(tx);
+      const [row] = await tx.select({ t: projects.statusPromptTime }).from(projects).where(eq(projects.id, p));
+      expect(row.t).toBe("10:00");
+      for (const bad of ["24:00", "9:00", "10:60", "10:00:00", ""]) {
+        await expectPgFailure(
+          tx,
+          (sp) => sp.update(projects).set({ statusPromptTime: bad }).where(eq(projects.id, p)),
+          CHECK,
+          "projects_status_prompt_time_check",
+        );
+      }
+      await tx.update(projects).set({ statusPromptTime: "23:59" }).where(eq(projects.id, p));
+      await tx.update(projects).set({ statusPromptTime: "00:00" }).where(eq(projects.id, p));
+    });
+  });
+
+  it("deleting the prompt office clears status_prompt_office_id; prompts are unique per day and cascade", async () => {
+    await withRollback(async (tx) => {
+      const office = await seedOffice(tx);
+      const p = await seedProject(tx, { statusPromptOfficeId: office });
+      await tx.delete(offices).where(eq(offices.id, office));
+      const [row] = await tx.select({ o: projects.statusPromptOfficeId }).from(projects).where(eq(projects.id, p));
+      expect(row.o).toBeNull();
+      await tx.insert(projectPrompts).values({ projectId: p, promptDate: "2026-11-02" });
+      await expectPgFailure(
+        tx,
+        (sp) => sp.insert(projectPrompts).values({ projectId: p, promptDate: "2026-11-02" }),
+        UNIQUE,
+        "project_prompts_pk",
+      );
+      await tx.delete(projects).where(eq(projects.id, p));
+      expect(await tx.$count(projectPrompts, eq(projectPrompts.projectId, p))).toBe(0);
     });
   });
 });

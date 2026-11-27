@@ -22,7 +22,7 @@ Validated at runtime by `src/lib/env.ts`. Template: `.env.example`.
 
 1. `npm ci`, then `cp .env.example .env.local` and fill it in.
 2. `supabase start` (needs Docker). It reads `supabase/config.toml`, which enables `[auth.external.slack_oidc]` with `SLACK_CLIENT_ID` / `SLACK_CLIENT_SECRET` from the shell env, so export them first (or put them in `supabase/.env`, which is git-ignored).
-3. `npm run db:migrate` — applies every file in `drizzle/` in journal order (`0000_init` … `0013_a15_seed_holidays_2026`). `0001`, `0004`, `0005`, `0008` and `0012` need Supabase (`auth.uid()`, roles `anon`/`authenticated`); they fail on plain Postgres.
+3. `npm run db:migrate` — applies every file in `drizzle/` in journal order (`0000_init` … `0015_a16_rls`). `0001`, `0004`, `0005`, `0008`, `0012` and `0015` need Supabase (`auth.uid()`, roles `anon`/`authenticated`); they fail on plain Postgres.
 4. `npm run dev` → http://localhost:3000. Slack cannot reach localhost: for Slack webhooks use a tunnel (ngrok / cloudflared) and put its origin into the Slack app URLs (section 4).
 
 Schema changes: edit `src/server/db/schema/*.ts`, run `npm run db:generate`, review the SQL in `drizzle/`, commit it, then `npm run db:migrate`.
@@ -35,7 +35,7 @@ Schema changes: edit `src/server/db/schema/*.ts`, run `npm run db:generate`, rev
 4. Run migrations against the hosted DB from a trusted machine (section 3a): `DATABASE_URL=<session-uri> npm run db:migrate`. Run it before each deploy that ships a new migration.
 5. **Project Settings → API (Data API)**: you can turn the Data API off. Tempo does not use PostgREST (all data goes through server-side Drizzle), and `0005_lockdown_grants` already revokes `anon`/`authenticated` table access. Supabase Auth keeps working without it.
 6. Promote the first admin once they have signed in: `update users set role = 'admin' where email = '<admin email>';` (SQL editor). Everything else is done in `/admin`.
-7. Set up the morning-ping scheduler (section 5a) once the app is deployed.
+7. Set up the status-prompt scheduler (section 5a) once the app is deployed.
 
 ## 3a. Supabase cloud dev project (which connection string and key goes where)
 
@@ -62,7 +62,7 @@ URL-encode special characters in the database password inside connection strings
    Bot scopes required by A11: `channels:read`, `groups:read`, `channels:join`. An existing install must be **reinstalled** (OAuth & Permissions → Reinstall to Workspace) after the manifest gains these scopes; the bot token may change, so re-copy `SLACK_BOT_TOKEN` if it does.
    A15 removed teams: `usergroups:read` is **no longer needed** and can be dropped from the manifest (dropping a scope also needs a reinstall; keeping it is harmless). Project members are read with `conversations.members`, covered by `channels:read` / `groups:read`; the bot must be in the channel (public: it joins on pick; private: invite it first).
 7. In `/admin`, click **Sync from Slack** to import members (new users start as active `member`s, with no office) and refresh every project's members. Morning standup cards go to the general standup channel (A11).
-8. A15 offices and projects, after migrating (section 3a / A15 rollout below): in `/admin` → People assign each new user an office (users without an office get no holidays: they are pinged on every weekday and their "previous business day" skips weekends only). In `/admin` → Projects, each project needs a channel; saving a project refreshes its members, and **Refresh members** re-reads the channel. Only members of a project's channel can log time to it (web and Slack).
+8. A15 offices and projects, after migrating (section 3a / A15 rollout below): in `/admin` → People assign each new user an office (users without an office get no holidays: their "previous business day" skips weekends only). In `/admin` → Projects, each project needs a channel; saving a project refreshes its members, and **Refresh members** re-reads the channel. Only members of a project's channel can log time to it (web and Slack).
 
 ### A15 rollout (migrations `0010`–`0013`)
 
@@ -73,6 +73,15 @@ Ship the migrations **before** deploying the A15 code (`DATABASE_URL=<session-ur
 - `0012_a15_rls` enables RLS (no policies) and revokes Data API grants on the two new tables.
 - `0013_a15_seed_holidays_2026` inserts the 2026 holidays for UA and PL (`on conflict do nothing`, so it never overwrites admin edits).
 
+### A16 rollout (migrations `0014`–`0015`)
+
+Ship the migrations **before** deploying the A16 code (the A16 code reads the new columns; the old code ignores them, so migrating first is safe):
+
+- `0014_a16_project_prompts` adds `offices.timezone` (backfill `UA` → `Europe/Kyiv`, `PL` → `Europe/Warsaw`, any other office → `Europe/Kyiv`, then not null), `projects.status_prompt_time` (default `10:00`, `HH:MM` check) and `projects.status_prompt_office_id` (FK offices, on delete set null), and creates `project_prompts`.
+- `0015_a16_rls` enables RLS (no policies) and revokes Data API grants on `project_prompts`.
+
+After deploy: the cron posts one status prompt per project channel per local day instead of DMing each person. Check each office's timezone in `/admin` → Offices and each project's prompt time/office in `/admin` → Projects (null office = UA). `daily_pings` stays as history; nothing writes it any more. Admins can now delete a project only if it has no time entries; otherwise archive it.
+
 After deploy, existing projects have **no members** until an admin opens `/admin` → Projects and runs **Refresh members** (or **Sync from Slack**); until then nobody can log time to them. Each year, add the next year's holidays per office in `/admin` → Holidays (**Copy from {previous year}**, then move Easter-based dates by hand).
 
 ## 5. Vercel
@@ -81,9 +90,9 @@ After deploy, existing projects have **no members** until an admin opens `/admin
 2. No Vercel cron. Vercel Hobby allows daily crons only, so the 15-minute morning-ping scheduler runs in Supabase (section 5a, amendment A10).
 3. Deploy. Then smoke test: sign in with Slack → `/my-time`; download `/api/export/ledger.csv?from=YYYY-MM-01&to=YYYY-MM-28` and `/api/export/summary.csv?month=YYYY-MM`; after setting up section 5a, check `net._http_response` at the next quarter hour.
 
-## 5a. Morning-ping scheduler (Supabase `pg_cron` + `pg_net`, amendment A10)
+## 5a. Status-prompt scheduler (Supabase `pg_cron` + `pg_net`, amendments A10, A16)
 
-Supabase calls `GET <APP_BASE_URL>/api/cron/morning-ping` every 15 minutes with `Authorization: Bearer <CRON_SECRET>`. The app sends the ping on the first run where the user's local time is in `[09:30, 11:00)` on a local weekday, not a holiday of the user's own office (A15), not on PTO, and not yet pinged that local date (`daily_pings`, `ON CONFLICT DO NOTHING`). Late, skipped, repeated or weekend runs are therefore safe: a user gets at most one ping per local date, and a run delayed by up to ~1.5 h still catches them.
+Supabase calls `GET <APP_BASE_URL>/api/cron/morning-ping` every 15 minutes with `Authorization: Bearer <CRON_SECRET>`. The path keeps its old name; since A16 it posts the **project status prompt** in each project's channel (the personal DM ping is gone). A project is posted on the first run where the local time of its prompt office (`projects.status_prompt_office_id`, null → `UA`; timezone from `offices.timezone`) is in `[status_prompt_time, +90 min)` (default `10:00`), on a local weekday, not a holiday of that office, and not yet posted that local date (`project_prompts`, `ON CONFLICT DO NOTHING`). Late, skipped, repeated or weekend runs are therefore safe: a project gets at most one prompt per local date, and a run delayed by up to ~1.5 h still catches it.
 
 Do this once per environment, after the app is deployed and `CRON_SECRET` is set in Vercel:
 

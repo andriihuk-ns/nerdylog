@@ -2,8 +2,8 @@ import { date, pgTable, primaryKey, timestamp, uuid } from "drizzle-orm/pg-core"
 import { users } from "./users";
 
 /**
- * Amendment A4: one morning ping per user per local date.
- * The cron inserts with ON CONFLICT DO NOTHING and only sends when a row was inserted.
+ * Amendment A4: one morning ping per user per local date. A16 removed the personal morning DM;
+ * the table is kept as history only (nothing writes it any more).
  */
 export const dailyPings = pgTable(
   "daily_pings",

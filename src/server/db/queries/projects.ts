@@ -1,5 +1,5 @@
 import { and, asc, eq, inArray } from "drizzle-orm";
-import { projectMembers, projects, users } from "../schema";
+import { projectMembers, projects, timeEntries, users } from "../schema";
 import type { DbOrTx } from "./types";
 
 /** A15: cached Slack-channel membership rows. `projectIds` / `userIds` narrow; an empty list returns []. */
@@ -58,4 +58,20 @@ export async function listProjectNames(
   if (ids?.length === 0) return [];
   const query = db.select({ id: projects.id, name: projects.name }).from(projects);
   return ids ? query.where(inArray(projects.id, [...ids])) : query;
+}
+
+/** A16: true when any time entry references the project (delete is then refused). */
+export async function projectHasTimeEntries(db: DbOrTx, projectId: string): Promise<boolean> {
+  const rows = await db
+    .select({ id: timeEntries.id })
+    .from(timeEntries)
+    .where(eq(timeEntries.projectId, projectId))
+    .limit(1);
+  return rows.length > 0;
+}
+
+/** A16: deletes the project (project_members and project_prompts cascade). False when no row had `id`. */
+export async function deleteProjectRow(db: DbOrTx, projectId: string): Promise<boolean> {
+  const rows = await db.delete(projects).where(eq(projects.id, projectId)).returning({ id: projects.id });
+  return rows.length > 0;
 }

@@ -1,7 +1,8 @@
--- Tempo: morning-ping scheduler (PRD amendment A10).
+-- Tempo: status-prompt scheduler (PRD amendments A10, A16; job and path keep the old "morning-ping" name).
 --
 -- Supabase pg_cron + pg_net call GET {APP_BASE_URL}/api/cron/morning-ping every 15 minutes.
--- The app decides who is due (local [09:30, 11:00), weekday, no holiday/PTO, not yet pinged),
+-- A16: the app decides which project channels are due (prompt-office local time in
+-- [status_prompt_time, +90 min), weekday, not an office holiday, not yet posted that local day),
 -- so every run, including late, repeated or weekend runs, is safe.
 --
 -- Run once per environment in the Supabase SQL editor. Safe to re-run (idempotent).

@@ -12,12 +12,12 @@ import {
 import { InvalidInputError, NotFoundError } from "./errors";
 import { isUniqueViolation } from "./pg-errors";
 import { assertAdmin } from "./rbac";
-import { assertRowId, parseInput } from "./validation";
+import { assertRowId, isValidTimeZone, parseInput } from "./validation";
 
 /** Postgres name of the offices.code unique constraint (drizzle/0011). */
 export const OFFICES_CODE_UNIQUE = "offices_code_unique";
 
-/** Code is trimmed and uppercased, then must be 2–6 Latin letters ("UA", "PL"). */
+/** Code is trimmed and uppercased, then must be 2–6 Latin letters ("UA", "PL"). A16: timezone must be a real IANA zone. */
 export const officeInputSchema = z.object({
   id: z.uuid().optional(),
   code: z
@@ -26,6 +26,7 @@ export const officeInputSchema = z.object({
     .transform((c) => c.toUpperCase())
     .pipe(z.string().regex(/^[A-Z]{2,6}$/, "Use 2–6 letters")),
   name: z.string().trim().min(1, "Name is required").max(100),
+  timezone: z.string().trim().refine(isValidTimeZone, "Unknown IANA timezone"), // A16
 });
 
 /** Contract ListOffices: any signed-in user. */

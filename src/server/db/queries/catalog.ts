@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, inArray, isNotNull, lte, type SQL } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, isNotNull, lte, sql, type SQL } from "drizzle-orm";
 import type { HolidayView, IsoDate } from "@/contracts";
 import { companyHolidays, projects, users } from "../schema";
 import type { DbOrTx } from "./types";
@@ -10,13 +10,23 @@ export interface ProjectRow {
   isActive: boolean;
   slackChannelId: string | null;
   createdBy: { userId: string; fullName: string } | null;
+  statusPromptTime: string; // A16
+  statusPromptOfficeId: string | null; // A16
+  hasTimeEntries: boolean; // A16
 }
+
+// Explicit table names: inside a correlated subquery Drizzle may render ${projects.id} unqualified ("id"),
+// which would then resolve to time_entries.id (see offices.ts).
+const hasTimeEntries = sql<boolean>`exists(select 1 from "time_entries" te where te."project_id" = "projects"."id")`;
 
 const projectRowColumns = {
   id: projects.id,
   name: projects.name,
   isActive: projects.isActive,
   slackChannelId: projects.slackChannelId,
+  statusPromptTime: projects.statusPromptTime,
+  statusPromptOfficeId: projects.statusPromptOfficeId,
+  hasTimeEntries,
   creatorId: users.id,
   creatorName: users.fullName,
 };
@@ -48,10 +58,13 @@ export async function findProjectRow(db: DbOrTx, id: string): Promise<ProjectRow
   return row ? toProjectRow(row) : undefined;
 }
 
+/** Undefined optional fields are left unchanged on update (and take the column default on insert). */
 export interface ProjectValues {
   name: string;
   slackChannelId: string | null;
   isActive?: boolean;
+  statusPromptTime?: string; // A16
+  statusPromptOfficeId?: string | null; // A16
 }
 
 /** Returns the new id. */

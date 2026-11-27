@@ -64,6 +64,8 @@ const PROJECT = "33333333-3333-4333-8333-333333333333";
 const admin = { userId: ADMIN, role: "admin" as const };
 const manager = { userId: ADMIN, role: "manager" as const };
 const member = { userId: ADMIN, role: "member" as const };
+const KYIV = "Europe/Kyiv";
+const PROMPT = { statusPromptTime: "10:00", statusPromptOfficeId: null, hasTimeEntries: false };
 const uniqueErr = (constraint: string) => Object.assign(new Error("dup"), { code: "23505", constraint_name: constraint });
 
 beforeEach(() => {
@@ -82,6 +84,9 @@ beforeEach(() => {
     isActive: true,
     slackChannelId: "C0123ABCD",
     createdBy: { userId: ADMIN, fullName: "Admin" },
+    statusPromptTime: "10:00",
+    statusPromptOfficeId: null,
+    hasTimeEntries: false,
   });
   vi.mocked(proj.listProjectMemberRows).mockResolvedValue([]);
   vi.mocked(proj.projectExists).mockResolvedValue(true);
@@ -89,7 +94,7 @@ beforeEach(() => {
   vi.mocked(off.officeExists).mockResolvedValue(true);
   vi.mocked(off.insertOffice).mockResolvedValue(OFFICE);
   vi.mocked(off.updateOffice).mockResolvedValue(true);
-  vi.mocked(off.findOfficeView).mockResolvedValue({ id: OFFICE, code: "UA", name: "Ukraine", memberCount: 0 });
+  vi.mocked(off.findOfficeView).mockResolvedValue({ id: OFFICE, code: "UA", name: "Ukraine", timezone: "Europe/Kyiv", memberCount: 0 });
   vi.mocked(off.countOfficeUsage).mockResolvedValue({ members: 0, holidays: 0 });
   vi.mocked(off.deleteOfficeRow).mockResolvedValue(true);
 });
@@ -192,8 +197,8 @@ describe("projects (A15)", () => {
 
   it("listProjects: everyone sees all, with memberIds and isMember for the actor", async () => {
     vi.mocked(cat.listProjectRows).mockResolvedValue([
-      { id: PROJECT, name: "A", isActive: true, slackChannelId: "C0123ABCD", createdBy: null },
-      { id: OTHER, name: "B", isActive: true, slackChannelId: null, createdBy: null },
+      { id: PROJECT, name: "A", isActive: true, slackChannelId: "C0123ABCD", createdBy: null, ...PROMPT },
+      { id: OTHER, name: "B", isActive: true, slackChannelId: null, createdBy: null, ...PROMPT },
     ]);
     vi.mocked(proj.listProjectMemberRows).mockResolvedValue([{ projectId: PROJECT, userId: ADMIN }]);
     const views = await listProjects(member);
@@ -228,22 +233,22 @@ describe("offices (A15)", () => {
   it("list is open to any user; writes are admin only", async () => {
     vi.mocked(off.listOfficeViews).mockResolvedValue([]);
     await expect(listOffices(member)).resolves.toEqual([]);
-    await expect(upsertOffice(manager, { code: "UA", name: "Ukraine" })).rejects.toBeInstanceOf(ForbiddenError);
+    await expect(upsertOffice(manager, { code: "UA", name: "Ukraine", timezone: KYIV })).rejects.toBeInstanceOf(ForbiddenError);
     await expect(deleteOffice(member, OFFICE)).rejects.toBeInstanceOf(ForbiddenError);
   });
 
   it("uppercases the code and enforces 2–6 letters; duplicate code → field error", async () => {
-    await upsertOffice(admin, { code: " de ", name: "Germany" });
-    expect(off.insertOffice).toHaveBeenLastCalledWith(expect.anything(), { code: "DE", name: "Germany" });
+    await upsertOffice(admin, { code: " de ", name: "Germany", timezone: "Europe/Berlin" });
+    expect(off.insertOffice).toHaveBeenLastCalledWith(expect.anything(), { code: "DE", name: "Germany", timezone: "Europe/Berlin" });
     for (const code of ["U", "UKRAINE", "U1", ""]) {
-      const err = await upsertOffice(admin, { code, name: "X" }).catch((e) => e);
+      const err = await upsertOffice(admin, { code, name: "X", timezone: KYIV }).catch((e) => e);
       expect(Object.keys(err.fieldErrors)).toEqual(["code"]);
     }
     vi.mocked(off.insertOffice).mockRejectedValueOnce(uniqueErr("offices_code_unique"));
-    const dup = await upsertOffice(admin, { code: "UA", name: "Ukraine" }).catch((e) => e);
+    const dup = await upsertOffice(admin, { code: "UA", name: "Ukraine", timezone: KYIV }).catch((e) => e);
     expect(dup.fieldErrors).toEqual({ code: ["Another office already uses this code"] });
     vi.mocked(off.updateOffice).mockResolvedValue(false);
-    await expect(upsertOffice(admin, { id: OFFICE, code: "UA", name: "Ukraine" })).rejects.toBeInstanceOf(NotFoundError);
+    await expect(upsertOffice(admin, { id: OFFICE, code: "UA", name: "Ukraine", timezone: KYIV })).rejects.toBeInstanceOf(NotFoundError);
   });
 
   it("delete only when the office has no members and no holidays", async () => {

@@ -1,6 +1,6 @@
 /**
  * RLS as the Supabase `authenticated` role (drizzle/0001_rls_policies.sql, 0004_app_settings_rls.sql,
- * 0012_a15_rls.sql),
+ * 0012_a15_rls.sql, 0015_a16_rls.sql),
  * checked against docs/02 "RLS" table and PRD A5/A7. Defence in depth: Drizzle bypasses RLS.
  */
 import { eq } from "drizzle-orm";
@@ -13,6 +13,7 @@ import {
   dailyPings,
   offices,
   projectMembers,
+  projectPrompts,
   projects,
   slackSubmissions,
   timeEntries,
@@ -60,7 +61,7 @@ const entryOwners = (sp: Tx) => sp.select({ userId: timeEntries.userId }).from(t
 const checkinOwners = (sp: Tx) => sp.select({ userId: dailyCheckins.userId }).from(dailyCheckins);
 
 describe("RLS as deployed: no Data-API grants", () => {
-  it("authenticated (even an active admin) is denied on all 10 public tables", async () => {
+  it("authenticated (even an active admin) is denied on all 11 public tables", async () => {
     await withRollback(async (tx) => {
       const admin = await seedUser(tx, { role: "admin" });
       for (const table of Object.values(PUBLIC_TABLES)) {
@@ -250,9 +251,22 @@ describe("RLS policies: server-only tables and inactive / anonymous callers", ()
           members: await sp.select().from(projectMembers),
         }));
         expect(seen).toEqual({ offices: [], members: [] });
-        await expectRlsDenied(tx, sub(actor), (sp) => sp.insert(offices).values({ code: "TRLS", name: "Nope" }));
+        await expectRlsDenied(tx, sub(actor), (sp) => sp.insert(offices).values({ code: "TRLS", name: "Nope", timezone: "Europe/Kyiv" }));
         await expectRlsDenied(tx, sub(actor), (sp) =>
           sp.insert(projectMembers).values({ projectId: w.projectId, userId: actor.id }),
+        );
+      }
+    });
+  });
+
+  it("authenticated (even admin) gets nothing from project_prompts (A16)", async () => {
+    await withRollback(async (tx) => {
+      const w = await seedWorld(tx);
+      await tx.insert(projectPrompts).values({ projectId: w.projectId, promptDate: "2026-11-02" });
+      for (const actor of [w.member, w.admin]) {
+        expect(await asAuth(tx, sub(actor), (sp) => sp.select().from(projectPrompts))).toEqual([]);
+        await expectRlsDenied(tx, sub(actor), (sp) =>
+          sp.insert(projectPrompts).values({ projectId: w.projectId, promptDate: "2026-11-03" }),
         );
       }
     });

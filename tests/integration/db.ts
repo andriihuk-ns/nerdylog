@@ -128,9 +128,10 @@ export const PUBLIC_TABLES = {
   app_settings: schema.appSettings,
   offices: schema.offices, // A15
   project_members: schema.projectMembers, // A15
+  project_prompts: schema.projectPrompts, // A16
 } as const;
 
-/** Row counts of the 10 public tables, read outside any test transaction. */
+/** Row counts of the 11 public tables, read outside any test transaction. */
 export async function publicTableCounts(db: Db | Tx = testDb()): Promise<Record<string, number>> {
   const counts: Record<string, number> = {};
   for (const [name, table] of Object.entries(PUBLIC_TABLES)) {

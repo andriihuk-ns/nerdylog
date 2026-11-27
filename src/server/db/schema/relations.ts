@@ -4,6 +4,7 @@ import { dailyPings } from "./daily-pings";
 import { companyHolidays } from "./company-holidays";
 import { offices } from "./offices";
 import { projectMembers } from "./project-members";
+import { projectPrompts } from "./project-prompts";
 import { projects } from "./projects";
 import { slackSubmissions } from "./slack-submissions";
 import { timeEntries } from "./time-entries";
@@ -21,7 +22,13 @@ export const usersRelations = relations(users, ({ many, one }) => ({
 export const projectsRelations = relations(projects, ({ many, one }) => ({
   timeEntries: many(timeEntries),
   members: many(projectMembers),
+  prompts: many(projectPrompts),
   creator: one(users, { fields: [projects.createdBy], references: [users.id] }),
+  promptOffice: one(offices, { fields: [projects.statusPromptOfficeId], references: [offices.id] }),
+}));
+
+export const projectPromptsRelations = relations(projectPrompts, ({ one }) => ({
+  project: one(projects, { fields: [projectPrompts.projectId], references: [projects.id] }),
 }));
 
 export const projectMembersRelations = relations(projectMembers, ({ one }) => ({
@@ -32,6 +39,7 @@ export const projectMembersRelations = relations(projectMembers, ({ one }) => ({
 export const officesRelations = relations(offices, ({ many }) => ({
   users: many(users),
   holidays: many(companyHolidays),
+  promptProjects: many(projects),
 }));
 
 export const companyHolidaysRelations = relations(companyHolidays, ({ one }) => ({

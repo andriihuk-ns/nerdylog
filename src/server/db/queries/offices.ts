@@ -7,7 +7,14 @@ import type { DbOrTx } from "./types";
 // which would then resolve to users.id and count 0.
 const memberCount = sql<number>`(select count(*)::int from "users" u where u."office_id" = "offices"."id")`;
 
-const officeColumns = { id: offices.id, code: offices.code, name: offices.name, memberCount };
+const officeColumns = { id: offices.id, code: offices.code, name: offices.name, timezone: offices.timezone, memberCount };
+
+/** Writable office fields (A16 adds the IANA timezone). */
+export interface OfficeValues {
+  code: string;
+  name: string;
+  timezone: string;
+}
 
 /** A15: offices by code, with how many users (active or archived) belong to each. */
 export async function listOfficeViews(db: DbOrTx): Promise<OfficeView[]> {
@@ -25,13 +32,13 @@ export async function officeExists(db: DbOrTx, id: string): Promise<boolean> {
 }
 
 /** Returns the new id. */
-export async function insertOffice(db: DbOrTx, values: { code: string; name: string }): Promise<string> {
+export async function insertOffice(db: DbOrTx, values: OfficeValues): Promise<string> {
   const [row] = await db.insert(offices).values(values).returning({ id: offices.id });
   return row.id;
 }
 
 /** Returns false when no office has `id`. */
-export async function updateOffice(db: DbOrTx, id: string, values: { code: string; name: string }): Promise<boolean> {
+export async function updateOffice(db: DbOrTx, id: string, values: OfficeValues): Promise<boolean> {
   const rows = await db.update(offices).set(values).where(eq(offices.id, id)).returning({ id: offices.id });
   return rows.length > 0;
 }

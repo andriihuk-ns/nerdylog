@@ -12,12 +12,12 @@ vi.mock("@/server/db/client", async () => {
 import { eq, inArray } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import type { SlackDirectoryMember } from "@/contracts";
-import { projectMembers, timeEntries, users } from "@/server/db/schema";
+import { projectMembers, projectPrompts, projects, timeEntries, users } from "@/server/db/schema";
 import { syncDirectoryFromSlack, updateDirectoryUser } from "@/server/services/directory-service";
-import { ForbiddenError, InvalidInputError } from "@/server/services/errors";
+import { ForbiddenError, InvalidInputError, NotFoundError } from "@/server/services/errors";
 import { addHoliday, copyHolidays, listHolidayDatesForUser } from "@/server/services/holiday-service";
 import { deleteOffice, listOffices, upsertOffice } from "@/server/services/office-service";
-import { listProjects, replaceProjectMembers, upsertProject } from "@/server/services/project-service";
+import { deleteProject, listProjects, replaceProjectMembers, upsertProject } from "@/server/services/project-service";
 import {
   createTimeEntry,
   deleteTimeEntry,
@@ -26,7 +26,7 @@ import {
   updateTimeEntry,
 } from "@/server/services/time-entry-service";
 import { withRollback } from "./db";
-import { actorOf, seedEntries, seedProject, seedUser } from "./fixtures";
+import { actorOf, seedEntries, seedOffice, seedProject, seedUser } from "./fixtures";
 
 describe("time-entry-service RBAC", () => {
   it("member cannot update, delete, create or list another user's entries; row is unchanged", async () => {
@@ -116,13 +116,61 @@ describe("project membership (A15)", () => {
   });
 });
 
+describe("project prompt fields and delete (A16)", () => {
+  it("upsert stores prompt time/office; list reports hasTimeEntries per project (correlated EXISTS)", async () => {
+    await withRollback(async (tx) => {
+      const admin = await seedUser(tx, { role: "admin" });
+      const office = await seedOffice(tx, "Prompt Office", "Europe/Warsaw");
+      const view = await upsertProject(actorOf(admin), { name: "A16 P", slackChannelId: "CTESTA1601" });
+      expect(view).toMatchObject({ statusPromptTime: "10:00", statusPromptOfficeId: null, hasTimeEntries: false });
+      const updated = await upsertProject(actorOf(admin), {
+        id: view.id,
+        name: "A16 P",
+        slackChannelId: "CTESTA1601",
+        statusPromptTime: "09:15",
+        statusPromptOfficeId: office,
+      });
+      expect(updated).toMatchObject({ statusPromptTime: "09:15", statusPromptOfficeId: office });
+      const used = await seedProject(tx);
+      await seedEntries(tx, [{ userId: admin.id, date: "2026-11-02", hours: 1, projectId: used }]);
+      const list = await listProjects(actorOf(admin));
+      expect(list.find((p) => p.id === used)?.hasTimeEntries).toBe(true);
+      expect(list.find((p) => p.id === view.id)?.hasTimeEntries).toBe(false);
+      const input = { id: view.id, name: "A16 P", slackChannelId: null, statusPromptTime: "24:00" };
+      const bad = await upsertProject(actorOf(admin), input).catch((e) => e);
+      expect(Object.keys(bad.fieldErrors)).toEqual(["statusPromptTime"]);
+    });
+  });
+
+  it("deleteProject: admin only, refuses with has_entries, cascades members and prompts, 404s missing", async () => {
+    await withRollback(async (tx) => {
+      const admin = await seedUser(tx, { role: "admin" });
+      const manager = await seedUser(tx, { role: "manager" });
+      const used = await seedProject(tx);
+      await seedEntries(tx, [{ userId: admin.id, date: "2026-11-02", hours: 1, projectId: used }]);
+      const free = await seedProject(tx, { members: [admin.id] });
+      await tx.insert(projectPrompts).values({ projectId: free, promptDate: "2026-11-02" });
+      await expect(deleteProject(actorOf(manager), free)).rejects.toBeInstanceOf(ForbiddenError);
+      const err = await deleteProject(actorOf(admin), used).catch((e) => e);
+      expect(err).toBeInstanceOf(InvalidInputError);
+      expect(err.fieldErrors).toEqual({ _: ["has_entries"] });
+      expect(await tx.$count(projects, eq(projects.id, used))).toBe(1);
+      await deleteProject(actorOf(admin), free);
+      expect(await tx.$count(projects, eq(projects.id, free))).toBe(0);
+      expect(await tx.$count(projectMembers, eq(projectMembers.projectId, free))).toBe(0);
+      expect(await tx.$count(projectPrompts, eq(projectPrompts.projectId, free))).toBe(0);
+      await expect(deleteProject(actorOf(admin), free)).rejects.toBeInstanceOf(NotFoundError);
+    });
+  });
+});
+
 describe("offices and holidays (A15)", () => {
   it("assigning an office, copying holidays and refusing to delete a used office", async () => {
     await withRollback(async (tx) => {
       const admin = await seedUser(tx, { role: "admin" });
       const member = await seedUser(tx);
-      const office = await upsertOffice(actorOf(admin), { code: "tq", name: "Test Office" });
-      expect(office).toMatchObject({ code: "TQ", memberCount: 0 });
+      const office = await upsertOffice(actorOf(admin), { code: "tq", name: "Test Office", timezone: "Europe/Warsaw" });
+      expect(office).toMatchObject({ code: "TQ", timezone: "Europe/Warsaw", memberCount: 0 });
       const user = await updateDirectoryUser(actorOf(admin), member.id, { officeId: office.id });
       expect(user).toMatchObject({ officeId: office.id, projectIds: [] });
       await addHoliday(actorOf(admin), { officeId: office.id, holidayDate: "2028-02-29", name: "Leap" });
@@ -134,7 +182,7 @@ describe("offices and holidays (A15)", () => {
       expect(await listHolidayDatesForUser(admin.id, "2029-01-01", "2030-12-31")).toEqual([]); // no office
       const err = await deleteOffice(actorOf(admin), office.id).catch((e) => e);
       expect(Object.keys(err.fieldErrors).sort()).toEqual(["holidays", "members"]);
-      const empty = await upsertOffice(actorOf(admin), { code: "TQZ", name: "Empty" });
+      const empty = await upsertOffice(actorOf(admin), { code: "TQZ", name: "Empty", timezone: "Europe/Kyiv" });
       await deleteOffice(actorOf(admin), empty.id);
       expect((await listOffices(actorOf(member))).some((o) => o.id === empty.id)).toBe(false);
     });
