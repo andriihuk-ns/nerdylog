@@ -122,6 +122,8 @@
       "spoken": "{hours} hours",
       "spokenWithNote": "{hours} hours, note: {notes}",
       "hasNote": "Has a note",
+      "showMoreTasks": "Show all {count, plural, one {# task} other {# tasks}}",
+      "showLess": "Show less",
       "hoursInput": "{label}, hours",
       "weekend": "weekend, switch to Work to log hours"
     },
@@ -460,6 +462,8 @@
     "total": "Total"
   },
   "people": {
+    "position": "Position",
+    "email": "Email",
     "office": "Office",
     "role": "Role",
     "status": "Status",
@@ -473,10 +477,6 @@
       "days": "Days",
       "vacSick": "Vac/Sick days",
       "holidays": "Holidays"
-    },
-    "standups": {
-      "title": "Recent status",
-      "empty": "No status in the last 14 days."
     },
     "backTeam": "Team",
     "backDirectory": "People"

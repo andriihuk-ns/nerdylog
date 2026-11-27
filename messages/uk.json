@@ -122,6 +122,8 @@
       "spoken": "{hours} год",
       "spokenWithNote": "{hours} год, нотатка: {notes}",
       "hasNote": "Є нотатка",
+      "showMoreTasks": "Показати всі {count, plural, one {# задачу} few {# задачі} many {# задач} other {# задач}}",
+      "showLess": "Згорнути",
       "hoursInput": "{label}, години",
       "weekend": "вихідний, обери «Робота», щоб внести години"
     },
@@ -460,6 +462,8 @@
     "total": "Разом"
   },
   "people": {
+    "position": "Посада",
+    "email": "Електронна пошта",
     "office": "Офіс",
     "role": "Роль",
     "status": "Статус",
@@ -473,10 +477,6 @@
       "days": "Дні",
       "vacSick": "Відпустка/лікарняні",
       "holidays": "Свята"
-    },
-    "standups": {
-      "title": "Останні статуси",
-      "empty": "Статусів за 14 днів немає."
     },
     "backTeam": "Команда",
     "backDirectory": "Люди"

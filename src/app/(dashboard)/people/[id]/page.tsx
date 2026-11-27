@@ -1,21 +1,19 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import type { CheckinView, DirectoryUser, OfficeView, ProjectHours, ProjectView, UserMonthRollup } from "@/contracts";
+import type { DirectoryUser, OfficeView, ProjectHours, ProjectView, UserMonthRollup } from "@/contracts";
 import { requireActor } from "@/server/auth/session";
 import { listDirectory } from "@/server/services/directory-service";
 import { listOffices } from "@/server/services/office-service";
 import { listProjects } from "@/server/services/project-service";
 import { getProjectHours, getTeamMonthRollup } from "@/server/services/rollup-service";
 import { getPtoBalance } from "@/server/services/pto-service";
-import { listCheckinsForUser } from "@/server/services/checkin-service";
 import { listWeekEntries } from "@/server/services/time-entry-service";
 import { addDays, monthForWeek, parseWeekParam, todayIn } from "@/components/lib/dates";
 import { ExportMenus } from "@/components/shell/export-menu";
 import { rangeExports } from "@/components/shell/export-href";
 import { PersonHeader } from "@/components/people/person-header";
 import { MonthTotalsCard } from "@/components/people/month-totals-card";
-import { RecentStandups } from "@/components/people/recent-standups";
 import { PtoBalanceCard } from "@/components/my-time/pto-balance-card";
 import { ProjectHoursCard } from "@/components/my-time/project-hours-card";
 import { WeekView } from "@/components/my-time/week-view";
@@ -42,19 +40,17 @@ export default async function PersonPage({ params, searchParams }: { params: Par
   const weekStart = parseWeekParam(query.week, today);
   const weekEnd = addDays(weekStart, 6);
   const month = monthForWeek(weekStart, today);
-  const [projects, rollup, hours, pto, checkins, entries]: [
+  const [projects, rollup, hours, pto, entries]: [
     ProjectView[],
     UserMonthRollup[],
     ProjectHours[],
     Awaited<ReturnType<typeof getPtoBalance>>,
-    CheckinView[],
     Awaited<ReturnType<typeof listWeekEntries>>,
   ] = await Promise.all([
     listProjects(actor),
     getTeamMonthRollup(actor, month),
     getProjectHours(actor, month, user.id),
     getPtoBalance(actor, user.id, Number(today.slice(0, 4))),
-    listCheckinsForUser(actor, user.id, addDays(today, -13), today),
     listWeekEntries(actor, user.id, weekStart),
   ]);
   const options = await projectOptions(projects, (p) => p.memberIds.includes(user.id), { kind: "other", name: user.fullName });
@@ -77,9 +73,9 @@ export default async function PersonPage({ params, searchParams }: { params: Par
         userId={user.id}
         basePath={`/people/${user.id}`}
         title={t("week", { name: user.fullName })}
+        showTitle={false}
         actions={<ExportMenus groups={rangeExports({ from: weekStart, to: weekEnd }, month, { userIds: user.id })} />}
       />
-      <RecentStandups checkins={checkins} />
     </div>
   );
 }

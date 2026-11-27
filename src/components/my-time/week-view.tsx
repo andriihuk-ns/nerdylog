@@ -26,14 +26,16 @@ interface Props {
   userId?: string;
   /** Page path for week links (`/my-time` or `/people/{id}`). */
   basePath?: string;
-  /** Visible heading (people page). My Time keeps an sr-only page heading instead. */
+  /** Optional visible heading; an accessible heading remains when hidden. */
   title?: string;
+  /** Keep the profile heading for assistive technology while omitting it visually. */
+  showTitle?: boolean;
   /** Right side of the header row (export menus). */
   actions?: ReactNode;
 }
 
 /** Weekly matrix client island (My Time and the people page): optimistic state, toasts, confirms, week shortcuts. */
-export function WeekView({ weekStart, today, entries, projects, userId, basePath = "/my-time", title, actions }: Props) {
+export function WeekView({ weekStart, today, entries, projects, userId, basePath = "/my-time", title, showTitle = true, actions }: Props) {
   const weekHref = (d: IsoDate) => `${basePath}?week=${d}`;
   const router = useRouter();
   const t = useTranslations("myTime");
@@ -139,7 +141,7 @@ export function WeekView({ weekStart, today, entries, projects, userId, basePath
   const Heading = userId ? "h2" : "h1";
   return (
     <section aria-labelledby="my-time-title" className="flex flex-col gap-4">
-      <Heading id="my-time-title" className={userId ? "text-lg font-semibold" : "sr-only"}>
+      <Heading id="my-time-title" className={userId && showTitle ? "text-lg font-semibold" : "sr-only"}>
         {title ?? t("title")}
       </Heading>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
