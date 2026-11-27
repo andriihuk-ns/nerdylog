@@ -46,7 +46,7 @@ export function ProjectMemberAllocationControl({ projectId, projectName, member,
       </th>
       <td className="px-3 py-2 align-middle">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <div role="group" aria-label={t("allocationPresets", { name: member.fullName })} className="flex items-center gap-1">
+          <div role="group" aria-label={t("allocationPresets", { name: member.fullName })} className="flex flex-wrap items-center gap-1">
             {PROJECT_ALLOCATION_PRESETS.map((value) => {
               const hours = hoursForAllocationPercent(value);
               return (
@@ -56,14 +56,14 @@ export function ProjectMemberAllocationControl({ projectId, projectName, member,
                   size="sm"
                   variant="ghost"
                   className={percent === value
-                    ? "min-h-11 min-w-14 gap-1.5 bg-muted px-3 text-foreground hover:bg-muted"
-                    : "min-h-11 min-w-14 border border-input bg-background px-3 text-foreground hover:bg-muted"}
+                    ? "min-h-11 w-[4.5rem] shrink-0 gap-1 border border-input bg-muted px-2 text-foreground hover:bg-muted"
+                    : "min-h-11 w-[4.5rem] shrink-0 gap-1 border border-input bg-background px-2 text-foreground hover:bg-muted"}
                   aria-pressed={percent === value}
                   aria-label={t("allocationPercent", { name: member.fullName, percent: value })}
                   disabled={pending}
                   onClick={() => save(hours)}
                 >
-                  {percent === value ? <Check aria-hidden className="size-3.5" /> : null}
+                  <Check aria-hidden className={percent === value ? "size-3.5" : "size-3.5 invisible"} />
                   {value}%
                 </Button>
               );

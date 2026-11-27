@@ -17,7 +17,7 @@ import { ProjectRow } from "./project-row";
 import { channelLabel, takenChannelMap } from "./channel-options";
 import { useMemberRefreshText } from "./use-member-refresh-text";
 
-const COLUMNS = ["name", "channel", "prompt", "status"] as const;
+const COLUMNS = ["status", "name", "channel", "prompt"] as const;
 
 interface Props {
   projects: ProjectView[];
@@ -109,7 +109,7 @@ export function ProjectsPanel({ projects, channels, offices }: Props) {
             <thead>
               <tr className="border-b text-xs font-medium text-muted-foreground">
                 {COLUMNS.map((c) => (
-                  <th key={c} scope="col" className={c === "name" ? "sticky left-0 z-10 h-10 bg-card px-4 text-left font-medium" : "px-3 text-left font-medium whitespace-nowrap"}>
+                  <th key={c} scope="col" className={c === "name" ? "h-10 px-4 text-left font-medium" : "px-3 text-left font-medium whitespace-nowrap"}>
                     {t(`columns.${c}`)}
                   </th>
                 ))}

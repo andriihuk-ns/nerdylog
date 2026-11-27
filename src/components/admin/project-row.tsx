@@ -60,7 +60,15 @@ export function ProjectRow({ project: p, channels, offices, onEdit, onDelete, on
       }}
       className={cn("group h-11 cursor-pointer border-b last:border-b-0 hover:bg-muted/50", !active && "text-muted-foreground")}
     >
-      <th scope="row" className="sticky left-0 z-10 max-w-56 truncate bg-card px-4 text-left font-medium group-hover:bg-muted/50">
+      <td className="px-3">
+        <Switch
+          checked={active}
+          onCheckedChange={setActive}
+          disabled={savingStatus}
+          aria-label={t("statusFor", { name: p.name })}
+        />
+      </td>
+      <th scope="row" className="max-w-56 truncate px-4 text-left font-medium">
         <Link href={href} className="rounded-sm underline-offset-4 hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           {p.name}
         </Link>
@@ -70,14 +78,6 @@ export function ProjectRow({ project: p, channels, offices, onEdit, onDelete, on
       </td>
       <td className="tabular px-3 text-sm whitespace-nowrap text-muted-foreground">
         {t("asksAt", { time: p.statusPromptTime, office: office?.code ?? "UA" })}
-      </td>
-      <td className="px-3">
-        <Switch
-          checked={active}
-          onCheckedChange={setActive}
-          disabled={savingStatus}
-          aria-label={t("statusFor", { name: p.name })}
-        />
       </td>
       <td className="px-2">
         <span data-row-action className="flex justify-end gap-1">
