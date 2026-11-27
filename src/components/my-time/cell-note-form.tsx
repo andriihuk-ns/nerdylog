@@ -69,8 +69,10 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
           value={hours}
           aria-invalid={error ? true : undefined}
           onChange={(e) => {
-            setHours(e.target.value.replace(/[^0-9.,]/g, ""));
-            setError(null);
+            const raw = e.target.value;
+            const cleaned = raw.replace(/[^0-9.,]/g, "");
+            setHours(cleaned);
+            setError(cleaned !== raw ? t("input.numbersOnly") : null);
           }}
           className="tabular h-11 text-right"
         />

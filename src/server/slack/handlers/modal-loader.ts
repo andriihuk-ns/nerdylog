@@ -86,17 +86,23 @@ async function fillModal(deps: SlackDeps, req: OpenModalRequest, viewId: string)
 }
 
 /**
- * "+ Add project" / "Remove last": rebuild the time modal with a new row count, keeping block ids
- * (and the row-1 preselection) so Slack keeps what the user already typed.
+ * "+ Add project" / "Remove last" / checklist item actions: rebuild the time modal with updated metadata,
+ * keeping block ids (and the row-1 preselection) so Slack keeps what the user already typed.
  */
-export async function resizeTimeModal(
+export async function updateTimeModal(
   deps: SlackDeps,
-  args: { slackUserId: string; viewId: string; hash?: string; meta: ModalMetadata; rows: number },
+  args: { slackUserId: string; viewId: string; hash?: string; meta: ModalMetadata },
 ): Promise<void> {
   const profile = await deps.tempo.resolveUser(args.slackUserId);
   if (!profile || profile.userId !== args.meta.userId) return;
   const projects = await deps.tempo.listProjects(profile);
-  const meta = { ...args.meta, rows: args.rows };
-  const view = buildTimeModal({ meta, projects: selectableProjects(projects), locale: localeOf(profile) });
+  const view = buildTimeModal({ meta: args.meta, projects: selectableProjects(projects), locale: localeOf(profile) });
   await deps.slack.updateView(args.viewId, view, args.hash);
+}
+
+export async function resizeTimeModal(
+  deps: SlackDeps,
+  args: { slackUserId: string; viewId: string; hash?: string; meta: ModalMetadata; rows: number },
+): Promise<void> {
+  return updateTimeModal(deps, { ...args, meta: { ...args.meta, rows: args.rows } });
 }

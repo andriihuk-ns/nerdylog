@@ -84,7 +84,7 @@ describe("hours parsing (A14)", () => {
 
   it("rejects garbage with a localized message", () => {
     expect(parseHours("2,5,1", "uk")).toBe("Години мають бути від 0,25 до 24");
-    expect(parseHours("abc", "en")).toBe("Hours must be between 0.25 and 24");
+    expect(parseHours("abc", "en")).toBe("Numbers only, e.g. 0.5 or 0,5");
     expect(parseHours("1,3", "uk")).toContain("2,5");
   });
 

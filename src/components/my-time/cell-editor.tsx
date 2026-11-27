@@ -66,8 +66,10 @@ export function CellEditor({ initial, label, onCommit, onCancel, onOpenNote }: P
         aria-describedby={error ? errorId : undefined}
         value={value}
         onChange={(e) => {
-          setValue(e.target.value.replace(/[^0-9.,]/g, ""));
-          setError(null);
+          const raw = e.target.value;
+          const cleaned = raw.replace(/[^0-9.,]/g, "");
+          setValue(cleaned);
+          setError(cleaned !== raw ? t("numbersOnly") : null);
         }}
         onKeyDown={onKeyDown}
         onBlur={() => {

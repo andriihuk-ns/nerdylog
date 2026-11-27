@@ -1,9 +1,9 @@
-import { isoDateSchema, type Locale, type SlackSubmissionInput, type TimeEntryInput } from "@/contracts";
+import { isoDateSchema, serializeChecklist, type ChecklistItem, type Locale, type SlackSubmissionInput, type TimeEntryInput } from "@/contracts";
 import { formatNumber } from "../dates";
 import { t } from "../i18n";
 import { PLAN_MAX_LENGTH, TASK_MAX_LENGTH } from "../blocks/time-modal";
 import { BLOCK, rowBlock } from "../ids";
-import type { ModalMetadata } from "../metadata";
+import { getRowTaskMeta, type ModalMetadata } from "../metadata";
 import { dateValue, optionValue, textValue, type FieldErrors, type ParseResult, type ViewStateValues } from "./state";
 
 export interface TimeSubmissionArgs {
@@ -18,7 +18,11 @@ const MAX_HOURS = 24;
 
 /** Parses "2.5" or "2,5" (A14: either decimal separator). Returns a localized error message on failure. */
 export function parseHours(raw: string, locale: Locale): number | string {
-  const normalized = raw.trim().replace(",", ".");
+  const trimmed = raw.trim();
+  if (/[^0-9.,]/.test(trimmed)) {
+    return t(locale, "err.numbersOnly");
+  }
+  const normalized = trimmed.replace(",", ".");
   const hours = /^\d+(\.\d+)?$|^\.\d+$/.test(normalized) ? Number(normalized) : NaN;
   if (!Number.isFinite(hours) || hours < MIN_HOURS || hours > MAX_HOURS) {
     return t(locale, "err.hoursRange", { min: formatNumber(MIN_HOURS, locale), max: formatNumber(MAX_HOURS, locale) });
@@ -49,8 +53,32 @@ export function parseTimeSubmission({ viewId, meta, values, locale }: TimeSubmis
   for (let n = 1; n <= meta.rows; n += 1) {
     const projectId = optionValue(values, rowBlock.project(n));
     const rawHours = textValue(values, rowBlock.hours(n));
-    const task = textValue(values, rowBlock.task(n));
     const hours = rawHours ? parseHours(rawHours, locale) : t(locale, "err.enterHours");
+    const taskMeta = getRowTaskMeta(meta, n);
+    const items: ChecklistItem[] = [];
+    let taskInvalid = false;
+
+    for (let i = 1; i <= taskMeta.count; i += 1) {
+      const text = textValue(values, rowBlock.taskItem(n, i));
+      if (!text) {
+        errors[rowBlock.taskItem(n, i)] = t(locale, "err.enterTask");
+        taskInvalid = true;
+      }
+      const hasLink = taskMeta.links.includes(i);
+      const link = hasLink ? textValue(values, rowBlock.taskLink(n, i)) : "";
+      if (hasLink && !link) {
+        errors[rowBlock.taskLink(n, i)] = t(locale, "err.enterLink");
+        taskInvalid = true;
+      }
+      items.push({ text, ...(link ? { link } : {}), done: false });
+    }
+
+    const taskSummary =
+      items.length === 1 && !items[0].link ? items[0].text : serializeChecklist(items);
+    if (!taskInvalid && taskSummary.length > TASK_MAX_LENGTH) {
+      errors[rowBlock.taskItem(n, taskMeta.count)] = t(locale, "err.tooLong", { max: TASK_MAX_LENGTH });
+      taskInvalid = true;
+    }
 
     if (!projectId) {
       errors[rowBlock.project(n)] = t(locale, "err.pickProject");
@@ -58,12 +86,7 @@ export function parseTimeSubmission({ viewId, meta, values, locale }: TimeSubmis
     if (typeof hours === "string") {
       errors[rowBlock.hours(n)] = hours;
     }
-    if (!task) {
-      errors[rowBlock.task(n)] = t(locale, "err.enterTask");
-    } else if (task.length > TASK_MAX_LENGTH) {
-      errors[rowBlock.task(n)] = t(locale, "err.tooLong", { max: TASK_MAX_LENGTH });
-    }
-    if (!projectId || typeof hours === "string" || !task || task.length > TASK_MAX_LENGTH) continue;
+    if (!projectId || typeof hours === "string" || taskInvalid) continue;
     total += hours;
     lastHoursBlock = rowBlock.hours(n);
     entries.push({
@@ -72,7 +95,7 @@ export function parseTimeSubmission({ viewId, meta, values, locale }: TimeSubmis
       workDate: workDate ?? meta.logDate,
       hours,
       entryType: "work",
-      taskSummary: task,
+      taskSummary,
       source,
       slackViewId: viewId,
     });

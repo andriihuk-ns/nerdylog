@@ -1,7 +1,7 @@
 import { isoDateSchema } from "@/contracts";
 import { decodePromptValue } from "../blocks/project-prompt";
-import { ACTION, MAX_PROJECT_ROWS } from "../ids";
-import { decodeMetadata } from "../metadata";
+import { ACTION, MAX_PROJECT_ROWS, MAX_TASK_ITEMS } from "../ids";
+import { decodeMetadata, getRowTaskMeta, withRowTaskMeta, type ModalMetadata } from "../metadata";
 import {
   isBlockActions,
   isViewSubmission,
@@ -9,7 +9,7 @@ import {
   type BlockActionsPayload,
 } from "../payloads";
 import type { SlackDeps } from "../types";
-import { openModalFast, resizeTimeModal } from "./modal-loader";
+import { openModalFast, updateTimeModal } from "./modal-loader";
 import { handlePromptClick } from "./project-prompt";
 import { handleViewSubmission } from "./view-submission";
 
@@ -55,18 +55,56 @@ async function handleBlockActions(payload: BlockActionsPayload, deps: SlackDeps)
       const delta = action.action_id === ACTION.addRow ? 1 : -1;
       const rows = Math.min(MAX_PROJECT_ROWS, Math.max(1, meta.rows + delta));
       if (rows === meta.rows) return OK();
-      deps.defer(async () => {
-        try {
-          await resizeTimeModal(deps, { slackUserId, viewId: view.id, hash: view.hash, meta, rows });
-        } catch (error) {
-          console.error("slack: resize modal failed", error instanceof Error ? error.message : error);
-        }
-      });
+      deferModalUpdate(deps, slackUserId, view, { ...meta, rows });
+      return OK();
+    }
+    case ACTION.addTaskItem:
+    case ACTION.removeTaskItem: {
+      const view = payload.view;
+      const meta = decodeMetadata(view?.private_metadata);
+      const row = Number(action.value);
+      if (!view || !meta || !Number.isInteger(row) || row < 1 || row > meta.rows) return OK();
+      const cur = getRowTaskMeta(meta, row);
+      const delta = action.action_id === ACTION.addTaskItem ? 1 : -1;
+      const count = Math.min(MAX_TASK_ITEMS, Math.max(1, cur.count + delta));
+      if (count === cur.count) return OK();
+      const links = cur.links.filter((l) => l <= count);
+      deferModalUpdate(deps, slackUserId, view, withRowTaskMeta(meta, row, { count, links }));
+      return OK();
+    }
+    case ACTION.toggleTaskLink: {
+      const view = payload.view;
+      const meta = decodeMetadata(view?.private_metadata);
+      const [rowStr, itemStr] = (action.value ?? "").split(":");
+      const row = Number(rowStr);
+      const item = Number(itemStr);
+      if (!view || !meta || !Number.isInteger(row) || !Number.isInteger(item) || row < 1 || row > meta.rows) return OK();
+      const cur = getRowTaskMeta(meta, row);
+      if (item < 1 || item > cur.count) return OK();
+      const links = cur.links.includes(item)
+        ? cur.links.filter((l) => l !== item)
+        : [...cur.links, item].sort((a, b) => a - b);
+      deferModalUpdate(deps, slackUserId, view, withRowTaskMeta(meta, row, { ...cur, links }));
       return OK();
     }
     default:
       return OK(); // url buttons (Open Web Panel) and unknown actions need only an ack
   }
+}
+
+function deferModalUpdate(
+  deps: SlackDeps,
+  slackUserId: string,
+  view: { id: string; hash?: string },
+  meta: ModalMetadata,
+) {
+  deps.defer(async () => {
+    try {
+      await updateTimeModal(deps, { slackUserId, viewId: view.id, hash: view.hash, meta });
+    } catch (error) {
+      console.error("slack: resize modal failed", error instanceof Error ? error.message : error);
+    }
+  });
 }
 
 /** POST /api/slack/interactions body (already signature-verified, form-encoded). */

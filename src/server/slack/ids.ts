@@ -18,9 +18,13 @@ export const ACTION = {
   openWeb: "open_web",
   addRow: "add_row",
   removeRow: "remove_row",
+  addTaskItem: "add_task_item",
+  removeTaskItem: "remove_task_item",
+  toggleTaskLink: "toggle_task_link",
 } as const;
 
 export const MAX_PROJECT_ROWS = 6;
+export const MAX_TASK_ITEMS = 10;
 export const MAX_PTO_BUSINESS_DAYS = 10;
 
 export const BLOCK = {
@@ -40,4 +44,8 @@ export const rowBlock = {
   project: (n: number) => `row_${n}_project`,
   hours: (n: number) => `row_${n}_hours`,
   task: (n: number) => `row_${n}_task`,
+  taskItem: (n: number, item: number) => (item === 1 ? `row_${n}_task` : `row_${n}_task_${item}`),
+  taskLink: (n: number, item: number) => `row_${n}_link_${item}`,
+  taskItemActions: (n: number, item: number) => `row_${n}_task_item_actions_${item}`,
+  taskActions: (n: number) => `row_${n}_task_actions`,
 };

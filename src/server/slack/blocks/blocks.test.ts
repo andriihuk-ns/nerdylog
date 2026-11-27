@@ -32,6 +32,8 @@ describe("buildTimeModal", () => {
       rowBlock.project(1),
       rowBlock.hours(1),
       rowBlock.task(1),
+      rowBlock.taskItemActions(1, 1),
+      rowBlock.taskActions(1),
       BLOCK.rowActions,
       BLOCK.plan,
       BLOCK.blockers,
