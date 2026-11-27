@@ -1,6 +1,6 @@
 import type { Actor, GetProjectHours, GetTeamMonthRollup } from "@/contracts";
 import { getDb } from "@/server/db/client";
-import { listProjectNames } from "@/server/db/queries/projects";
+import { listProjectMemberRows, listProjectNames } from "@/server/db/queries/projects";
 import { listEntriesInRange } from "@/server/db/queries/time-entries";
 import { listActiveRollupUsers } from "@/server/db/queries/users";
 import { monthRange } from "./calendar";
@@ -14,17 +14,30 @@ export function canViewTeam(actor: Actor): boolean {
 }
 
 /**
- * Contract GetTeamMonthRollup. member → only their own row (empty if inactive);
- * manager/admin → every active user, sorted by name. Math lives in time-aggregator.
+ * Contract GetTeamMonthRollup. Without a project filter, member → self and manager/admin → active
+ * users. Project reports narrow that set to active project members and contributors.
  */
 export const getTeamMonthRollup: GetTeamMonthRollup = async (actor, month, projectIds) => {
   const { start, end } = monthRange(month);
   const db = getDb();
   const users = await listActiveRollupUsers(db, canViewTeam(actor) ? undefined : actor.userId);
   const entries = await listEntriesInRange(db, { start, end, userIds: users.map((u) => u.id), projectIds });
-  const usersWithEntries = new Set(entries.map((entry) => entry.userId));
-  const includedUsers = projectIds ? users.filter((user) => usersWithEntries.has(user.id)) : users;
-  return aggregateMonth(month, includedUsers, entries);
+  if (!projectIds) return aggregateMonth(month, users, entries);
+
+  const projectMembers = await listProjectMemberRows(db, { projectIds });
+  const projectUserIds = new Set([...projectMembers.map((member) => member.userId), ...entries.map((entry) => entry.userId)]);
+  const includedUsers = users.filter((user) => projectUserIds.has(user.id));
+  if (includedUsers.length === 0) return aggregateMonth(month, includedUsers, []);
+
+  const contextEntries = await listEntriesInRange(db, {
+    start,
+    end,
+    userIds: includedUsers.map((user) => user.id),
+  });
+  const reportEntries = contextEntries.filter(
+    (entry) => entry.entryType !== "work" || (entry.projectId !== null && projectIds.includes(entry.projectId)),
+  );
+  return aggregateMonth(month, includedUsers, reportEntries);
 };
 
 /**

@@ -87,18 +87,25 @@ function employeeReport(rows: readonly LedgerRow[]): EmployeeReport {
 
 /** Groups rows per employee (sorted by name), entries by date; totals reuse the rollup math. */
 export function buildReportModel(rows: readonly LedgerRow[], opts: ReportOptions): ReportModel {
+  const projectScoped = opts.projectScoped ?? opts.projectNames.length > 0;
   const byUser = new Map<string, LedgerRow[]>();
   for (const r of rows) byUser.set(r.userId, [...(byUser.get(r.userId) ?? []), r]);
   const employees = [...byUser.values()]
     .map((userRows) =>
-      employeeReport([...userRows].sort((a, b) => a.workDate.localeCompare(b.workDate))),
+      employeeReport(
+        [...userRows]
+          .sort((a, b) => a.workDate.localeCompare(b.workDate))
+          .map((row) =>
+            projectScoped && row.entryType !== "work" ? { ...row, projectName: "Context only" } : row,
+          ),
+      ),
     )
     .sort((a, b) => a.fullName.localeCompare(b.fullName) || a.userId.localeCompare(b.userId));
   const totalHours = Math.round(employees.reduce((s, e) => s + e.total.hours, 0) * 100) / 100;
   return {
     title: "Time Report",
     scope: opts.projectNames.length > 0 ? opts.projectNames.join(", ") : opts.projectScoped ? "Selected project" : "All projects",
-    projectScoped: opts.projectScoped ?? opts.projectNames.length > 0,
+    projectScoped,
     from: opts.from,
     to: opts.to,
     generatedOn: opts.generatedOn,

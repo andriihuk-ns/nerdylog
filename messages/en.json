@@ -192,7 +192,7 @@
     "exports": {
       "summaryCsv": "Summary CSV",
       "ledgerCsv": "Ledger CSV",
-      "projectScope": "Exports are scoped to {project}. Project summaries omit PTO because time off isn't assigned to a project."
+      "projectScope": "Exports are scoped to {project}. PTO and holidays appear as context, not project work."
     },
     "standupsToggle": "Status",
     "grid": {

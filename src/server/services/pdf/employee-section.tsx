@@ -5,7 +5,7 @@ import type { EmployeeReport } from "./report-model";
 import { styles } from "./styles";
 import { TotalsTable, type TotalsLine } from "./totals-table";
 
-/** One employee: monthly totals, PTO summary, then every entry with its task notes. */
+/** One employee: monthly totals, PTO context, then every scoped entry with its task notes. */
 export function EmployeeSection({
   employee,
   breakBefore,
@@ -28,15 +28,11 @@ export function EmployeeSection({
       <Text style={styles.subTitle}>Monthly totals</Text>
       <TotalsTable lines={lines} projectScoped={projectScoped} />
 
-      {!projectScoped ? (
-        <>
-          <Text style={styles.subTitle}>PTO summary</Text>
-          <Text>
-            Vacation {vacation} {vacation === 1 ? "day" : "days"} · Sick {sick} {sick === 1 ? "day" : "days"} · Holidays{" "}
-            {holiday} {holiday === 1 ? "day" : "days"}
-          </Text>
-        </>
-      ) : null}
+      <Text style={styles.subTitle}>PTO summary{projectScoped ? " · context only" : ""}</Text>
+      <Text>
+        Vacation {vacation} {vacation === 1 ? "day" : "days"} · Sick {sick} {sick === 1 ? "day" : "days"} · Holidays{" "}
+        {holiday} {holiday === 1 ? "day" : "days"}
+      </Text>
 
       <Text style={styles.subTitle}>Entries</Text>
       <EntriesTable entries={employee.entries} />

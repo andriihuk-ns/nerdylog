@@ -13,6 +13,9 @@ export function ReportDocument({ model }: { model: ReportModel }) {
           <Text style={styles.brand}>NERDYLOG</Text>
           <Text style={styles.title}>{model.title}</Text>
           <Text style={styles.meta}>Client / scope: {model.scope}</Text>
+          {model.projectScoped ? (
+            <Text style={styles.meta}>PTO and holidays are shown as context, not project work.</Text>
+          ) : null}
           <Text style={styles.meta}>
             Period {model.from} – {model.to} · Generated {model.generatedOn}
           </Text>
