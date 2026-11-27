@@ -51,8 +51,10 @@ export function WeekView({ weekStart, today, entries, holidayNames, projects, us
   const [optimisticEntries, applyOptimistic] = useOptimistic(entries, applyOptimisticEntry);
   const [pendingKeys, addPending] = useOptimistic<string[], string>([], (s, k) => [...s, k]);
   const [, startTransition] = useTransition();
-  const pinnedStorageKey = `nerdylog:week-projects:${storageUserId ?? userId ?? "self"}:${weekStart}`;
-  const { pinned, pin, unpin } = usePinnedProjects(pinnedStorageKey, projects);
+  const projectOwner = storageUserId ?? userId ?? "self";
+  const pinnedStorageKey = `nerdylog:pinned-projects:${projectOwner}`;
+  const legacyPinnedPrefix = `nerdylog:week-projects:${projectOwner}:`;
+  const { pinned, pin, unpin } = usePinnedProjects(pinnedStorageKey, projects, legacyPinnedPrefix);
   const [workWeekends, setWorkWeekends] = useState<IsoDate[]>([]); // A16: Sat/Sun switched to Work
   const [failedKey, setFailedKey] = useState<string | null>(null);
   const { toast, show, dismiss } = useToast();

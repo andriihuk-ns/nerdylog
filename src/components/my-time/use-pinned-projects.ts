@@ -9,10 +9,27 @@ const EMPTY_PROJECT_IDS = "[]";
 const pinnedProjectSnapshots = new Map<string, string>();
 const memoryOnlyPinnedKeys = new Set<string>();
 
-function getSnapshot(key: string): string {
+function getSnapshot(key: string, legacyPrefix?: string): string {
   if (memoryOnlyPinnedKeys.has(key)) return pinnedProjectSnapshots.get(key) ?? EMPTY_PROJECT_IDS;
   try {
-    const snapshot = window.localStorage.getItem(key) ?? EMPTY_PROJECT_IDS;
+    let snapshot = window.localStorage.getItem(key);
+    if (snapshot === null && legacyPrefix) {
+      const migrated = new Set<string>();
+      for (let index = 0; index < window.localStorage.length; index++) {
+        const legacyKey = window.localStorage.key(index);
+        if (!legacyKey?.startsWith(legacyPrefix)) continue;
+        const legacySnapshot = window.localStorage.getItem(legacyKey);
+        if (legacySnapshot) parseProjectIds(legacySnapshot).forEach((id) => migrated.add(id));
+      }
+      snapshot = JSON.stringify([...migrated]);
+      try {
+        window.localStorage.setItem(key, snapshot);
+      } catch (error) {
+        console.warn("Unable to migrate saved project rows.", error);
+        memoryOnlyPinnedKeys.add(key);
+      }
+    }
+    snapshot ??= EMPTY_PROJECT_IDS;
     pinnedProjectSnapshots.set(key, snapshot);
     return snapshot;
   } catch (error) {
@@ -61,10 +78,10 @@ function updateProjectIds(key: string, update: (current: string[]) => string[]) 
 
 const getEmptySnapshot = () => EMPTY_PROJECT_IDS;
 
-/** Persists empty project rows per person and week without creating zero-hour entries. */
-export function usePinnedProjects(key: string, projects: readonly ProjectOption[]) {
+/** Persists empty project rows across all weeks for one person without creating zero-hour entries. */
+export function usePinnedProjects(key: string, projects: readonly ProjectOption[], legacyPrefix?: string) {
   const subscribeToKey = useCallback((onChange: () => void) => subscribe(key, onChange), [key]);
-  const getSnapshotForKey = useCallback(() => getSnapshot(key), [key]);
+  const getSnapshotForKey = useCallback(() => getSnapshot(key, legacyPrefix), [key, legacyPrefix]);
   const savedIds = useSyncExternalStore(subscribeToKey, getSnapshotForKey, getEmptySnapshot);
   const pinned = useMemo(() => {
     const available = new Map(projects.filter((project) => project.disabledReason === null).map((project) => [project.id, project]));
