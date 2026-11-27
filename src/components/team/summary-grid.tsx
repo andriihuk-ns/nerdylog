@@ -9,6 +9,8 @@ import { FloatingHead } from "@/components/shell/floating-head";
 import { useFormat } from "@/hooks/use-format";
 import { initials } from "@/components/lib/format";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useTableSort } from "@/hooks/use-table-sort";
+import { SortableHead } from "@/components/shell/sortable-head";
 import { SummaryCards } from "./summary-cards";
 import { SummaryCell } from "./summary-cell";
 import { bucketValues, SUB_COLUMNS, teamTotals } from "./team-summary";
@@ -33,6 +35,18 @@ export function SummaryGrid({ rows, weeks, today, avatars, selfId }: Props) {
   const cols = (weeks.length + 1) * SUB_COLUMNS.length;
   const { gridRef, cellProps, handleNavKey } = useGridNavigation({ rows: rows.length, cols });
   const totals = teamTotals(rows, weeks.length);
+  // Column keys: "name", or "<group>-<sub>" where the last group is the monthly total.
+  const sort = useTableSort<UserMonthRollup, string>(
+    rows,
+    (row) => row.userId,
+    Object.fromEntries<(row: UserMonthRollup) => string | number>([
+      ["name", (row) => row.fullName],
+      ...[...weeks, null].flatMap((_, g) =>
+        SUBS.map((s) => [`${g}-${s}`, (row: UserMonthRollup) => bucketValues(g === weeks.length ? row.total : row.weeks[g])[s]] as const),
+      ),
+    ]),
+    weeks[0]?.start,
+  );
   const t = useTranslations("team.grid");
   const tTeam = useTranslations("team");
   const f = useFormat();
@@ -58,9 +72,9 @@ export function SummaryGrid({ rows, weeks, today, avatars, selfId }: Props) {
         </colgroup>
         <thead>
           <tr>
-            <th scope="col" rowSpan={2} className={cn(STICKY, "border-b px-4 text-xs font-medium text-muted-foreground")}>
+            <SortableHead {...sort.head("name")} rowSpan={2} className={cn(STICKY, "border-b px-4 text-xs font-medium text-muted-foreground")}>
               {t("teammate")}
-            </th>
+            </SortableHead>
             {weeks.map((w) => (
               <th
                 key={w.weekIndex}
@@ -81,9 +95,11 @@ export function SummaryGrid({ rows, weeks, today, avatars, selfId }: Props) {
           <tr className="text-xs font-medium text-muted-foreground">
             {[...weeks, null].flatMap((w, g) =>
               SUB_COLUMNS.map((sub, s) => (
-                <th
+                <SortableHead
                   key={`${g}-${sub}`}
-                  scope="col"
+                  {...sort.head(`${g}-${s}`)}
+                  align="right"
+                  compact
                   className={cn(
                     "h-8 border-b px-2 text-right font-medium whitespace-nowrap",
                     s === 0 && w !== null && "border-l",
@@ -93,13 +109,13 @@ export function SummaryGrid({ rows, weeks, today, avatars, selfId }: Props) {
                   style={w === null ? { right: subColumnOffset(s) } : undefined}
                 >
                   {t(`sub.${sub}`)}
-                </th>
+                </SortableHead>
               )),
             )}
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, r) => (
+          {sort.apply(rows).map((row, r) => (
             <tr key={row.userId}>
               <th scope="row" className={cn(STICKY, "h-11 border-b px-1 font-medium sm:px-2")}>
                 <Link

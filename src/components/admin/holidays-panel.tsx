@@ -105,7 +105,7 @@ export function HolidaysPanel({ holidays, offices, officeId, year, currentYear }
       ) : (
         <ul className="divide-y rounded-lg border bg-card" aria-label={t("listLabel", { office: office.name, year: String(year) })}>
           {sorted.map((h) => (
-            <li key={h.id} className="flex items-center gap-4 py-1 pr-2 pl-4">
+            <li key={h.id} className="flex h-11 items-center gap-4 pr-2 pl-4">
               <time dateTime={h.holidayDate} className="tabular w-28 font-medium text-holiday">
                 {f.dayLong(h.holidayDate)}
               </time>

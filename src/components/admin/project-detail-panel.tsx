@@ -5,13 +5,15 @@ import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { ArrowLeft, CircleCheck, CircleX, Clock, Hash, RefreshCw, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
-import type { OfficeView, ProjectView, SlackChannelOption } from "@/contracts";
+import type { OfficeView, ProjectView, SlackChannelOption, ProjectMemberAllocation } from "@/contracts";
 import { refreshProjectMembersAction } from "@/app/(dashboard)/admin/project-actions";
 import { Button } from "@/components/ui/button";
 import { Toast } from "@/components/ui/toast";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { channelLabel } from "./channel-options";
+import { useTableSort } from "@/hooks/use-table-sort";
+import { SortableHead } from "@/components/shell/sortable-head";
 import { ProjectMemberAllocationControl } from "./project-member-allocation";
 import { useMemberRefreshText } from "./use-member-refresh-text";
 import { CARD_FRAME, CARD_TABLE, TABLE_EDGE_PADDING } from "@/components/shell/table-styles";
@@ -30,6 +32,10 @@ export function ProjectDetailPanel({ project, offices, channels }: Props) {
   const [refreshing, startRefresh] = useTransition();
   const refreshText = useMemberRefreshText();
   const { toast, show, dismiss } = useToast();
+  const sort = useTableSort<ProjectMemberAllocation, "name" | "allocation">(project.memberAllocations, (m) => m.userId, {
+    name: (m) => m.fullName,
+    allocation: (m) => m.allocationHoursPerMonth,
+  });
   const channel = project.slackChannelId ? channelLabel(channels, project.slackChannelId) : t("noChannel");
   const channelDisplay = channel.startsWith("#") ? channel.slice(1) : channel;
 
@@ -102,12 +108,12 @@ export function ProjectDetailPanel({ project, offices, channels }: Props) {
             <table className={cn("w-full border-collapse", CARD_TABLE, TABLE_EDGE_PADDING)}>
               <thead>
                 <tr className="border-b text-xs font-medium text-muted-foreground">
-                  <th scope="col" className="sticky left-0 z-10 h-10 bg-card px-4 text-left font-medium">{t("columns.name")}</th>
-                  <th scope="col" className="px-3 text-left font-medium whitespace-nowrap">{t("allocationColumn")}</th>
+                  <SortableHead {...sort.head("name")} className="sticky left-0 z-10 h-10 bg-card px-4 text-left font-medium">{t("columns.name")}</SortableHead>
+                  <SortableHead {...sort.head("allocation")} className="px-3 text-left font-medium whitespace-nowrap">{t("allocationColumn")}</SortableHead>
                 </tr>
               </thead>
               <tbody>
-                {project.memberAllocations.map((member) => (
+                {sort.apply(project.memberAllocations).map((member) => (
                   <ProjectMemberAllocationControl
                     key={member.userId}
                     projectId={project.id}

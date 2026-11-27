@@ -74,21 +74,7 @@ export function OfficesPanel({ offices }: { offices: OfficeView[] }) {
         {sorted.length === 0 && editing !== "new" ? (
           <p className="p-6 text-muted-foreground">{t("empty")}</p>
         ) : (
-          <table className={cn("w-full border-collapse", CARD_TABLE, TABLE_EDGE_PADDING)}>
-            <thead>
-              <tr className="border-b text-xs font-medium text-muted-foreground">
-                <th scope="col" className="w-px">
-                  <span className="sr-only">{t("columns.order")}</span>
-                </th>
-                <th scope="col" className="h-10 w-px pr-2 pl-4 text-left font-medium whitespace-nowrap">{t("columns.code")}</th>
-                <th scope="col" className="px-4 text-left font-medium">{t("columns.name")}</th>
-                <th scope="col" className="px-3 text-left font-medium">{t("columns.timezone")}</th>
-                <th scope="col" className="px-3 text-right font-medium">{t("columns.members")}</th>
-                <th scope="col" className="px-4 text-right font-medium">
-                  <span className="sr-only">{t("columns.actions")}</span>
-                </th>
-              </tr>
-            </thead>
+          <table aria-label={t("title")} className={cn("w-full border-collapse", CARD_TABLE, TABLE_EDGE_PADDING)}>
             <tbody ref={bodyRef}>
               {sorted.map((o) =>
                 editing === o.id ? (
@@ -116,7 +102,7 @@ export function OfficesPanel({ offices }: { offices: OfficeView[] }) {
                     <th scope="row" className="min-w-0 text-left font-medium md:px-4">{o.name}</th>
                     <td className="text-sm text-muted-foreground max-md:col-span-4 md:px-3 md:whitespace-nowrap">{o.timezone}</td>
                     <td className="tabular font-medium max-md:col-span-4 md:px-3 md:text-right">
-                      <span aria-hidden className="mr-2 text-xs font-normal text-muted-foreground md:hidden">{t("columns.members")}</span>
+                      <span aria-hidden className="mr-2 text-xs font-normal text-muted-foreground">{t("columns.members")}</span>
                       {f.count(o.memberCount)}
                     </td>
                     <td className="max-md:col-start-4 max-md:row-start-1 md:px-2">

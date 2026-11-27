@@ -15,6 +15,8 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { BottomNotice } from "./bottom-notice";
 import { ProjectForm } from "./project-form";
+import { useTableSort } from "@/hooks/use-table-sort";
+import { SortableHead } from "@/components/shell/sortable-head";
 import { ProjectRow } from "./project-row";
 import { channelLabel, takenChannelMap } from "./channel-options";
 import { useMemberRefreshText } from "./use-member-refresh-text";
@@ -55,6 +57,12 @@ export function ProjectsPanel({ projects, channels, offices }: Props) {
     }),
     [channels, normalizedQuery, sorted],
   );
+  const sort = useTableSort<ProjectView, (typeof COLUMNS)[number]>(sorted, (p) => p.id, {
+    status: (p) => (p.isActive ? 0 : 1),
+    name: (p) => p.name,
+    channel: (p) => (p.slackChannelId ? channelLabel(channels, p.slackChannelId) : null),
+    prompt: (p) => p.statusPromptTime,
+  });
   const editingProject = editing && editing !== "new" ? projects.find((project) => project.id === editing) : undefined;
 
   function done({ project, members }: ProjectSaveResult, created: boolean) {
@@ -114,13 +122,13 @@ export function ProjectsPanel({ projects, channels, offices }: Props) {
             <thead>
               <tr className="border-b text-xs font-medium text-muted-foreground">
                 {COLUMNS.map((c) => (
-                  <th key={c} scope="col" className={cn(
+                  <SortableHead key={c} {...sort.head(c)} className={cn(
                     "h-10 text-left font-medium whitespace-nowrap",
                     // The status column shrinks to its switch so the name sits next to it, as on People.
                     c === "status" ? "w-px pr-2" : c === "name" ? "px-4" : "px-3",
                   )}>
                     {t(`columns.${c}`)}
-                  </th>
+                  </SortableHead>
                 ))}
                 <th scope="col" className="px-4 text-right font-medium">
                   <span className="sr-only">{t("columns.actions")}</span>
@@ -128,7 +136,7 @@ export function ProjectsPanel({ projects, channels, offices }: Props) {
               </tr>
             </thead>
             <tbody>
-              {visible.map((p) => (
+              {sort.apply(visible).map((p) => (
                 <ProjectRow
                   key={p.id}
                   project={p}

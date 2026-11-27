@@ -9,6 +9,8 @@ import { useGridNavigation } from "@/hooks/use-grid-navigation";
 import { FloatingHead } from "@/components/shell/floating-head";
 import { isWeekend } from "@/components/lib/dates";
 import { useFormat } from "@/hooks/use-format";
+import { useTableSort } from "@/hooks/use-table-sort";
+import { SortableHead } from "@/components/shell/sortable-head";
 import { AddProjectRow } from "./add-project-row";
 import { STICKY_PROJECT_COLUMN, STICKY_TOTAL_COLUMN, WEEK_TABLE_WIDTH } from "./week-grid-styles";
 import { TABLE_EDGE_PADDING } from "@/components/shell/table-styles";
@@ -41,7 +43,19 @@ export const cellKey = (projectId: string, date: IsoDate) => `${projectId}:${dat
 
 export function WeekGrid(props: Props) {
   const { matrix, display, holidayNames, addable, pendingKeys, failedKey, onSaveCell, onSetStatus, onRemoveRow, onAddProject } = props;
-  const { days, rows } = matrix;
+  const { days } = matrix;
+  // Column keys: "project", "total", or a day. The order stays put while hours are edited.
+  const sort = useTableSort<MatrixRow, string>(
+    matrix.rows,
+    (row) => row.projectId,
+    {
+      project: (row) => row.projectName,
+      total: (row) => row.total,
+      ...Object.fromEntries(days.map((day, i) => [day, (row: MatrixRow) => row.cells[i]?.hours || null])),
+    },
+    days[0],
+  );
+  const rows = sort.apply(matrix.rows);
   const { gridRef, focusCell, handleNavKey, cellProps } = useGridNavigation({ rows: rows.length, cols: days.length });
   const [editing, setEditing] = useState<Draft>(null);
   const [note, setNote] = useState<Draft>(null);
@@ -76,27 +90,28 @@ export function WeekGrid(props: Props) {
         </colgroup>
         <thead>
           <tr className="text-xs font-medium text-muted-foreground">
-            <th scope="col" className={cn(STICKY_PROJECT_COLUMN, "h-10 border-b px-3 font-medium sm:px-4")}>
+            <SortableHead {...sort.head("project")} className={cn(STICKY_PROJECT_COLUMN, "h-10 border-b px-3 font-medium sm:px-4")}>
               {t("grid.project")}
-            </th>
+            </SortableHead>
             {days.map((d, i) => {
               const head = f.dayHead(d);
               return (
-                <th
+                <SortableHead
                   key={d}
-                  scope="col"
+                  {...sort.head(d)}
+                  align="center"
                   className={cn(
                     "h-10 border-b border-l border-border px-3 text-center font-medium",
                     DAY_STATUS_COLUMN[display[i]] || (isWeekend(d) && "bg-[color-mix(in_srgb,var(--muted)_50%,var(--card))]"),
                   )}
                 >
                   {head.weekday} <span className="tabular">{head.day}</span>
-                </th>
+                </SortableHead>
               );
             })}
-            <th scope="col" className={cn(STICKY_TOTAL_COLUMN, "h-10 border-b px-4 font-semibold text-foreground")}>
+            <SortableHead {...sort.head("total")} className={cn(STICKY_TOTAL_COLUMN, "h-10 border-b px-4 font-semibold text-foreground")}>
               {t("grid.total")}
-            </th>
+            </SortableHead>
           </tr>
           <tr>
             <td className={cn(STICKY_PROJECT_COLUMN, "border-b px-3 text-xs text-muted-foreground sm:px-4")}>{t("grid.dayStatus")}</td>

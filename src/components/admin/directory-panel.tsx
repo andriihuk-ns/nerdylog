@@ -13,6 +13,8 @@ import { Toast } from "@/components/ui/toast";
 import { SearchInput } from "@/components/shell/search-input";
 import { FilterSelect } from "@/components/shell/filter-select";
 import { CARD_FRAME, CARD_TABLE, TABLE_EDGE_PADDING } from "@/components/shell/table-styles";
+import { useTableSort } from "@/hooks/use-table-sort";
+import { SortableHead } from "@/components/shell/sortable-head";
 import { DirectoryRow } from "./directory-row";
 import {
   ALL,
@@ -41,6 +43,7 @@ const COLUMNS = [
 /** FR-WEB-06 directory: refresh Slack people on entry, with search and project/office filters. */
 export function DirectoryPanel({ users, projects, offices }: Props) {
   const t = useTranslations("admin.directory");
+  const tRole = useTranslations("roles");
   const { toast, show, dismiss } = useToast();
   const [syncing, startSync] = useTransition();
   const [query, setQuery] = useState("");
@@ -52,6 +55,16 @@ export function DirectoryPanel({ users, projects, offices }: Props) {
     () => filterDirectory(users, { query: debounced, projectId, officeId }),
     [users, debounced, projectId, officeId],
   );
+
+  const sort = useTableSort<DirectoryUser, (typeof COLUMNS)[number]>(users, (u) => u.id, {
+    status: (u) => (u.isActive ? 0 : 1),
+    name: (u) => u.fullName,
+    title: (u) => u.title,
+    office: (u) => offices.find((o) => o.id === u.officeId)?.code,
+    role: (u) => tRole(u.role),
+    allowance: (u) => u.ptoAllowanceDays,
+    sickAllowance: (u) => u.sickAllowanceDays,
+  });
 
   useEffect(() => {
     const syncKey = "nerdylog-directory-sync-at";
@@ -151,9 +164,10 @@ export function DirectoryPanel({ users, projects, offices }: Props) {
             <thead>
               <tr className="border-b text-xs font-medium text-muted-foreground">
                 {COLUMNS.map((c) => (
-                  <th
+                  <SortableHead
                     key={c}
-                    scope="col"
+                    {...sort.head(c)}
+                    align={c === "allowance" || c === "sickAllowance" ? "right" : "left"}
                     className={cn(
                       "h-10 px-2 text-left font-medium whitespace-nowrap",
                       c === "name" && "sticky left-0 z-10 bg-card px-4",
@@ -161,12 +175,12 @@ export function DirectoryPanel({ users, projects, offices }: Props) {
                     )}
                   >
                     {t(`columns.${c}`)}
-                  </th>
+                  </SortableHead>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {shown.map((u) => (
+              {sort.apply(shown).map((u) => (
                 <DirectoryRow
                   key={u.id}
                   user={u}

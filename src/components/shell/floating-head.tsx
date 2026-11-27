@@ -30,6 +30,7 @@ function copyHead(table: HTMLTableElement, rows?: number) {
     });
   }
   head.querySelectorAll("[id]").forEach((node) => node.removeAttribute("id"));
+  head.querySelectorAll("button").forEach((button) => (button.tabIndex = -1));
   copy.append(head);
   copy.style.tableLayout = "fixed";
   copy.style.width = `${table.getBoundingClientRect().width}px`;
@@ -39,8 +40,9 @@ function copyHead(table: HTMLTableElement, rows?: number) {
 /**
  * A table head that stays under the app header while the page scrolls, without lag. The real head
  * cannot be `position: sticky` because its horizontal-scroll frame is its own scroll container, so a
- * visual copy sits outside the frame, where the browser pins it. It covers the real head exactly
- * until the page scrolls; screen readers and the keyboard only see the real table.
+ * visual copy sits outside the frame, where the browser pins it. It stays invisible until the page
+ * scrolls, so the real head takes hover, clicks and focus; clicks on a copied button are passed on
+ * to the real one. Screen readers and the keyboard only see the real table.
  */
 export function FloatingHead({ children, className, rows }: Props) {
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -61,6 +63,13 @@ export function FloatingHead({ children, className, rows }: Props) {
       // Stuck: the app header already draws the line above, so a second one would read as 2px.
       strip.classList.toggle("border-t-transparent", stuck);
       strip.classList.toggle("rounded-t-lg", !stuck && track.offsetTop <= 0);
+      strip.style.visibility = stuck ? "" : "hidden";
+    };
+    const press = (event: MouseEvent) => {
+      const button = event.target instanceof Element ? event.target.closest("button") : null;
+      if (!button) return;
+      const index = Array.from(strip.querySelectorAll("button")).indexOf(button);
+      frame.querySelector("table")?.tHead?.querySelectorAll("button")[index]?.click();
     };
     const follow = () => {
       strip.scrollLeft = frame.scrollLeft;
@@ -95,12 +104,14 @@ export function FloatingHead({ children, className, rows }: Props) {
     mutation.observe(frame, { subtree: true, childList: true, characterData: true, attributes: true });
     frame.addEventListener("scroll", follow, { passive: true });
     strip.addEventListener("scroll", lead, { passive: true });
+    strip.addEventListener("click", press);
     window.addEventListener("scroll", edge, { passive: true });
     return () => {
       resize.disconnect();
       mutation.disconnect();
       frame.removeEventListener("scroll", follow);
       strip.removeEventListener("scroll", lead);
+      strip.removeEventListener("click", press);
       window.removeEventListener("scroll", edge);
     };
   }, [rows]);

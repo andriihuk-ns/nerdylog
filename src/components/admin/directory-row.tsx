@@ -113,7 +113,7 @@ export function DirectoryRow({
             <AvatarFallback>{initials(view.fullName)}</AvatarFallback>
           </Avatar>
           <span className="flex min-w-0 flex-col leading-tight">
-            <span className="truncate underline-offset-4 group-hover/name:underline">{view.fullName}</span>
+            <span className="-mb-1 truncate pb-1 underline-offset-4 group-hover/name:underline">{view.fullName}</span>
             {view.email ? (
               <span className="truncate text-xs font-normal text-muted-foreground">
                 {view.email}
