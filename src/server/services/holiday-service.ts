@@ -18,6 +18,7 @@ import {
 import { officeExists } from "@/server/db/queries/offices";
 import { addDays } from "./calendar";
 import { InvalidInputError, NotFoundError } from "./errors";
+import { clearOfficeHolidayEntries, fillOfficeHolidayEntries } from "./holiday-entries";
 import { isUniqueViolation } from "./pg-errors";
 import { yearRange } from "./pto-balance";
 import { assertAdmin } from "./rbac";
@@ -53,8 +54,9 @@ export const listHolidays: ListHolidays = async (_actor, year, officeId) => {
 };
 
 /**
- * Contract AddHoliday (admin). Only writes company_holidays: it suppresses morning pings
- * and feeds previousBusinessDay for users of that office. It does NOT pre-fill `holiday` entries.
+ * Contract AddHoliday (admin). Writes company_holidays (suppresses morning pings and feeds
+ * previousBusinessDay) and, in the same transaction, pre-fills a `holiday` row for every active
+ * member of the office on that date.
  */
 export const addHoliday: AddHoliday = async (actor, input) => {
   assertAdmin(actor);
@@ -62,7 +64,11 @@ export const addHoliday: AddHoliday = async (actor, input) => {
   const db = getDb();
   if (!(await officeExists(db, values.officeId))) throw InvalidInputError.field("officeId", "Unknown office");
   try {
-    return await insertHoliday(db, values);
+    return await db.transaction(async (tx) => {
+      const row = await insertHoliday(tx, values);
+      await fillOfficeHolidayEntries(tx, values.officeId, [values.holidayDate]);
+      return row;
+    });
   } catch (error) {
     if (isUniqueViolation(error, HOLIDAY_OFFICE_DATE_UNIQUE)) {
       throw InvalidInputError.field("holidayDate", "This office already has a holiday on this date");
@@ -71,11 +77,16 @@ export const addHoliday: AddHoliday = async (actor, input) => {
   }
 };
 
-/** Contract RemoveHoliday (admin). */
+/** Contract RemoveHoliday (admin). Also removes the holiday rows it pre-filled for that office. */
 export const removeHoliday: RemoveHoliday = async (actor, id) => {
   assertAdmin(actor);
   assertRowId(id, "Holiday");
-  if (!(await deleteHoliday(getDb(), id))) throw new NotFoundError("Holiday not found");
+  const db = getDb();
+  await db.transaction(async (tx) => {
+    const removed = await deleteHoliday(tx, id);
+    if (!removed) throw new NotFoundError("Holiday not found");
+    await clearOfficeHolidayEntries(tx, removed.officeId, [removed.holidayDate]);
+  });
 };
 
 /**
@@ -111,11 +122,18 @@ export const copyHolidays: CopyHolidays = async (actor, officeId, fromYear, toYe
   const { start, end } = yearRange(years.fromYear);
   const source = await listHolidayViews(db, start, end, officeId);
   const { shifted } = shiftHolidaysToYear(source, years.toYear);
-  const copied = await insertHolidaysSkipExisting(
-    db,
-    shifted.map((h) => ({ officeId, holidayDate: h.holidayDate, name: h.name })),
-  );
-  return { copied, skipped: source.length - copied };
+  return db.transaction(async (tx) => {
+    const copied = await insertHolidaysSkipExisting(
+      tx,
+      shifted.map((h) => ({ officeId, holidayDate: h.holidayDate, name: h.name })),
+    );
+    await fillOfficeHolidayEntries(
+      tx,
+      officeId,
+      shifted.map((h) => h.holidayDate),
+    );
+    return { copied, skipped: source.length - copied };
+  });
 };
 
 /**

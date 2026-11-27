@@ -9,7 +9,7 @@ export const ENTRY_TYPES = ["work", "vacation", "sick", "holiday"] as const;
 export const entryTypeSchema = z.enum(ENTRY_TYPES);
 export type EntryType = z.infer<typeof entryTypeSchema>;
 
-export const ENTRY_SOURCES = ["slack_standup", "slack_command", "web_ui", "sheet_import"] as const;
+export const ENTRY_SOURCES = ["slack_standup", "slack_command", "web_ui", "sheet_import", "office_holiday"] as const;
 export const entrySourceSchema = z.enum(ENTRY_SOURCES);
 export type EntrySource = z.infer<typeof entrySourceSchema>;
 

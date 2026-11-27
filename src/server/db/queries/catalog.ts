@@ -134,10 +134,16 @@ export async function insertHolidaysSkipExisting(db: DbOrTx, rows: ReadonlyArray
   return inserted.length;
 }
 
-/** True when a row was deleted. */
-export async function deleteHoliday(db: DbOrTx, id: string): Promise<boolean> {
-  const rows = await db.delete(companyHolidays).where(eq(companyHolidays.id, id)).returning({ id: companyHolidays.id });
-  return rows.length > 0;
+/** The deleted holiday's office and date, or undefined when no row had that id. */
+export async function deleteHoliday(
+  db: DbOrTx,
+  id: string,
+): Promise<{ officeId: string; holidayDate: IsoDate } | undefined> {
+  const [row] = await db
+    .delete(companyHolidays)
+    .where(eq(companyHolidays.id, id))
+    .returning({ officeId: companyHolidays.officeId, holidayDate: companyHolidays.holidayDate });
+  return row;
 }
 
 /** A15: holiday dates of one user's office in [start, end]; a user without an office has none. */

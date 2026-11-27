@@ -23,6 +23,11 @@ vi.mock("@/server/db/queries/catalog", () => ({
   deleteHoliday: vi.fn(),
   listUserHolidayDates: vi.fn(),
 }));
+vi.mock("@/server/db/queries/office-holiday-entries", () => ({
+  insertOfficeHolidayEntries: vi.fn(),
+  deleteOfficeHolidayEntries: vi.fn(),
+  syncUserOfficeHolidayEntries: vi.fn(),
+}));
 vi.mock("@/server/db/queries/projects", () => ({
   listProjectMemberRows: vi.fn(),
   isProjectMember: vi.fn(),
@@ -75,7 +80,7 @@ beforeEach(() => {
   vi.mocked(dir.findUsersBySlackIds).mockResolvedValue(["U1"]);
   vi.mocked(dir.insertDirectoryUsers).mockResolvedValue(1);
   vi.mocked(dir.updateUserProfileBySlackId).mockResolvedValue(true);
-  vi.mocked(cat.deleteHoliday).mockResolvedValue(true);
+  vi.mocked(cat.deleteHoliday).mockResolvedValue({ officeId: OFFICE, holidayDate: "2026-01-01" });
   vi.mocked(cat.insertProject).mockResolvedValue(PROJECT);
   vi.mocked(cat.updateProject).mockResolvedValue(true);
   vi.mocked(cat.findProjectRow).mockResolvedValue({
@@ -290,8 +295,16 @@ describe("holidays per office (A15)", () => {
     vi.mocked(off.officeExists).mockResolvedValue(false);
     const unknown = await addHoliday(admin, h).catch((e) => e);
     expect(unknown.fieldErrors).toEqual({ officeId: ["Unknown office"] });
-    vi.mocked(cat.deleteHoliday).mockResolvedValue(false);
+    vi.mocked(cat.deleteHoliday).mockResolvedValue(undefined);
     await expect(removeHoliday(admin, OTHER)).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  it("add/remove holiday also pre-fills / clears the office's holiday rows for that date", async () => {
+    const ohe = await import("@/server/db/queries/office-holiday-entries");
+    await addHoliday(admin, { ...h, holidayDate: "2026-05-01" });
+    expect(ohe.insertOfficeHolidayEntries).toHaveBeenLastCalledWith(tx, h.officeId, ["2026-05-01"]);
+    await removeHoliday(admin, OTHER);
+    expect(ohe.deleteOfficeHolidayEntries).toHaveBeenLastCalledWith(tx, OFFICE, ["2026-01-01"]);
   });
 
   it("shiftHolidaysToYear keeps month/day and drops Feb 29 in a non-leap year", () => {

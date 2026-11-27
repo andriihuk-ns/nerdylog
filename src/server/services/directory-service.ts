@@ -19,6 +19,7 @@ import { officeExists } from "@/server/db/queries/offices";
 import { listProjectMemberRows } from "@/server/db/queries/projects";
 import type { DbOrTx } from "@/server/db/queries/types";
 import { planDirectorySync } from "./directory-sync";
+import { syncUserHolidayEntries } from "./holiday-entries";
 import { InvalidInputError, NotFoundError } from "./errors";
 import { assertAdmin, assertManagerOrAdmin } from "./rbac";
 import { assertRowId, isValidTimeZone, parseInput } from "./validation";
@@ -69,7 +70,14 @@ export const updateDirectoryUser: UpdateDirectoryUser = async (actor, userId, pa
   if (parsed.officeId && !(await officeExists(db, parsed.officeId))) {
     throw InvalidInputError.field("officeId", "Unknown office");
   }
-  const row = await updateDirectoryRow(db, userId, parsed);
+  const row = await db.transaction(async (tx) => {
+    const updated = await updateDirectoryRow(tx, userId, parsed);
+    // Office change (or re-activation): bring the user's auto-filled office holidays in line.
+    if (updated && (parsed.officeId !== undefined || parsed.isActive === true)) {
+      await syncUserHolidayEntries(tx, userId, updated.officeId, new Date().getUTCFullYear());
+    }
+    return updated;
+  });
   if (!row) throw new NotFoundError("User not found");
   const [user] = await withProjectIds(db, [row]);
   return user;
