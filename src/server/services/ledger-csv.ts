@@ -48,26 +48,33 @@ const METRICS = ["Hours", "Days", "Vac/Sick", "Holidays"] as const;
 
 /**
  * Pure Monthly Summary Pivot (FR-EXP-01 mode 2), mirroring the /team matrix: one row per
- * user; per month-week (A2) Hours, Days, Vac/Sick, Holidays; then the monthly total.
+ * user; per month-week (A2) Hours, Days, Vac/Sick, Holidays; then the monthly total. Project
+ * scopes retain only Hours and Days because PTO has no project.
  */
-export function buildSummaryRows(month: string, rollups: readonly UserMonthRollup[]): CsvCell[][] {
+export function buildSummaryRows(month: string, rollups: readonly UserMonthRollup[], projectName?: string): CsvCell[][] {
   const weeks = monthWeeks(month); // header even when no users
-  const header: CsvCell[] = ["Employee", "Daily_Norm_Hours"];
+  const metrics = projectName ? (["Hours", "Days"] as const) : METRICS;
+  const header: CsvCell[] = [...(projectName ? [`Project: ${safeText(projectName)}`] : []), "Employee", "Daily_Norm_Hours"];
   for (const w of weeks) {
     const label = `Week ${w.weekIndex} (${w.start.slice(5)}..${w.end.slice(5)})`;
-    for (const m of METRICS) header.push(`${label} ${m}`);
+    for (const m of metrics) header.push(`${label} ${m}`);
   }
-  for (const m of METRICS) header.push(`${month} Total ${m}`);
+  for (const m of metrics) header.push(`${month} Total ${m}`);
 
   const lines = rollups.map((r) => {
-    const cells: CsvCell[] = [safeText(r.fullName), formatNumber(r.dailyNormHours, 1)];
-    for (const w of r.weeks) cells.push(...totalsCells(w));
-    cells.push(...totalsCells(r.total));
+    const cells: CsvCell[] = [
+      ...(projectName ? [safeText(projectName)] : []),
+      safeText(r.fullName),
+      formatNumber(r.dailyNormHours, 1),
+    ];
+    for (const w of r.weeks) cells.push(...totalsCells(w, Boolean(projectName)));
+    cells.push(...totalsCells(r.total, Boolean(projectName)));
     return cells;
   });
   return [header, ...lines];
 }
 
-function totalsCells(t: { hours: number; days: number; vacSick: number; holidays: number }): CsvCell[] {
-  return [formatNumber(t.hours, 2), formatNumber(t.days, 2), t.vacSick, t.holidays];
+function totalsCells(t: { hours: number; days: number; vacSick: number; holidays: number }, projectScoped = false): CsvCell[] {
+  const hoursAndDays = [formatNumber(t.hours, 2), formatNumber(t.days, 2)];
+  return projectScoped ? hoursAndDays : [...hoursAndDays, t.vacSick, t.holidays];
 }

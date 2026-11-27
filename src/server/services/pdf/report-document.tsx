@@ -25,7 +25,9 @@ export function ReportDocument({ model }: { model: ReportModel }) {
         {model.employees.length === 0 ? (
           <Text style={styles.empty}>No time entries in this period.</Text>
         ) : (
-          model.employees.map((e, i) => <EmployeeSection key={e.userId} employee={e} breakBefore={i > 0} />)
+          model.employees.map((e, i) => (
+            <EmployeeSection key={e.userId} employee={e} breakBefore={i > 0} projectScoped={model.projectScoped} />
+          ))
         )}
 
         <View style={styles.footer} fixed>

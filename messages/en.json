@@ -192,7 +192,7 @@
     "exports": {
       "summaryCsv": "Summary CSV",
       "ledgerCsv": "Ledger CSV",
-      "projectScope": "CSV exports include only {project}. Summary and PDF exports are available with All projects."
+      "projectScope": "Exports are scoped to {project}. Project summaries omit PTO because time off isn't assigned to a project."
     },
     "standupsToggle": "Status",
     "grid": {

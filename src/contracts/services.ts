@@ -37,7 +37,7 @@ export type SubmitSlackSubmission = (input: SlackSubmissionInput) => Promise<Sub
 export type PreviousBusinessDay = (date: IsoDate, holidays: ReadonlySet<IsoDate>) => IsoDate;
 
 /** src/server/services/rollup-service.ts — wraps the pure math in time-aggregator.ts. */
-export type GetTeamMonthRollup = (actor: Actor, month: string) => Promise<UserMonthRollup[]>;
+export type GetTeamMonthRollup = (actor: Actor, month: string, projectIds?: readonly string[]) => Promise<UserMonthRollup[]>;
 /** A15: hours per project in the month for `userId` (default: the actor). Members may only read their own. */
 export type GetProjectHours = (actor: Actor, month: string, userId?: string) => Promise<ProjectHours[]>;
 

@@ -9,9 +9,10 @@ const querySchema = z.object({
   from: isoDateSchema,
   to: isoDateSchema,
   userIds: z.array(z.uuid()).optional(),
+  projectIds: z.array(z.uuid()).optional(),
 });
 
-/** GET /api/export/report.pdf?from&to&userIds — PDF report (FR-EXP-02). Node runtime (react-pdf). */
+/** GET /api/export/report.pdf?from&to&userIds&projectIds — PDF report (FR-EXP-02). Node runtime (react-pdf). */
 export async function GET(request: NextRequest) {
   try {
     const actor = await requireActor();
@@ -20,6 +21,7 @@ export async function GET(request: NextRequest) {
       from: params.get("from") ?? undefined,
       to: params.get("to") ?? undefined,
       userIds: listParam(params, "userIds"),
+      projectIds: listParam(params, "projectIds"),
     });
     return fileResponse(await buildReportPdf(actor, query));
   } catch (error) {

@@ -58,12 +58,12 @@ export default async function TeamPage({ searchParams }: { searchParams: SearchP
         exports={{
           week: [
             { kind: "csv", href: exportHref("/api/export/ledger.csv", { ...weekRange, ...exportScope }) },
-            ...(!filters.project ? [{ kind: "pdf" as const, href: exportHref("/api/export/report.pdf", weekRange) }] : []),
+            { kind: "pdf", href: exportHref("/api/export/report.pdf", { ...weekRange, ...exportScope }) },
           ],
           month: [
-            ...(!filters.project ? [{ kind: "csv" as const, label: t("exports.summaryCsv"), href: exportHref("/api/export/summary.csv", { month }) }] : []),
+            { kind: "csv", label: t("exports.summaryCsv"), href: exportHref("/api/export/summary.csv", { month, ...exportScope }) },
             { kind: "csv", label: t("exports.ledgerCsv"), href: exportHref("/api/export/ledger.csv", { ...range, ...exportScope }) },
-            ...(!filters.project ? [{ kind: "pdf" as const, href: exportHref("/api/export/report.pdf", range) }] : []),
+            { kind: "pdf", href: exportHref("/api/export/report.pdf", { ...range, ...exportScope }) },
           ],
         }}
       />

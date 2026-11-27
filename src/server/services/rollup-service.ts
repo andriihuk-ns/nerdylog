@@ -17,12 +17,14 @@ export function canViewTeam(actor: Actor): boolean {
  * Contract GetTeamMonthRollup. member → only their own row (empty if inactive);
  * manager/admin → every active user, sorted by name. Math lives in time-aggregator.
  */
-export const getTeamMonthRollup: GetTeamMonthRollup = async (actor, month) => {
+export const getTeamMonthRollup: GetTeamMonthRollup = async (actor, month, projectIds) => {
   const { start, end } = monthRange(month);
   const db = getDb();
   const users = await listActiveRollupUsers(db, canViewTeam(actor) ? undefined : actor.userId);
-  const entries = await listEntriesInRange(db, { start, end, userIds: users.map((u) => u.id) });
-  return aggregateMonth(month, users, entries);
+  const entries = await listEntriesInRange(db, { start, end, userIds: users.map((u) => u.id), projectIds });
+  const usersWithEntries = new Set(entries.map((entry) => entry.userId));
+  const includedUsers = projectIds ? users.filter((user) => usersWithEntries.has(user.id)) : users;
+  return aggregateMonth(month, includedUsers, entries);
 };
 
 /**

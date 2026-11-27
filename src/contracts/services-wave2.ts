@@ -185,7 +185,7 @@ export interface ExportFile {
   body: Uint8Array;
 }
 export type BuildLedgerCsv = (actor: Actor, range: ExportRange) => Promise<ExportFile>;
-export type BuildSummaryCsv = (actor: Actor, month: string) => Promise<ExportFile>;
+export type BuildSummaryCsv = (actor: Actor, month: string, projectIds?: string[]) => Promise<ExportFile>;
 export type BuildReportPdf = (actor: Actor, range: ExportRange) => Promise<ExportFile>;
 
 // ── src/server/services/settings-service.ts (A11) ───────────────────────────

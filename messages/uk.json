@@ -192,7 +192,7 @@
     "exports": {
       "summaryCsv": "Зведення CSV",
       "ledgerCsv": "Журнал CSV",
-      "projectScope": "CSV міститиме лише проєкт «{project}». Зведення та PDF доступні для всіх проєктів."
+      "projectScope": "Експорти обмежено проєктом «{project}». Зведення не включає відпустки, бо вони не належать до проєктів."
     },
     "standupsToggle": "Статус",
     "grid": {

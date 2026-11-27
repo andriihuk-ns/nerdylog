@@ -32,6 +32,7 @@ export interface EmployeeReport {
 export interface ReportModel {
   title: string;
   scope: string;
+  projectScoped: boolean;
   from: IsoDate;
   to: IsoDate;
   generatedOn: IsoDate;
@@ -44,6 +45,7 @@ export interface ReportOptions {
   from: IsoDate;
   to: IsoDate;
   generatedOn: IsoDate;
+  projectScoped?: boolean;
   /** Project names when the export was filtered by project (header "client" line). */
   projectNames: readonly string[];
 }
@@ -95,7 +97,8 @@ export function buildReportModel(rows: readonly LedgerRow[], opts: ReportOptions
   const totalHours = Math.round(employees.reduce((s, e) => s + e.total.hours, 0) * 100) / 100;
   return {
     title: "Time Report",
-    scope: opts.projectNames.length > 0 ? opts.projectNames.join(", ") : "All projects",
+    scope: opts.projectNames.length > 0 ? opts.projectNames.join(", ") : opts.projectScoped ? "Selected project" : "All projects",
+    projectScoped: opts.projectScoped ?? opts.projectNames.length > 0,
     from: opts.from,
     to: opts.to,
     generatedOn: opts.generatedOn,
