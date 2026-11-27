@@ -1,6 +1,6 @@
 "use client";
 
-import { useOptimistic, useState, useTransition } from "react";
+import { useMemo, useOptimistic, useState, useTransition } from "react";
 import { Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { OfficeView, ProjectView, SlackChannelOption } from "@/contracts";
@@ -9,12 +9,14 @@ import { useToast } from "@/hooks/use-toast";
 import { useConfirm } from "@/hooks/use-confirm";
 import { Button } from "@/components/ui/button";
 import { Toast } from "@/components/ui/toast";
+import { SearchInput } from "@/components/shell/search-input";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { ProjectForm } from "./project-form";
 import { ProjectRow } from "./project-row";
 import { channelLabel, takenChannelMap } from "./channel-options";
 import { useMemberRefreshText } from "./use-member-refresh-text";
 
-const COLUMNS = ["name", "channel", "prompt", "team", "status"] as const;
+const COLUMNS = ["name", "channel", "prompt", "status"] as const;
 
 interface Props {
   projects: ProjectView[];
@@ -25,6 +27,7 @@ interface Props {
 /** Projects: name + Slack channel + status prompt (A16); members are the channel's members. Archived stay listed (muted). */
 export function ProjectsPanel({ projects, channels, offices }: Props) {
   const [editing, setEditing] = useState<string | "new" | null>(null);
+  const [query, setQuery] = useState("");
   const { toast, show, dismiss } = useToast();
   const t = useTranslations("admin.projects");
   const tf = useTranslations("admin.projectForm");
@@ -33,7 +36,20 @@ export function ProjectsPanel({ projects, channels, offices }: Props) {
   const { confirm, dialog } = useConfirm();
   const [list, removeOptimistic] = useOptimistic(projects, (cur: ProjectView[], id: string) => cur.filter((p) => p.id !== id));
   const [, startRemove] = useTransition();
-  const sorted = [...list].sort((a, b) => Number(b.isActive) - Number(a.isActive) || a.name.localeCompare(b.name));
+  const debouncedQuery = useDebouncedValue(query);
+  const sorted = useMemo(
+    () => [...list].sort((a, b) => Number(b.isActive) - Number(a.isActive) || a.name.localeCompare(b.name)),
+    [list],
+  );
+  const normalizedQuery = debouncedQuery.trim().toLocaleLowerCase();
+  const visible = useMemo(
+    () => sorted.filter((project) => {
+      if (!normalizedQuery) return true;
+      const channel = project.slackChannelId ? channelLabel(channels, project.slackChannelId) : "";
+      return `${project.name} ${channel}`.toLocaleLowerCase().includes(normalizedQuery);
+    }),
+    [channels, normalizedQuery, sorted],
+  );
 
   function done({ project, members }: ProjectSaveResult, created: boolean) {
     setEditing(null);
@@ -68,13 +84,10 @@ export function ProjectsPanel({ projects, channels, offices }: Props) {
   );
 
   return (
-    <section aria-labelledby="projects-title" className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 id="projects-title" className="text-lg font-semibold">
-            {t("title")}
-          </h2>
-          <p className="text-muted-foreground">{t("helper")}</p>
+    <section aria-label={t("title")} className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div role="search" className="w-full sm:max-w-md">
+          <SearchInput value={query} onChange={setQuery} label={t("search")} />
         </div>
         <Button onClick={() => setEditing("new")} disabled={editing === "new"} className="hit-target w-full sm:w-auto">
           <Plus aria-hidden />
@@ -85,6 +98,11 @@ export function ProjectsPanel({ projects, channels, offices }: Props) {
         {editing === "new" ? <div className="border-b">{form()}</div> : null}
         {sorted.length === 0 && editing !== "new" ? (
           <p className="p-6 text-muted-foreground">{t("empty")}</p>
+        ) : visible.length === 0 && editing !== "new" ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 p-6 text-muted-foreground">
+            <p>{t("noMatch")}</p>
+            <Button variant="outline" className="hit-target" onClick={() => setQuery("")}>{t("clearSearch")}</Button>
+          </div>
         ) : (
           <table className="w-full border-collapse">
             <thead>
@@ -100,7 +118,7 @@ export function ProjectsPanel({ projects, channels, offices }: Props) {
               </tr>
             </thead>
             <tbody>
-              {sorted.map((p) =>
+              {visible.map((p) =>
                 editing === p.id ? (
                   <tr key={p.id} className="border-b last:border-b-0">
                     <td colSpan={COLUMNS.length + 1}>{form(p)}</td>

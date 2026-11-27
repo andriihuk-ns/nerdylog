@@ -2,9 +2,10 @@
 
 import { refresh } from "next/cache";
 import { z } from "zod";
-import { MAX_MONTH_ALLOCATION_HOURS, type ProjectMemberAllocation, type ProjectView } from "@/contracts";
+import { MAX_MONTH_ALLOCATION_HOURS, type ProjectMemberAllocation, type ProjectView, type SlackChannelOption } from "@/contracts";
 import { requireActor } from "@/server/auth/session";
 import { deleteProject, listProjects, updateProjectMemberAllocation, upsertProject } from "@/server/services/project-service";
+import { listSlackChannelsCached } from "@/server/slack/channels";
 import { actionError, fail, fieldErrorCode, ok, type ActionResult } from "../action-result";
 import { channelFailure, channelFieldError, type ChannelActionResult } from "./channel-result";
 import { channelIdSchema, ensureBotInChannel, serverCopy } from "./channel-guard";
@@ -12,6 +13,16 @@ import { refreshMembers } from "./project-members";
 import type { MemberRefresh } from "./sync-result";
 
 const ADMIN = ["admin"] as const;
+
+/** Fetches the current public and bot-visible private channels when a project picker opens. */
+export async function refreshSlackChannelsAction(): Promise<ActionResult<SlackChannelOption[]>> {
+  try {
+    await requireActor(ADMIN);
+    return ok(await listSlackChannelsCached());
+  } catch (err) {
+    return actionError(err);
+  }
+}
 
 const projectSchema = z.object({
   id: z.uuid().optional(),

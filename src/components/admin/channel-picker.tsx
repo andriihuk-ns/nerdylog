@@ -1,9 +1,10 @@
 "use client";
 
-import { useId, useState, type KeyboardEvent } from "react";
+import { useId, useState, useTransition, type KeyboardEvent } from "react";
 import { Check, ChevronsUpDown, Lock } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { SlackChannelOption } from "@/contracts";
+import { refreshSlackChannelsAction } from "@/app/(dashboard)/admin/project-actions";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,17 +36,32 @@ export function ChannelPicker({ channels, value, onChange, taken, noneLabel, dis
   const listId = useId();
   const t = useTranslations("admin.channel");
   const [open, setOpen] = useState(false);
+  const [channelOptions, setChannelOptions] = useState(channels);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
+  const [refreshing, startRefresh] = useTransition();
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
-  const unavailable = channels === null;
+  const unavailable = channelOptions === null;
 
   const rows: Row[] = [
     ...(query.trim() ? [] : [{ id: null }]),
-    ...filterChannels(channels ?? [], query).map((c) => ({ id: c.id, channel: c, takenBy: taken?.get(c.id) })),
+    ...filterChannels(channelOptions ?? [], query).map((c) => ({ id: c.id, channel: c, takenBy: taken?.get(c.id) })),
   ];
-  const selected = value ? (channels?.find((c) => c.id === value) ?? null) : null;
+  const selected = value ? (channelOptions?.find((c) => c.id === value) ?? null) : null;
 
   function setOpenState(next: boolean) {
+    if (next && !open) {
+      setRefreshError(null);
+      startRefresh(async () => {
+        try {
+          const result = await refreshSlackChannelsAction();
+          if (result.ok) setChannelOptions(result.data);
+          else setRefreshError(result.message);
+        } catch {
+          setRefreshError(t("refreshFailed"));
+        }
+      });
+    }
     setOpen(next);
     setQuery("");
     setActive(Math.max(0, value ? rows.findIndex((r) => r.id === value) : 0));
@@ -99,7 +115,7 @@ export function ChannelPicker({ channels, value, onChange, taken, noneLabel, dis
             {value ? (
               <>
                 {selected?.isPrivate ? <Lock aria-label={t("private")} className="size-3.5" /> : null}
-                <span className="truncate">{channelLabel(channels, value)}</span>
+                <span className="truncate">{channelLabel(channelOptions, value)}</span>
               </>
             ) : (
               <span className="text-muted-foreground">{unavailable ? t("notConnected") : noneLabel}</span>
@@ -108,7 +124,7 @@ export function ChannelPicker({ channels, value, onChange, taken, noneLabel, dis
           <ChevronsUpDown aria-hidden className="size-4 opacity-60" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-80 p-2" onKeyDown={onKeyDown}>
+      <PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] p-2" onKeyDown={onKeyDown}>
         <Input
           value={query}
           onChange={(e) => {
@@ -145,7 +161,9 @@ export function ChannelPicker({ channels, value, onChange, taken, noneLabel, dis
             </li>
           ))}
         </ul>
-        {channels ? <p className="px-2 pt-2 text-xs text-muted-foreground">{t("privateHint")}</p> : null}
+        {refreshing ? <p role="status" className="px-2 pt-2 text-xs text-muted-foreground">{t("checking")}</p> : null}
+        {refreshError ? <p role="alert" className="px-2 pt-2 text-xs text-destructive">{refreshError}</p> : null}
+        {channelOptions ? <p className="px-2 pt-2 text-xs text-muted-foreground">{t("privateHint")}</p> : null}
       </PopoverContent>
     </Popover>
   );

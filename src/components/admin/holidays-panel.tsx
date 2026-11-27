@@ -72,11 +72,8 @@ export function HolidaysPanel({ holidays, offices, officeId, year, currentYear }
   }
 
   return (
-    <section aria-labelledby="holidays-title" className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id="holidays-title" className="text-lg font-semibold">
-          {t("title")}
-        </h2>
+    <section aria-label={t("title")} className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center justify-end gap-3">
         <HolidayToolbar
           offices={offices}
           officeId={officeId}

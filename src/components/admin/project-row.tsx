@@ -2,7 +2,8 @@
 
 import { useTransition } from "react";
 import Link from "next/link";
-import { Lock, Pencil, RefreshCw, Trash2, Users } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Lock, Pencil, RefreshCw, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { OfficeView, ProjectView, SlackChannelOption } from "@/contracts";
 import { cn } from "@/lib/utils";
@@ -25,9 +26,11 @@ interface Props {
 export function ProjectRow({ project: p, channels, offices, onEdit, onDelete, onToast }: Props) {
   const t = useTranslations("admin.projects");
   const tc = useTranslations("common");
+  const router = useRouter();
   const refreshText = useMemberRefreshText();
   const [refreshing, startRefresh] = useTransition();
   const label = p.slackChannelId ? channelLabel(channels, p.slackChannelId) : null;
+  const href = `/admin/projects/${p.id}`;
   const office = offices.find((o) => o.id === p.statusPromptOfficeId) ?? offices.find((o) => o.code === "UA");
 
   function refreshMembers() {
@@ -40,9 +43,15 @@ export function ProjectRow({ project: p, channels, offices, onEdit, onDelete, on
   }
 
   return (
-    <tr className={cn("h-11 border-b last:border-b-0", !p.isActive && "text-muted-foreground")}>
-      <th scope="row" className="sticky left-0 z-10 max-w-56 truncate bg-card px-4 text-left font-medium">
-        <Link href={`/admin/projects/${p.id}`} className="rounded-sm underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+    <tr
+      onClick={(event) => {
+        if (event.target instanceof Element && event.target.closest("a, button, input, [role='switch'], [data-row-action]")) return;
+        router.push(href);
+      }}
+      className={cn("h-11 cursor-pointer border-b last:border-b-0 hover:bg-muted/50", !p.isActive && "text-muted-foreground")}
+    >
+      <th scope="row" className="sticky left-0 z-10 max-w-56 truncate bg-card px-4 text-left font-medium hover:bg-muted/50">
+        <Link href={href} className="rounded-sm underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           {p.name}
         </Link>
       </th>
@@ -52,24 +61,19 @@ export function ProjectRow({ project: p, channels, offices, onEdit, onDelete, on
       <td className="tabular px-3 text-sm whitespace-nowrap text-muted-foreground">
         {t("asksAt", { time: p.statusPromptTime, office: office?.code ?? "UA" })}
       </td>
-      <td className="px-3 whitespace-nowrap">
-        <Link href={`/admin/projects/${p.id}`} className="inline-flex min-h-11 items-center gap-2 rounded-sm text-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={t("viewTeam", { name: p.name })}>
-          <Users aria-hidden className="size-4" />
-          {t("teamCount", { count: p.memberAllocations.length })}
-        </Link>
-      </td>
       <td className="px-3">{p.isActive ? tc("active") : tc("archived")}</td>
       <td className="px-2">
-        <span className="flex justify-end gap-1">
+        <span data-row-action className="flex justify-end gap-1">
           <Button
             variant="ghost"
+            size="icon"
             className="hit-target"
             onClick={refreshMembers}
             disabled={refreshing || !p.slackChannelId}
-            title={p.slackChannelId ? undefined : t("refreshNeedsChannel")}
+            aria-label={refreshing ? t("refreshing") : t("refresh")}
+            title={!p.slackChannelId ? t("refreshNeedsChannel") : t("refresh")}
           >
             <RefreshCw aria-hidden className={cn(refreshing && "motion-safe:animate-spin")} />
-            <span className="sr-only sm:not-sr-only">{refreshing ? t("refreshing") : t("refresh")}</span>
           </Button>
           <Button variant="ghost" size="icon" className="hit-target" onClick={onEdit} aria-label={t("edit", { name: p.name })}>
             <Pencil aria-hidden />

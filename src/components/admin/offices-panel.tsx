@@ -41,14 +41,8 @@ export function OfficesPanel({ offices }: { offices: OfficeView[] }) {
   }
 
   return (
-    <section aria-labelledby="offices-title" className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 id="offices-title" className="text-lg font-semibold">
-            {t("title")}
-          </h2>
-          <p className="text-muted-foreground">{t("helper")}</p>
-        </div>
+    <section aria-label={t("title")} className="flex flex-col gap-4">
+      <div className="flex justify-end">
         <Button onClick={() => setEditing("new")} disabled={editing === "new"} className="hit-target w-full sm:w-auto">
           <Plus aria-hidden />
           {t("new")}

@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import type { AppSettings, DirectoryUser, HolidayView, OfficeView, ProjectView, SlackChannelOption } from "@/contracts";
+import type { DirectoryUser, HolidayView, OfficeView, ProjectView, SlackChannelOption } from "@/contracts";
 import { requireActor } from "@/server/auth/session";
 import { listDirectory } from "@/server/services/directory-service";
 import { listProjects } from "@/server/services/project-service";
 import { listHolidays } from "@/server/services/holiday-service";
 import { listOffices } from "@/server/services/office-service";
-import { getAppSettings } from "@/server/services/settings-service";
 import { todayIn } from "@/components/lib/dates";
 import { NoAccessPanel } from "@/components/shell/state-panels";
 import { getCurrentProfile } from "@/components/shell/profile";
@@ -16,7 +15,6 @@ import { DirectoryPanel } from "@/components/admin/directory-panel";
 import { ProjectsPanel } from "@/components/admin/projects-panel";
 import { OfficesPanel } from "@/components/admin/offices-panel";
 import { HolidaysPanel } from "@/components/admin/holidays-panel";
-import { SettingsPanel } from "@/components/admin/settings-panel";
 import { loadSlackChannels } from "./load-channels";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -44,13 +42,12 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
   const tab = parseAdminTab(params.tab);
   const currentYear = Number(todayIn(profile.timezone).slice(0, 4));
   const year = parseYear(params.year, currentYear);
-  const needsChannels = tab === "projects" || tab === "settings"; // Slack Tier 2 rate limits
-  const [users, projects, offices, settings, channels]: [DirectoryUser[], ProjectView[], OfficeView[], AppSettings, SlackChannelOption[] | null] =
+  const needsChannels = tab === "projects"; // Slack Tier 2 rate limits
+  const [users, projects, offices, channels]: [DirectoryUser[], ProjectView[], OfficeView[], SlackChannelOption[] | null] =
     await Promise.all([
       listDirectory(actor),
       listProjects(actor, { includeArchived: true }),
       listOffices(actor),
-      getAppSettings(actor),
       needsChannels ? loadSlackChannels() : Promise.resolve(null),
     ]);
   const officeId = pickOffice(offices, params.office);
@@ -70,7 +67,6 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
           holidays: (
             <HolidaysPanel key={`${officeId}-${year}`} holidays={holidays} offices={offices} officeId={officeId} year={year} currentYear={currentYear} />
           ),
-          settings: <SettingsPanel settings={settings} channels={channels} />,
         }}
       />
     </div>
