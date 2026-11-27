@@ -15,6 +15,8 @@ export interface TimeModalInput {
   meta: ModalMetadata; // kind "standup" or "log"
   projects: ProjectView[]; // A15: active projects the user is a member of
   locale: Locale; // A14: recipient's language
+  initialHours?: string;
+  initialTask?: string;
 }
 
 function projectOptions(projects: ProjectView[]) {
@@ -25,7 +27,15 @@ function projectOptions(projects: ProjectView[]) {
 }
 
 /** A16: every rendered input is required (no `optional`); the server re-checks empty values. */
-function projectRow(n: number, projects: ProjectView[], locale: Locale, meta: ModalMetadata, preselectId?: string): SlackBlock[] {
+function projectRow(
+  n: number,
+  projects: ProjectView[],
+  locale: Locale,
+  meta: ModalMetadata,
+  preselectId?: string,
+  initialHours?: string,
+  initialTask?: string,
+): SlackBlock[] {
   const options = projectOptions(projects);
   const initial = preselectId ? options.find((o) => o.value === preselectId) : undefined;
   const taskMeta = getRowTaskMeta(meta, n);
@@ -53,6 +63,7 @@ function projectRow(n: number, projects: ProjectView[], locale: Locale, meta: Mo
         action_id: INPUT_ACTION,
         max_length: 6,
         placeholder: plain(t(locale, "time.hoursPlaceholder")),
+        ...(n === 1 && initialHours ? { initial_value: initialHours } : {}),
       },
     },
   ];
@@ -67,6 +78,7 @@ function projectRow(n: number, projects: ProjectView[], locale: Locale, meta: Mo
         action_id: INPUT_ACTION,
         max_length: 500,
         placeholder: plain(t(locale, "time.taskPlaceholder")),
+        ...(n === 1 && i === 1 && initialTask ? { initial_value: initialTask } : {}),
       },
     });
     if (hasLink) {
@@ -119,7 +131,13 @@ function rowActions(rows: number, locale: Locale): SlackBlock | null {
   return elements.length > 0 ? { type: "actions", block_id: BLOCK.rowActions, elements } : null;
 }
 
-function workSection(meta: ModalMetadata, projects: ProjectView[], locale: Locale): SlackBlock[] {
+function workSection(
+  meta: ModalMetadata,
+  projects: ProjectView[],
+  locale: Locale,
+  initialHours?: string,
+  initialTask?: string,
+): SlackBlock[] {
   const blocks: SlackBlock[] = [
     header(t(locale, "time.workHeader", { date: longDate(meta.logDate, locale) })),
     {
@@ -135,7 +153,17 @@ function workSection(meta: ModalMetadata, projects: ProjectView[], locale: Local
   }
   for (let n = 1; n <= meta.rows; n += 1) {
     if (n > 1) blocks.push(divider());
-    blocks.push(...projectRow(n, projects, locale, meta, n === 1 ? meta.projectId : undefined));
+    blocks.push(
+      ...projectRow(
+        n,
+        projects,
+        locale,
+        meta,
+        n === 1 ? meta.projectId : undefined,
+        initialHours,
+        initialTask,
+      ),
+    );
   }
   const actions = rowActions(meta.rows, locale);
   if (actions) blocks.push(actions);
@@ -168,10 +196,13 @@ function standupSection(locale: Locale): SlackBlock[] {
  * kind "log" = /log, time rows only. A16: every rendered row is required. Without projects no
  * rows are rendered (`rows: 0` in the metadata); the log modal then has nothing to submit.
  */
-export function buildTimeModal({ meta: input, projects, locale }: TimeModalInput): ModalView {
+export function buildTimeModal({ meta: input, projects, locale, initialHours, initialTask }: TimeModalInput): ModalView {
   const standup = input.kind === "standup";
   const meta: ModalMetadata = projects.length === 0 ? { ...input, rows: 0 } : { ...input, rows: Math.max(1, input.rows) };
-  const blocks = [...workSection(meta, projects, locale), ...(standup ? standupSection(locale) : [])];
+  const blocks = [
+    ...workSection(meta, projects, locale, initialHours, initialTask),
+    ...(standup ? standupSection(locale) : []),
+  ];
   const canSubmit = standup || meta.rows > 0;
   return {
     type: "modal",

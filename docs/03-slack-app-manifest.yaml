@@ -27,11 +27,13 @@ features:
   slash_commands:
     - command: /log
       url: https://APP_BASE_URL/api/slack/commands
-      description: Open the time-logging form (projects, hours, tasks)
+      description: Log time (open form, or quick-enter e.g. /log 2.5 Task)
+      usage_hint: "[help | 2.5 Task description]"
       should_escape: false
     - command: /pto
       url: https://APP_BASE_URL/api/slack/commands
       description: Record vacation or a sick day (single date or range)
+      usage_hint: "[vacation | sick]"
       should_escape: false
 
 oauth_config:

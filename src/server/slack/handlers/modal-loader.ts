@@ -17,6 +17,8 @@ export interface OpenModalRequest {
   logDate?: IsoDate | null;
   /** A16: project to preselect in row 1 (project prompt button). */
   projectId?: string | null;
+  initialHours?: string;
+  initialTask?: string;
 }
 
 const TITLES: Record<SlackSubmissionKind, MessageKey> = { standup: "title.standup", log: "title.log", pto: "title.pto" };
@@ -76,7 +78,16 @@ async function fillModal(deps: SlackDeps, req: OpenModalRequest, viewId: string)
       }
       meta.projectId = req.projectId;
     }
-    await deps.slack.updateView(viewId, buildTimeModal({ meta, projects: selectableProjects(projects), locale }));
+    await deps.slack.updateView(
+      viewId,
+      buildTimeModal({
+        meta,
+        projects: selectableProjects(projects),
+        locale,
+        initialHours: req.initialHours,
+        initialTask: req.initialTask,
+      }),
+    );
   } catch (error) {
     console.error("slack: modal load failed", error instanceof Error ? error.message : error);
     await deps.slack

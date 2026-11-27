@@ -27,6 +27,8 @@ export const uk: Messages = {
   "cmd.unknown": "Не знаю команди {command}. Спробуй /log або /pto.",
   "cmd.noTrigger": "Slack не передав потрібних даних. Спробуй ще раз.",
   "cmd.openFailed": "nerdylog не зміг відкрити форму. Спробуй ще раз.",
+  "cmd.logHelp":
+    "*Швидкий запис часу:*\n• `/log` — відкрити форму\n• `/log 2,5 Опис задачі` — одразу підставити час (можна `0,5` або `0.5`) та опис\n• `/pto` — оформити відпустку чи лікарняний",
 
   // A16 project channel prompt
   "prompt.notMember": "Попроси {creator} додати тебе до цього проєкту.",

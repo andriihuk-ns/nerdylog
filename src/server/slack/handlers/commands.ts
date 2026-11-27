@@ -22,6 +22,17 @@ async function callerLocale(deps: SlackDeps, slackUserId: string | null): Promis
   }
 }
 
+/** Parse quick-enter `/log 2.5 Fix login` or `/log Fix login`. */
+function parseLogArgs(raw: string): { initialHours?: string; initialTask?: string } {
+  const text = raw.trim();
+  if (!text) return {};
+  const match = text.match(/^([0-9]+(?:[.,][0-9]+)?)(?:\s+([\s\S]+))?$/);
+  if (match) {
+    return { initialHours: match[1], ...(match[2]?.trim() ? { initialTask: match[2].trim() } : {}) };
+  }
+  return { initialTask: text };
+}
+
 /**
  * POST /api/slack/commands body (already signature-verified, form-encoded).
  * Opens the modal with the trigger id right away; data loading happens after the ack.
@@ -30,11 +41,16 @@ export async function handleSlashCommand(form: URLSearchParams, deps: SlackDeps)
   const command = form.get("command") ?? "";
   const triggerId = form.get("trigger_id");
   const slackUserId = form.get("user_id");
+  const text = (form.get("text") ?? "").trim();
   const kind = COMMAND_KINDS[command as keyof typeof COMMAND_KINDS];
   if (!kind) return ephemeral(t(await callerLocale(deps, slackUserId), "cmd.unknown", { command }));
+  if (kind === "log" && text.toLowerCase() === "help") {
+    return ephemeral(t(await callerLocale(deps, slackUserId), "cmd.logHelp"));
+  }
   if (!triggerId || !slackUserId) return ephemeral(t(await callerLocale(deps, slackUserId), "cmd.noTrigger"));
 
-  const opened = await openModalFast(deps, { kind, slackUserId, triggerId });
+  const quick = kind === "log" ? parseLogArgs(text) : {};
+  const opened = await openModalFast(deps, { kind, slackUserId, triggerId, ...quick });
   if (!opened) return ephemeral(t(await callerLocale(deps, slackUserId), "cmd.openFailed"));
   return new Response(null, { status: 200 });
 }

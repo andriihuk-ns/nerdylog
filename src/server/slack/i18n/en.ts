@@ -26,6 +26,8 @@ export const en = {
   "cmd.unknown": "Unknown command {command}. Try /log or /pto.",
   "cmd.noTrigger": "Slack did not send a trigger. Please try again.",
   "cmd.openFailed": "nerdylog could not open the form. Please try again.",
+  "cmd.logHelp":
+    "*Quick time logging:*\n• `/log` — open the time form\n• `/log 2.5 Task description` — pre-fill hours (supports `0.5` or `0,5`) and task\n• `/pto` — record vacation or sick day",
 
   // A16 project channel prompt (ephemeral replies to the clicker)
   "prompt.notMember": "Ask {creator} to add you to this project.",
