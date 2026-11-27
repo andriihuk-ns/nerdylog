@@ -42,7 +42,7 @@ export function ProjectMemberAllocationControl({ projectId, projectName, member,
   );
 
   return (
-    <tr aria-busy={pending} className="h-16 border-b last:border-b-0">
+    <tr aria-busy={pending} className="h-11 border-b last:border-b-0">
       <th scope="row" className="sticky left-0 z-10 bg-card px-4 text-left align-middle font-medium">
         <span className="flex items-center gap-3">
           <Avatar size="sm">
@@ -52,7 +52,7 @@ export function ProjectMemberAllocationControl({ projectId, projectName, member,
           <span className="block max-w-56 truncate" title={member.fullName}>{member.fullName}</span>
         </span>
       </th>
-      <td className="px-3 py-2 align-middle">
+      <td className="px-3 py-1 align-middle">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <div role="group" aria-label={t("allocationPresets", { name: member.fullName })} className="flex flex-wrap items-center gap-1">
             {PROJECT_ALLOCATION_PRESETS.map((value) => {
@@ -64,8 +64,8 @@ export function ProjectMemberAllocationControl({ projectId, projectName, member,
                   size="sm"
                   variant="ghost"
                   className={percent === value
-                    ? "min-h-11 w-[4.5rem] shrink-0 gap-1 border border-primary bg-primary px-2 text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground"
-                    : "min-h-11 w-[4.5rem] shrink-0 gap-1 border border-input bg-background px-2 text-foreground hover:bg-muted"}
+                    ? "h-11 w-16 sm:h-8 shrink-0 gap-1 border border-primary bg-primary px-2 text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground"
+                    : "h-11 w-16 sm:h-8 shrink-0 gap-1 border border-input bg-background px-2 text-foreground hover:bg-muted"}
                   aria-pressed={percent === value}
                   aria-label={t("allocationPercent", { name: member.fullName, percent: value })}
                   disabled={pending}
@@ -86,6 +86,7 @@ export function ProjectMemberAllocationControl({ projectId, projectName, member,
               max={MAX_MONTH_ALLOCATION_HOURS}
               step={0.5}
               format={f.hours}
+              className="w-16 sm:h-8"
               onCommit={(hours) => hours !== null && save(hours)}
             />
             {t("allocationHoursUnit")}

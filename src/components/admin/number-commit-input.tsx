@@ -13,6 +13,7 @@ interface Props {
   step: number;
   allowEmpty?: boolean; // empty → null
   format: (n: number) => string;
+  className?: string;
   onCommit: (value: number | null) => void;
 }
 
@@ -20,7 +21,7 @@ interface Props {
  * Inline numeric field that commits on Enter or blur and reverts on Esc or invalid input.
  * Parent should pass `key={value}` so a server refresh resets the draft.
  */
-export function NumberCommitInput({ value, label, min, max, step, allowEmpty = false, format, onCommit }: Props) {
+export function NumberCommitInput({ value, label, min, max, step, allowEmpty = false, format, className, onCommit }: Props) {
   const initial = value === null ? "" : format(value);
   const [draft, setDraft] = useState(initial);
   const [invalid, setInvalid] = useState(false);
@@ -59,7 +60,7 @@ export function NumberCommitInput({ value, label, min, max, step, allowEmpty = f
           setInvalid(false);
         }
       }}
-      className={cn("tabular h-11 w-24 text-right")}
+      className={cn("tabular h-11 w-24 text-right", className)}
     />
   );
 }
