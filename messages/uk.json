@@ -123,7 +123,8 @@
       "spoken": "{hours} год",
       "spokenWithNote": "{hours} год, нотатка: {notes}",
       "hasNote": "Є нотатка",
-      "showMoreTasks": "Показати всі {count, plural, one {# задачу} few {# задачі} many {# задач} other {# задач}}",
+      "showMoreTasks": "Показати всі задачі (ще {count})",
+      "showFullTask": "Показати опис повністю",
       "showLess": "Згорнути",
       "hoursInput": "{label}, години",
       "weekend": "вихідний, обери «Робота», щоб внести години"

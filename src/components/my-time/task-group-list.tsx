@@ -73,12 +73,16 @@ export function TaskGroupList({ summaries }: { summaries: readonly string[] }) {
           type="button"
           variant="ghost"
           size="sm"
-          className="hit-target h-11 w-full justify-start gap-1.5 px-1.5 text-xs text-muted-foreground"
+          className="hit-target h-11 w-full justify-center gap-1.5 px-1.5 text-center text-xs text-muted-foreground"
           aria-expanded={expanded}
           onClick={() => setExpanded((value) => !value)}
         >
           {expanded ? <ChevronUp aria-hidden className="size-3.5" /> : <ChevronDown aria-hidden className="size-3.5" />}
-          {expanded ? t("showLess") : t("showMoreTasks", { count: items.length })}
+          {expanded
+            ? t("showLess")
+            : items.length > 1
+              ? t("showMoreTasks", { count: items.length - 1 })
+              : t("showFullTask")}
         </Button>
       ) : null}
     </div>

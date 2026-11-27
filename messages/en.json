@@ -123,7 +123,8 @@
       "spoken": "{hours} hours",
       "spokenWithNote": "{hours} hours, note: {notes}",
       "hasNote": "Has a note",
-      "showMoreTasks": "Show all {count, plural, one {# task} other {# tasks}}",
+      "showMoreTasks": "Show all tasks ({count} more)",
+      "showFullTask": "Show full task",
       "showLess": "Show less",
       "hoursInput": "{label}, hours",
       "weekend": "weekend, switch to Work to log hours"
