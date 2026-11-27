@@ -7,7 +7,7 @@ import type { DbOrTx } from "./types";
 export async function listProjectMemberRows(
   db: DbOrTx,
   filter: { projectIds?: readonly string[]; userIds?: readonly string[] } = {},
-): Promise<Array<{ projectId: string; userId: string; fullName: string; allocationHoursPerMonth: number }>> {
+): Promise<Array<{ projectId: string; userId: string; fullName: string; avatarUrl: string | null; allocationHoursPerMonth: number }>> {
   if (filter.projectIds?.length === 0 || filter.userIds?.length === 0) return [];
   const conditions = [];
   if (filter.projectIds) conditions.push(inArray(projectMembers.projectId, [...filter.projectIds]));
@@ -17,6 +17,7 @@ export async function listProjectMemberRows(
       projectId: projectMembers.projectId,
       userId: projectMembers.userId,
       fullName: users.fullName,
+      avatarUrl: users.avatarUrl,
       allocationHoursPerMonth: projectMembers.allocationHoursPerMonth,
     })
     .from(projectMembers)
@@ -68,7 +69,7 @@ export async function updateProjectMemberAllocationRow(
   projectId: string,
   userId: string,
   hoursPerMonth: number,
-): Promise<{ userId: string; fullName: string; allocationHoursPerMonth: number } | undefined> {
+): Promise<{ userId: string; fullName: string; avatarUrl: string | null; allocationHoursPerMonth: number } | undefined> {
   const updated = await db
     .update(projectMembers)
     .set({ allocationHoursPerMonth: hoursPerMonth })
@@ -76,7 +77,7 @@ export async function updateProjectMemberAllocationRow(
     .returning({ userId: projectMembers.userId });
   if (updated.length === 0) return undefined;
   const [row] = await db
-    .select({ userId: users.id, fullName: users.fullName, allocationHoursPerMonth: projectMembers.allocationHoursPerMonth })
+    .select({ userId: users.id, fullName: users.fullName, avatarUrl: users.avatarUrl, allocationHoursPerMonth: projectMembers.allocationHoursPerMonth })
     .from(projectMembers)
     .innerJoin(users, eq(users.id, projectMembers.userId))
     .where(and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, userId)))

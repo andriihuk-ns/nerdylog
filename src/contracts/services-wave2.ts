@@ -117,6 +117,7 @@ export interface ProjectView {
 export interface ProjectMemberAllocation {
   userId: string;
   fullName: string;
+  avatarUrl: string | null;
   allocationHoursPerMonth: number;
 }
 /** Everyone sees all projects (A15); isMember tells the UI whether to show "Ask {creator}". */

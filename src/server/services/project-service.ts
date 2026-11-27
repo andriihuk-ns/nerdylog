@@ -70,7 +70,7 @@ function toView(
     ...row,
     memberIds,
     memberAllocations: includeMemberDetails
-      ? members.map(({ userId, fullName, allocationHoursPerMonth }) => ({ userId, fullName, allocationHoursPerMonth }))
+      ? members.map(({ userId, fullName, avatarUrl, allocationHoursPerMonth }) => ({ userId, fullName, avatarUrl, allocationHoursPerMonth }))
       : [],
     isMember: memberIds.includes(actorId),
   };

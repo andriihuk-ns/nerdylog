@@ -10,6 +10,8 @@ import {
   type ProjectMemberAllocation,
 } from "@/contracts";
 import { updateProjectMemberAllocationAction } from "@/app/(dashboard)/admin/project-actions";
+import { initials } from "@/components/lib/format";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useFormat } from "@/hooks/use-format";
 import { NumberCommitInput } from "./number-commit-input";
@@ -42,7 +44,13 @@ export function ProjectMemberAllocationControl({ projectId, projectName, member,
   return (
     <tr aria-busy={pending} className="h-16 border-b last:border-b-0">
       <th scope="row" className="sticky left-0 z-10 bg-card px-4 text-left align-middle font-medium">
-        <span className="block max-w-56 truncate" title={member.fullName}>{member.fullName}</span>
+        <span className="flex items-center gap-3">
+          <Avatar size="sm">
+            {member.avatarUrl ? <AvatarImage src={member.avatarUrl} alt="" /> : null}
+            <AvatarFallback>{initials(member.fullName)}</AvatarFallback>
+          </Avatar>
+          <span className="block max-w-56 truncate" title={member.fullName}>{member.fullName}</span>
+        </span>
       </th>
       <td className="px-3 py-2 align-middle">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
