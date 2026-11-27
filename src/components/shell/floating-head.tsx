@@ -55,10 +55,12 @@ export function FloatingHead({ children, className, rows }: Props) {
     const frame = frameRef.current;
     if (!wrapper || !track || !strip || !frame) return;
 
-    // Vertical pinning is pure CSS; this only squares the corners once the copy has moved.
-    const corners = () => {
-      const flush = track.offsetTop <= 0 && strip.getBoundingClientRect().top <= track.getBoundingClientRect().top + 0.5;
-      strip.classList.toggle("rounded-t-lg", flush);
+    // Vertical pinning is pure CSS; this only restyles the top edge once the copy has moved.
+    const edge = () => {
+      const stuck = strip.getBoundingClientRect().top > track.getBoundingClientRect().top + 0.5;
+      // Stuck: the app header already draws the line above, so a second one would read as 2px.
+      strip.classList.toggle("border-t-transparent", stuck);
+      strip.classList.toggle("rounded-t-lg", !stuck && track.offsetTop <= 0);
     };
     const follow = () => {
       strip.scrollLeft = frame.scrollLeft;
@@ -80,7 +82,7 @@ export function FloatingHead({ children, className, rows }: Props) {
       track.style.top = `${box.top - wrapper.getBoundingClientRect().top - 1}px`;
       track.style.bottom = `${table.tHead.offsetHeight}px`;
       follow();
-      corners();
+      edge();
     };
 
     build();
@@ -92,13 +94,13 @@ export function FloatingHead({ children, className, rows }: Props) {
     mutation.observe(frame, { subtree: true, childList: true, characterData: true, attributes: true });
     frame.addEventListener("scroll", follow, { passive: true });
     strip.addEventListener("scroll", lead, { passive: true });
-    window.addEventListener("scroll", corners, { passive: true });
+    window.addEventListener("scroll", edge, { passive: true });
     return () => {
       resize.disconnect();
       mutation.disconnect();
       frame.removeEventListener("scroll", follow);
       strip.removeEventListener("scroll", lead);
-      window.removeEventListener("scroll", corners);
+      window.removeEventListener("scroll", edge);
     };
   }, [rows]);
 
