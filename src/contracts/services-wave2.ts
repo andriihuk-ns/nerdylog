@@ -1,4 +1,5 @@
 import type { EntryType, Role } from "./enums";
+import type { Locale } from "./locale";
 import type { DailyCheckinInput, IsoDate, TimeEntryInput } from "./time";
 import type { Actor } from "./users";
 
@@ -21,6 +22,16 @@ export interface TimeEntryView {
   ticketRefs: string[];
   source: TimeEntryInput["source"];
 }
+export interface MorningReminderTarget {
+  userId: string;
+  slackUserId: string;
+  locale: Locale;
+  pingDate: IsoDate;
+  logDate: IsoDate;
+  entries: Array<Pick<TimeEntryView, "entryType" | "projectName" | "hours" | "taskSummary">>;
+}
+/** Claim due personal morning reminders for their local day; called by the cron only. */
+export type ClaimMorningReminders = (now: Date) => Promise<MorningReminderTarget[]>;
 /** Entries for userId in [weekStart, weekStart+6]. weekStart must be a Monday. */
 export type ListWeekEntries = (actor: Actor, userId: string, weekStart: IsoDate) => Promise<TimeEntryView[]>;
 export type CreateTimeEntry = (actor: Actor, input: Omit<TimeEntryInput, "source" | "slackViewId">) => Promise<TimeEntryView>;

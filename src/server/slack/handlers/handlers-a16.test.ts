@@ -1,5 +1,3 @@
-import { existsSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ProjectPromptTarget, SlackSubmissionInput } from "@/contracts";
 import { buildProjectLinesMessage } from "../blocks/project-lines";
@@ -90,11 +88,9 @@ describe("A16 project status prompt (cron)", () => {
     expect(decodePromptValue(JSON.stringify({ projectId: PROJECT_ID, logDate: "soon" }))).toBeNull();
   });
 
-  it("the personal DM ping code is gone", () => {
-    for (const file of ["../blocks/morning-dm.ts", "./morning-ping.ts"]) {
-      expect(existsSync(fileURLToPath(new URL(file, import.meta.url))), file).toBe(false);
-    }
+  it("keeps personal reminders separate from project-channel prompts", () => {
     expect("claimMorningPings" in fakeDeps().tempo).toBe(false);
+    expect("claimMorningReminders" in fakeDeps().tempo).toBe(true);
   });
 });
 

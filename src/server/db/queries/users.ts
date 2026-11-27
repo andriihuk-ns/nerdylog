@@ -7,6 +7,20 @@ export interface UserAccessRow extends Actor {
   isActive: boolean;
 }
 
+/** Active users eligible for a personal Slack reminder. */
+export async function listMorningReminderUsers(db: DbOrTx) {
+  return db
+    .select({
+      userId: users.id,
+      slackUserId: users.slackUserId,
+      timezone: users.timezone,
+      locale: users.locale,
+      officeId: users.officeId,
+    })
+    .from(users)
+    .where(eq(users.isActive, true));
+}
+
 /** Insert or update a user keyed on `slack_user_id`; returns the RBAC fields. */
 export async function upsertUserBySlackId(
   db: DbOrTx,

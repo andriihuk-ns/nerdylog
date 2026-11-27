@@ -3,6 +3,7 @@ import type {
   Actor,
   HolidayView,
   IsoDate,
+  MorningReminderTarget,
   ProjectHours,
   ProjectPromptTarget,
   ProjectView,
@@ -57,6 +58,8 @@ export interface TempoPorts {
   /** A15: the actor's hours per project in the month. */
   getProjectHours(actor: Actor, month: string): Promise<ProjectHours[]>;
   getPtoBalance(actor: Actor, userId: string, year: number): Promise<PtoBalance>;
+  /** A19: atomically claim personal reminders due in the user's local morning window. */
+  claimMorningReminders(now: Date): Promise<MorningReminderTarget[]>;
   /** A16: claim the projects whose channel status prompt is due now (project_prompts dedup). */
   claimProjectPrompts(now: Date): Promise<ProjectPromptTarget[]>;
   /** A11/A15: the general standup channel; null → no card. */

@@ -80,7 +80,7 @@ Ship the migrations **before** deploying the A16 code (the A16 code reads the ne
 - `0014_a16_project_prompts` adds `offices.timezone` (backfill `UA` → `Europe/Kyiv`, `PL` → `Europe/Warsaw`, any other office → `Europe/Kyiv`, then not null), `projects.status_prompt_time` (default `10:00`, `HH:MM` check) and `projects.status_prompt_office_id` (FK offices, on delete set null), and creates `project_prompts`.
 - `0015_a16_rls` enables RLS (no policies) and revokes Data API grants on `project_prompts`.
 
-After deploy: the cron posts one status prompt per project channel per local day instead of DMing each person. Check each office's timezone in `/admin` → Offices and each project's prompt time/office in `/admin` → Projects (null office = UA). `daily_pings` stays as history; nothing writes it any more. Admins can now delete a project only if it has no time entries; otherwise archive it.
+After deploy: the cron sends personal time reminders and posts one status prompt per configured project channel per local day. Reminders use each user's timezone and `/log`; project prompts use the configured prompt office and time. Check office timezones in `/admin` → Offices and each project's prompt time/office in `/admin` → Projects (null office = UA). Admins can delete a project only if it has no time entries; otherwise archive it.
 
 After deploy, existing projects have **no members** until an admin opens `/admin` → Projects and runs **Refresh members** (or **Sync from Slack**); until then nobody can log time to them. Each year, add the next year's holidays per office in `/admin` → Holidays (**Copy from {previous year}**, then move Easter-based dates by hand).
 

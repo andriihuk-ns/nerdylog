@@ -99,6 +99,15 @@ export const uk: Messages = {
   "err.notMemberDm": "Час для {project} не збережено. {hint}",
   "err.notMemberGeneric": "Час не збережено: тебе немає в одному з цих каналів проєктів. Попроси адміна додати тебе.",
 
+  // A19 personal morning reminder
+  "morning.title": "Останній робочий день · {date}",
+  "morning.noEntries": "За {date} ще немає твого запису часу. Додай учорашні години й короткі описи задач, поки пам’ятаєш.",
+  "morning.summary": "За {date} записано {hours} у {count} проєктних рядках.",
+  "morning.timeOffOnly": "За {date} є запис про відсутність.",
+  "morning.noTask": "Опис задачі не додано",
+  "morning.logYesterday": "Записати пропущений час",
+  "morning.logMore": "Додати ще час",
+
   // App Home
   "home.yourWeek": "Твій тиждень",
   "home.thisWeek": "Цього тижня",

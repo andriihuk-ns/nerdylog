@@ -99,6 +99,15 @@ export const en = {
   "err.notMemberDm": "Your time for {project} was not saved. {hint}",
   "err.notMemberGeneric": "Your time was not saved: you're not in one of those project channels. Ask an admin to add you.",
 
+  // A19 personal morning reminder
+  "morning.title": "Last workday · {date}",
+  "morning.noEntries": "You haven't logged your time for {date} yet. Add yesterday's hours and task summaries while they're fresh.",
+  "morning.summary": "You logged {hours} across {count} project entries on {date}.",
+  "morning.timeOffOnly": "You recorded time off on {date}.",
+  "morning.noTask": "Task details not added",
+  "morning.logYesterday": "Log missing time",
+  "morning.logMore": "Log more time",
+
   // App Home
   "home.yourWeek": "Your week",
   "home.thisWeek": "This week",

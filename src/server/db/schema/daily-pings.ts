@@ -2,8 +2,7 @@ import { date, pgTable, primaryKey, timestamp, uuid } from "drizzle-orm/pg-core"
 import { users } from "./users";
 
 /**
- * Amendment A4: one morning ping per user per local date. A16 removed the personal morning DM;
- * the table is kept as history only (nothing writes it any more).
+ * Amendment A4/A19: one personal morning reminder per user per local date.
  */
 export const dailyPings = pgTable(
   "daily_pings",

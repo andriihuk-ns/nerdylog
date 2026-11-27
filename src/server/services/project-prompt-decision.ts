@@ -4,7 +4,7 @@ import { previousBusinessDay } from "./calendar";
 import { isValidTimeZone } from "./validation";
 
 /**
- * Pure project status-prompt rules (amendment A16, replacing the personal morning DM of A10).
+ * Pure project status-prompt rules (amendment A16; these channel prompts run alongside A19 DMs).
  * No DB, no clock: `now` is passed in. Supabase pg_cron calls the endpoint every 15 minutes; a
  * project is due on the first run where its office-local time is in [prompt, prompt + 90 min) on a
  * local weekday that is not a holiday of that office. The 90-minute window lets late or skipped
