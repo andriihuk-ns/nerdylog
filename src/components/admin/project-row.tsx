@@ -48,9 +48,9 @@ export function ProjectRow({ project: p, channels, offices, onEdit, onDelete, on
         if (event.target instanceof Element && event.target.closest("a, button, input, [role='switch'], [data-row-action]")) return;
         router.push(href);
       }}
-      className={cn("h-11 cursor-pointer border-b last:border-b-0 hover:bg-muted/50", !p.isActive && "text-muted-foreground")}
+      className={cn("group h-11 cursor-pointer border-b last:border-b-0 hover:bg-muted/50", !p.isActive && "text-muted-foreground")}
     >
-      <th scope="row" className="sticky left-0 z-10 max-w-56 truncate bg-card px-4 text-left font-medium hover:bg-muted/50">
+      <th scope="row" className="sticky left-0 z-10 max-w-56 truncate bg-card px-4 text-left font-medium group-hover:bg-muted/50">
         <Link href={href} className="rounded-sm underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           {p.name}
         </Link>

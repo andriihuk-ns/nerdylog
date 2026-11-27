@@ -317,6 +317,7 @@
         "prompt": "Status prompt"
       },
       "team": "Team",
+      "memberCount": "{count, plural, one {# member} other {# members}}",
       "search": "Search projects",
       "noMatch": "No projects match your search.",
       "clearSearch": "Clear search",

@@ -109,7 +109,7 @@ export function ChannelPicker({ channels, value, onChange, taken, noneLabel, dis
           aria-invalid={invalid || undefined}
           aria-describedby={aria["aria-describedby"]}
           disabled={disabled || unavailable}
-          className="hit-target h-11 w-full justify-between border-input font-normal hover:border-input-hover"
+          className="hit-target h-11 w-full justify-between border-input bg-card font-normal hover:border-input-hover"
         >
           <span className="flex min-w-0 items-center gap-1.5">
             {value ? (
