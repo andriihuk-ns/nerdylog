@@ -25,17 +25,17 @@ const saveCellSchema = z.object({
   projectId: z.uuid(),
   hours: z.number().min(0).max(24).multipleOf(0.25),
   note: z.string().max(2000).optional(),
-  userId: z.uuid().optional(), // A15 people page: an admin edits on the person's behalf
+  userId: z.uuid().optional(), // people page: a manager/admin edits on the person's behalf (PRD §2, A16)
 });
 
 export type SaveCellInput = z.input<typeof saveCellSchema>;
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
-/** Own data, or (admin only) another person's: people page, PRD §2. Services re-check. */
+/** Own data, or (manager/admin) another person's: people page, PRD §2 + A16. Services re-check. */
 function targetUser(actor: Actor, userId: string | undefined): string | null {
   if (!userId || userId === actor.userId) return actor.userId;
-  return actor.role === "admin" ? userId : null;
+  return actor.role === "admin" || actor.role === "manager" ? userId : null;
 }
 
 /** A15: service fieldErrors { projectId: ["not_member"] } → "Ask {creator} to add you to #channel". */

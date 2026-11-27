@@ -2,12 +2,13 @@
 
 import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
-import { extractTicketRefs } from "@/contracts";
+import { extractArtifactLinks, extractTicketRefs } from "@/contracts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { parseHoursInput } from "@/components/lib/format";
+import { ArtifactChip, ArtifactText } from "@/components/shell/artifact-text";
 
 interface Props {
   title: string; // "DogTeamPro · Tue, Nov 24"
@@ -24,6 +25,7 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
   const [note, setNote] = useState(notes[0] ?? "");
   const [error, setError] = useState<string | null>(null);
   const refs = extractTicketRefs(note);
+  const links = extractArtifactLinks(note);
   const t = useTranslations("myTime");
   const tc = useTranslations("common");
 
@@ -67,7 +69,20 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
           maxLength={2000}
           onChange={(e) => setNote(e.target.value)}
           placeholder={t("note.placeholder")}
+          aria-describedby="cell-note-hint"
         />
+        <p id="cell-note-hint" className="text-xs text-muted-foreground">
+          {t("note.linksHint")}
+        </p>
+        {links.length > 0 ? (
+          <ul className="flex flex-wrap gap-1" aria-label={t("note.links")}>
+            {links.map((l) => (
+              <li key={l.url} className="max-w-full">
+                <ArtifactChip link={l} />
+              </li>
+            ))}
+          </ul>
+        ) : null}
         {refs.length > 0 ? (
           <ul className="flex flex-wrap gap-1" aria-label={t("note.detected")}>
             {refs.map((r) => (
@@ -80,8 +95,8 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
         {entryCount > 1 ? (
           <ul className="flex flex-col gap-1 text-xs text-muted-foreground">
             {notes.slice(1).map((n, i) => (
-              <li key={i} className="whitespace-pre-line">
-                {n}
+              <li key={i}>
+                <ArtifactText text={n} />
               </li>
             ))}
           </ul>

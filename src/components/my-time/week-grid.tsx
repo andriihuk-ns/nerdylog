@@ -1,26 +1,30 @@
 "use client";
 
 import { useState } from "react";
+import { X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import type { EntryType, IsoDate } from "@/contracts";
+import type { IsoDate } from "@/contracts";
 import { cn } from "@/lib/utils";
 import { useGridNavigation } from "@/hooks/use-grid-navigation";
 import { isWeekend } from "@/components/lib/dates";
 import { useFormat } from "@/hooks/use-format";
 import { AddProjectRow } from "./add-project-row";
 import type { CommitMove } from "./cell-editor";
-import { DAY_STATUS_COLUMN } from "./day-status";
+import { DAY_STATUS_COLUMN, type DayDisplay } from "./day-status";
 import { DayStatusPill } from "./day-status-pill";
 import { HoursCell } from "./hours-cell";
-import type { ProjectOption, ProjectRef, WeekMatrix } from "./week-matrix";
+import type { MatrixRow, ProjectOption, ProjectRef, WeekMatrix } from "./week-matrix";
 
 interface Props {
   matrix: WeekMatrix;
+  /** A16: per-day pill state incl. display-only "weekend" (locks the column). */
+  display: DayDisplay[];
   addable: ProjectOption[];
   pendingKeys: readonly string[];
   failedKey: string | null;
   onSaveCell: (project: ProjectRef, date: IsoDate, hours: number, note?: string) => void;
-  onSetStatus: (date: IsoDate, status: EntryType) => void;
+  onSetStatus: (date: IsoDate, status: DayDisplay) => void;
+  onRemoveRow: (row: MatrixRow) => void;
   onAddProject: (project: ProjectRef) => void;
 }
 
@@ -28,9 +32,10 @@ type Draft = { row: number; col: number; draft: string } | null;
 
 export const cellKey = (projectId: string, date: IsoDate) => `${projectId}:${date}`;
 
-const STICKY = "sticky left-0 z-10 w-[200px] min-w-[200px] bg-card text-left";
+/** Sticky first column: narrower on phones so day columns stay visible at 375px. */
+const STICKY = "sticky left-0 z-10 w-[132px] min-w-[132px] max-w-[132px] bg-card text-left sm:w-[200px] sm:min-w-[200px] sm:max-w-[200px]";
 
-export function WeekGrid({ matrix, addable, pendingKeys, failedKey, onSaveCell, onSetStatus, onAddProject }: Props) {
+export function WeekGrid({ matrix, display, addable, pendingKeys, failedKey, onSaveCell, onSetStatus, onRemoveRow, onAddProject }: Props) {
   const { days, rows } = matrix;
   const { gridRef, focusCell, handleNavKey, cellProps } = useGridNavigation({ rows: rows.length, cols: days.length });
   const [editing, setEditing] = useState<Draft>(null);
@@ -57,7 +62,7 @@ export function WeekGrid({ matrix, addable, pendingKeys, failedKey, onSaveCell, 
       <table ref={gridRef} role="grid" aria-label={t("grid.label")} className="w-full border-collapse">
         <thead>
           <tr className="text-xs font-medium text-muted-foreground">
-            <th scope="col" className={cn(STICKY, "h-10 border-b px-4 font-medium")}>
+            <th scope="col" className={cn(STICKY, "h-10 border-b px-3 font-medium sm:px-4")}>
               {t("grid.project")}
             </th>
             {days.map((d, i) => {
@@ -68,7 +73,7 @@ export function WeekGrid({ matrix, addable, pendingKeys, failedKey, onSaveCell, 
                   scope="col"
                   className={cn(
                     "h-10 border-b px-3 text-right font-medium",
-                    DAY_STATUS_COLUMN[matrix.dayStatus[i]] || (isWeekend(d) && "bg-muted/50"),
+                    DAY_STATUS_COLUMN[display[i]] || (isWeekend(d) && "bg-muted/50"),
                   )}
                 >
                   {head.weekday} <span className="tabular">{head.day}</span>
@@ -80,12 +85,14 @@ export function WeekGrid({ matrix, addable, pendingKeys, failedKey, onSaveCell, 
             </th>
           </tr>
           <tr>
-            <td className={cn(STICKY, "border-b px-4 text-xs text-muted-foreground")}>{t("grid.dayStatus")}</td>
+            <td className={cn(STICKY, "border-b px-3 text-xs text-muted-foreground sm:px-4")}>{t("grid.dayStatus")}</td>
             {days.map((d, i) => (
-              <td key={d} className={cn("border-b px-1 py-1", DAY_STATUS_COLUMN[matrix.dayStatus[i]])}>
+              <td key={d} className={cn("border-b px-1 py-1", DAY_STATUS_COLUMN[display[i]])}>
                 <DayStatusPill
-                  status={matrix.dayStatus[i]}
+                  status={display[i]}
                   dayLabel={f.dayLong(d)}
+                  weekend={isWeekend(d)}
+                  hasHours={(matrix.dayTotals[i] ?? 0) > 0}
                   onChange={(s) => onSetStatus(d, s)}
                 />
               </td>
@@ -99,12 +106,24 @@ export function WeekGrid({ matrix, addable, pendingKeys, failedKey, onSaveCell, 
             const project = { id: row.projectId, name };
             return (
               <tr key={row.projectId}>
-                <th scope="row" className={cn(STICKY, "h-11 truncate border-b px-4 font-medium")}>
-                  {name}
+                <th scope="row" className={cn(STICKY, "group h-11 border-b pr-1 pl-3 font-medium sm:pl-4")}>
+                  <span className="flex items-center gap-1">
+                    <span className="min-w-0 flex-1 truncate" title={name}>
+                      {name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => onRemoveRow(row)}
+                      aria-label={t("removeRow", { name })}
+                      className="inline-flex size-11 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-100 hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:size-8 sm:opacity-0 sm:group-hover:opacity-100"
+                    >
+                      <X aria-hidden className="size-4" />
+                    </button>
+                  </span>
                 </th>
                 {row.cells.map((cell, c) => {
                   const date = days[c];
-                  const status = matrix.dayStatus[c];
+                  const status = display[c];
                   const key = cellKey(row.projectId, date);
                   return (
                     <HoursCell
@@ -113,6 +132,7 @@ export function WeekGrid({ matrix, addable, pendingKeys, failedKey, onSaveCell, 
                       label={`${name}, ${f.dayLong(date)}`}
                       title={`${name} · ${f.dayLong(date)}`}
                       readOnly={status !== "work"}
+                      weekendLocked={status === "weekend"}
                       weekend={isWeekend(date)}
                       columnTint={DAY_STATUS_COLUMN[status]}
                       editing={editing?.row === r && editing.col === c ? editing.draft : null}
@@ -142,7 +162,7 @@ export function WeekGrid({ matrix, addable, pendingKeys, failedKey, onSaveCell, 
         </tbody>
         <tfoot>
           <tr className="font-semibold">
-            <th scope="row" className={cn(STICKY, "h-11 px-4 text-left")}>
+            <th scope="row" className={cn(STICKY, "h-11 px-3 text-left sm:px-4")}>
               {t("grid.dailyTotal")}
             </th>
             {matrix.dayTotals.map((total, i) => (

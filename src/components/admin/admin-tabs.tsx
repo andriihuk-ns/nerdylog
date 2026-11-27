@@ -27,13 +27,15 @@ export function AdminTabs({ tab, year, officeId, panels }: Props) {
       }}
       className="flex flex-col gap-6"
     >
-      <TabsList aria-label={t("tabsLabel")}>
-        {ADMIN_TABS.map((value) => (
-          <TabsTrigger key={value} value={value} className="px-4">
-            {t(`tabs.${value}`)}
-          </TabsTrigger>
-        ))}
-      </TabsList>
+      <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+        <TabsList aria-label={t("tabsLabel")} className="w-max">
+          {ADMIN_TABS.map((value) => (
+            <TabsTrigger key={value} value={value} className="min-h-11 px-4 sm:min-h-0">
+              {t(`tabs.${value}`)}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </div>
       {ADMIN_TABS.map((value) => (
         <TabsContent key={value} value={value}>
           {panels[value]}

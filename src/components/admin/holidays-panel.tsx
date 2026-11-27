@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Toast } from "@/components/ui/toast";
 import { isIsoDate } from "@/components/lib/dates";
 import { useFormat } from "@/hooks/use-format";
+import { useConfirm } from "@/hooks/use-confirm";
 import { HolidayToolbar } from "./holiday-toolbar";
 
 interface Props {
@@ -33,6 +34,8 @@ export function HolidaysPanel({ holidays, offices, officeId, year, currentYear }
   const { toast, show, dismiss } = useToast();
   const t = useTranslations("admin.holidays");
   const f = useFormat();
+  const tc = useTranslations("common");
+  const { confirm, dialog } = useConfirm();
   const office = offices.find((o) => o.id === officeId);
   const sorted = [...list].sort((a, b) => a.holidayDate.localeCompare(b.holidayDate));
 
@@ -52,6 +55,11 @@ export function HolidaysPanel({ holidays, offices, officeId, year, currentYear }
       setName("");
       show(t("added", { name: res.data.name, day: f.dayLong(res.data.holidayDate) }));
     });
+  }
+
+  async function confirmRemove(h: HolidayView) {
+    const ok = await confirm({ title: t("confirmRemove", { name: h.name }), description: tc("cantUndo"), confirmLabel: tc("delete") });
+    if (ok) remove(h);
   }
 
   function remove(h: HolidayView) {
@@ -77,15 +85,15 @@ export function HolidaysPanel({ holidays, offices, officeId, year, currentYear }
         />
       </div>
       <form onSubmit={add} aria-label={t("addFor", { office: office.name })} className="flex flex-wrap items-end gap-3 rounded-lg border bg-card p-4">
-        <div className="flex flex-col gap-1.5">
+        <div className="flex w-full flex-col gap-1.5 sm:w-auto">
           <Label htmlFor="holiday-date">{t("date")}</Label>
-          <Input id="holiday-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} className="tabular h-11 w-44" />
+          <Input id="holiday-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} className="tabular h-11 w-full sm:w-44" />
         </div>
         <div className="flex min-w-48 flex-1 flex-col gap-1.5">
           <Label htmlFor="holiday-name">{t("name")}</Label>
           <Input id="holiday-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={120} placeholder={t("placeholder")} className="h-11" />
         </div>
-        <Button type="submit" disabled={adding} className="hit-target">
+        <Button type="submit" disabled={adding} className="hit-target w-full sm:w-auto">
           {adding ? t("adding") : t("addTo", { code: office.code })}
         </Button>
         {error ? (
@@ -104,7 +112,7 @@ export function HolidaysPanel({ holidays, offices, officeId, year, currentYear }
                 {f.dayLong(h.holidayDate)}
               </time>
               <span className="flex-1">{h.name}</span>
-              <Button variant="ghost" size="icon" className="hit-target" onClick={() => remove(h)} aria-label={t("remove", { name: h.name })}>
+              <Button variant="ghost" size="icon" className="hit-target" onClick={() => void confirmRemove(h)} aria-label={t("remove", { name: h.name })}>
                 <Trash2 aria-hidden />
               </Button>
             </li>
@@ -112,6 +120,7 @@ export function HolidaysPanel({ holidays, offices, officeId, year, currentYear }
         </ul>
       )}
       <Toast toast={toast} onDismiss={dismiss} />
+      {dialog}
     </section>
   );
 }

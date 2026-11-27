@@ -71,7 +71,13 @@ export default async function TeamPage({ searchParams }: { searchParams: SearchP
           {rows.length === 0 ? (
             <p className="rounded-lg border bg-card p-6 text-muted-foreground">{filtered ? t("noMatch") : t("empty")}</p>
           ) : (
-            <SummaryGrid rows={rows} weeks={weeks} today={today} />
+            <SummaryGrid
+              rows={rows}
+              weeks={weeks}
+              today={today}
+              avatars={Object.fromEntries(directory.map((u) => [u.id, u.avatarUrl]))}
+              selfId={actor.userId}
+            />
           )}
         </div>
         {drawerDate ? (

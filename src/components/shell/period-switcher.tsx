@@ -22,7 +22,7 @@ export function PeriodSwitcher({ label, unit, prevHref, nextHref, todayHref, tod
           <ChevronLeft aria-hidden />
         </Link>
       </Button>
-      <p className="tabular min-w-44 text-center text-sm font-medium" aria-live="polite">
+      <p className="tabular min-w-0 text-center text-sm font-medium whitespace-nowrap sm:min-w-44" aria-live="polite">
         {label}
       </p>
       <Button asChild variant="ghost" size="icon" className="hit-target">

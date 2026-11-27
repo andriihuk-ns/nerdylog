@@ -12,10 +12,13 @@
     "export": "Export",
     "saved": "Saved",
     "saveFailed": "Couldn't save",
-    "clearSearch": "Clear search"
+    "clearSearch": "Clear search",
+    "delete": "Delete",
+    "remove": "Remove",
+    "cantUndo": "This can't be undone."
   },
   "metadata": {
-    "description": "nerdylog: time tracking and async standups for the team, from Slack.",
+    "description": "nerdylog: time tracking and async standups from Slack.",
     "signIn": "Sign in",
     "myTime": "My time",
     "team": "Team",
@@ -23,17 +26,17 @@
     "person": "Person"
   },
   "login": {
-    "tagline": "Log time and share your standup from Slack. Sign in with your workspace account",
+    "tagline": "Log time and share your status from Slack.",
     "signIn": "Sign in with Slack",
     "errors": {
-      "oauth_denied": "Slack sign-in was cancelled. Try again when you're ready.",
-      "oauth_start": "We couldn't reach Slack to start sign-in. Try again in a moment.",
-      "exchange_failed": "Slack sign-in expired or was already used. Please sign in again.",
-      "missing_slack_identity": "Slack didn't share your user ID with nerdylog. Ask an admin to check the Slack app's scopes.",
-      "user_link_failed": "Signed in with Slack, but we couldn't link your nerdylog account. Try again or contact an admin.",
-      "inactive_user": "Your nerdylog account is archived. Ask an admin to reactivate it.",
-      "wrong_workspace": "This Slack workspace isn't connected to nerdylog. Sign in with your team's workspace.",
-      "unknown": "Sign-in failed. Please try again."
+      "oauth_denied": "Sign-in was cancelled. Try again.",
+      "oauth_start": "Couldn't reach Slack. Try again in a moment.",
+      "exchange_failed": "Sign-in link expired. Sign in again.",
+      "missing_slack_identity": "Slack didn't send your user ID. Ask an admin to check the app's scopes.",
+      "user_link_failed": "Couldn't link your account. Try again or ask an admin.",
+      "inactive_user": "Your account is archived. Ask an admin to turn it back on.",
+      "wrong_workspace": "This Slack workspace isn't connected. Use your team's workspace.",
+      "unknown": "Sign-in failed. Try again."
     }
   },
   "locale": {
@@ -46,13 +49,14 @@
       "en": "English",
       "uk": "Українська"
     },
-    "saveFailed": "Couldn't save your language. Try again."
+    "saveFailed": "Couldn't save the language. Try again."
   },
   "nav": {
     "main": "Main",
     "myTime": "My Time",
     "team": "Team",
-    "admin": "Admin"
+    "admin": "Admin",
+    "menu": "Pages"
   },
   "userMenu": {
     "accountFor": "Account menu for {name}",
@@ -78,30 +82,30 @@
     "thisYear": "This year"
   },
   "errors": {
-    "forbidden": "You don't have permission to do that.",
-    "notFound": "That item no longer exists. Refresh and try again.",
+    "forbidden": "You can't do that.",
+    "notFound": "This item is gone. Refresh the page.",
     "invalid": "Check the values and try again.",
     "generic": "Something went wrong. Try again.",
     "load": {
-      "myTime": "We couldn't load your week. Check your connection and try again.",
-      "team": "We couldn't load the team summary. Check your connection and try again.",
-      "admin": "We couldn't load admin settings. Check your connection and try again."
+      "myTime": "Couldn't load your week.",
+      "team": "Couldn't load the team.",
+      "admin": "Couldn't load admin."
     },
     "noAccess": {
-      "team": "Team is available to managers and admins. Ask an admin if you need access.",
-      "admin": "Admin is available to admins. Ask an admin if you need access."
+      "team": "Only managers and admins can see this.",
+      "admin": "Only admins can see this."
     }
   },
   "loading": {
     "myTime": "Loading your week",
-    "team": "Loading team summary",
+    "team": "Loading team",
     "admin": "Loading admin",
-    "standups": "Loading standups"
+    "standups": "Loading status"
   },
   "myTime": {
     "title": "My time",
     "weeklyTotal": "Weekly total",
-    "empty": "No hours yet. Use “Add project” in the grid, then type a number in any cell, or log from Slack with /log.",
+    "empty": "No hours yet. Add a project and type hours in a cell.",
     "saveFailed": "Couldn't save {hours}h on {day}. {reason}",
     "statusFailed": "Couldn't change {day}. {reason}",
     "confirmClear": "Clear {hours}h on {day}?",
@@ -117,17 +121,20 @@
       "timeOff": "time off",
       "spoken": "{hours} hours",
       "spokenWithNote": "{hours} hours, note: {notes}",
-      "hasNote": "Has a task note",
-      "hoursInput": "{label}, hours"
+      "hasNote": "Has a note",
+      "hoursInput": "{label}, hours",
+      "weekend": "weekend, switch to Work to log hours"
     },
     "addProject": "Add project",
     "addProjectRow": "Add a project row",
     "note": {
       "hours": "Hours",
-      "taskNote": "Task note",
-      "taskNoteFirst": "Task note (first entry)",
+      "taskNote": "Note",
+      "taskNoteFirst": "Note (first entry)",
       "placeholder": "What did you do? Ticket IDs like DOG-1364 are picked up.",
-      "detected": "Detected tickets"
+      "detected": "Detected tickets",
+      "linksHint": "Paste links to Jira, Figma, Asana, Drive… — they show as previews.",
+      "links": "Links"
     },
     "input": {
       "invalid": "Enter a number of hours",
@@ -135,10 +142,10 @@
     },
     "server": {
       "invalidHours": "Hours must be between 0 and 24, in steps of 0.25.",
-      "dayOff": "This day is marked as time off. Set it back to Work first.",
+      "dayOff": "This day is time off. Set it to Work first.",
       "dayMax": "Max 24h a day across all projects.",
       "pickStatus": "Pick Work, Vacation, Sick or Holiday.",
-      "cellBelow": "This cell combines {count} entries. Enter at least {hours}h, or 0 to clear it."
+      "cellBelow": "This cell has {count} entries. Enter at least {hours}h, or 0 to clear."
     },
     "access": {
       "askToJoin": "Ask {creator} to add you to {channel}",
@@ -146,43 +153,49 @@
       "projectChannel": "the project's Slack channel",
       "notInChannel": "{name} isn't in {channel} yet",
       "thisPerson": "This person",
-      "notMemberUnknown": "You're not a member of this project's Slack channel."
-    }
+      "notMemberUnknown": "You're not in this project's Slack channel."
+    },
+    "confirmClearBody": "The day becomes {status}. Its hours are removed.",
+    "clearAction": "Clear hours",
+    "removeRow": "Remove {name}",
+    "confirmRemoveRow": "Remove {name} from this week?",
+    "confirmRemoveRowBody": "Its {hours}h this week will be deleted."
   },
   "dayStatus": {
     "short": {
       "work": "Work",
       "vacation": "Vac",
       "sick": "Sick",
-      "holiday": "Hol"
+      "holiday": "Hol",
+      "weekend": "Weekend"
     },
     "long": {
       "work": "Work",
       "vacation": "Vacation",
       "sick": "Sick day",
-      "holiday": "Public holiday"
+      "holiday": "Public holiday",
+      "weekend": "Weekend"
     },
-    "change": "{day}: {status}. Change day status"
+    "change": "{day}: {status}. Change"
   },
   "pto": {
     "title": "Time off",
     "left": "{remaining, plural, one {vacation day left} other {vacation days left}} of <n>{allowance}</n>",
-    "noAllowance": "No vacation allowance set. Ask an admin to add one.",
+    "noAllowance": "No vacation allowance set yet.",
     "vacationUsed": "Vacation used",
     "sickDays": "Sick days",
     "days": "{count, plural, one {{value} day} other {{value} days}}"
   },
   "team": {
-    "title": "Team",
-    "empty": "No teammates in this view. Admins can sync from Slack in Admin.",
+    "empty": "Nobody here yet.",
     "exports": {
       "summaryCsv": "Summary CSV",
       "ledgerCsv": "Ledger CSV"
     },
-    "standupsToggle": "Standups",
+    "standupsToggle": "Status",
     "grid": {
       "label": "Team summary by month-week",
-      "teammate": "Teammate",
+      "teammate": "Person",
       "week": "Week {n}",
       "monthlyTotal": "Monthly total",
       "teamTotal": "Team total",
@@ -202,34 +215,34 @@
         "holidays": "{context}: {value} holidays"
       }
     },
-    "noMatch": "Nobody matches these filters.",
+    "noMatch": "Nobody matches.",
     "filters": {
-      "search": "Search teammates",
-      "project": "Filter by project",
+      "search": "Search people",
+      "project": "Project",
       "allProjects": "All projects"
-    }
+    },
+    "open": "Open {name}"
   },
   "standups": {
-    "title": "Standups",
-    "close": "Close standups",
+    "title": "Status",
+    "close": "Close status",
     "previousDay": "Previous day",
     "nextDay": "Next day",
-    "date": "Standup date",
-    "caption": "{day} · plans and blockers only, never counted as hours",
+    "date": "Date",
+    "caption": "{day} · plans and blockers, not counted as hours",
     "blockers": "Blockers",
     "plans": "Plans",
-    "empty": "No standups for {day}.",
-    "missingLabel": "No standup yet",
-    "missing": "No standup yet",
-    "loadFailed": "Couldn't load standups.",
-    "noPlan": "No plan written.",
+    "empty": "No status for {day}.",
+    "missingLabel": "No status yet",
+    "missing": "No status yet",
+    "loadFailed": "Couldn't load status.",
+    "noPlan": "No plan.",
     "blocker": "Blocker",
     "cardPlan": "{name}, plan",
     "cardBlocker": "{name}, blocker",
     "tickets": "Tickets"
   },
   "admin": {
-    "title": "Admin",
     "tabsLabel": "Admin sections",
     "tabs": {
       "directory": "Directory",
@@ -239,66 +252,75 @@
       "settings": "Settings"
     },
     "directory": {
-      "title": "Team directory",
       "counts": "<n>{active}</n> active · <n>{archived}</n> archived",
       "sync": "Sync from Slack",
       "syncing": "Syncing…",
-      "empty": "No teammates yet. Use “Sync from Slack” to import your workspace.",
+      "empty": "Nobody yet. Sync from Slack.",
       "columns": {
         "name": "Name",
         "title": "Title",
         "role": "Role",
-        "dailyNorm": "Daily norm (h)",
-        "allowance": "Vacation days / year",
+        "dailyNorm": "Hours / day",
+        "allowance": "Vacation days",
         "status": "Status",
         "office": "Office"
       },
       "syncFailed": "Sync failed. {reason}",
-      "synced": "Synced from Slack: {people}.",
+      "synced": "Synced: {people}.",
       "people": "{count, plural, one {# person} other {# people}}{created, plural, =0 {} other { (# new)}}",
-      "noTitle": "No title in Slack",
+      "noTitle": "No title",
       "roleFor": "Role for {name}",
       "normFor": "Daily norm hours for {name}",
       "allowanceFor": "Yearly vacation allowance in days for {name}",
       "activeFor": "{name} active",
-      "syncedWithProjects": "Synced from Slack: {people} · {projects}.",
+      "syncedWithProjects": "Synced: {people} · {projects}.",
       "projects": "members of {count, plural, one {# project} other {# projects}} refreshed",
       "projectsFailed": " ({count} failed)",
       "projectsNeedInvite": " · {count, plural, one {# needs} other {# need}} @nerdylog invited to their channel",
-      "search": "Search name, email or title",
-      "projectFilter": "Filter by project",
-      "officeFilter": "Filter by office",
+      "search": "Search name, email, title",
+      "projectFilter": "Project",
+      "officeFilter": "Office",
       "allProjects": "All projects",
       "allOffices": "All offices",
       "noOffice": "No office",
       "officeFor": "Office for {name}",
-      "noMatch": "Nobody matches these filters.",
+      "noMatch": "Nobody matches.",
       "clearFilters": "Clear filters",
-      "showing": "Showing <n>{shown}</n> of <n>{total}</n>"
+      "showing": "Showing <n>{shown}</n> of <n>{total}</n>",
+      "confirmArchive": "Archive {name}?",
+      "confirmArchiveBody": "They lose access and stop getting prompts. You can turn them back on later.",
+      "archive": "Archive"
     },
     "projects": {
       "title": "Projects",
       "new": "New project",
-      "empty": "No projects yet. Create one to start logging time.",
+      "empty": "No projects yet.",
       "columns": {
         "name": "Name",
         "channel": "Slack channel",
         "status": "Status",
         "actions": "Actions",
         "createdBy": "Created by",
-        "members": "Members"
+        "members": "Members",
+        "prompt": "Status prompt"
       },
       "edit": "Edit {name}",
       "botNotIn": "· bot not in channel",
-      "helper": "One project = one Slack channel. Its members are the people in that channel; only they can log time to it.",
+      "helper": "One project = one Slack channel. Only channel members can log time.",
       "noChannel": "No channel",
       "refresh": "Refresh members",
       "refreshing": "Refreshing…",
       "refreshFailed": "Couldn't refresh members of {name}. {reason}",
-      "refreshNeedsChannel": "Link a Slack channel first",
-      "needsInvite": "Invite @nerdylog to {channel}, then refresh members. Current members were kept.",
+      "refreshNeedsChannel": "Link a channel first",
+      "needsInvite": "Invite @nerdylog to {channel}, then refresh. Members kept.",
       "membersRefreshed": "{channel}: {count, plural, one {# member} other {# members}}{skipped, plural, =0 {} other { (# not in nerdylog yet)}}.",
-      "membersNotRefreshed": "Members couldn't be refreshed. Use “Refresh members” to try again."
+      "membersNotRefreshed": "Members not refreshed. Try “Refresh members”.",
+      "asksAt": "Asks at {time} · {office}",
+      "delete": "Delete {name}",
+      "deleteBlocked": "Has logged hours — archive instead",
+      "confirmDelete": "Delete project “{name}”?",
+      "deleted": "Deleted {name}.",
+      "deleteFailed": "Couldn't delete {name}. {reason}"
     },
     "projectForm": {
       "editLabel": "Edit {name}",
@@ -313,10 +335,14 @@
       "create": "Create project",
       "channelRequired": "Pick the project's Slack channel.",
       "channelRequiredLabel": "Slack channel (required)",
-      "channelHelper": "Members of this channel can log time to the project."
+      "channelHelper": "Channel members can log time here.",
+      "promptTime": "Status prompt time",
+      "promptOffice": "Office",
+      "promptHelper": "The bot asks for status in the channel at this time, in the office's timezone. Skips its holidays.",
+      "promptTimeInvalid": "Use HH:MM, like 10:00."
     },
     "holidays": {
-      "title": "Holiday calendar",
+      "title": "Holidays",
       "date": "Date",
       "name": "Name",
       "placeholder": "Independence Day",
@@ -325,28 +351,29 @@
       "nameRequired": "Name is required.",
       "added": "Added {name} on {day}.",
       "removeFailed": "Couldn't remove {name}. {reason}",
-      "empty": "No {office} holidays in {year} yet.",
+      "empty": "No {office} holidays in {year}.",
       "remove": "Remove {name}",
       "officeFilter": "Office",
       "copyFrom": "Copy from {year}",
       "copying": "Copying…",
       "copied": "Copied {copied}, skipped {skipped}.",
       "copyFailed": "Couldn't copy holidays. {reason}",
-      "noOffices": "Add an office on the Offices tab first; holidays are set per office.",
+      "noOffices": "Add an office first.",
       "addFor": "Add a holiday for {office}",
       "addTo": "Add to {code}",
-      "listLabel": "{office} holidays in {year}"
+      "listLabel": "{office} holidays in {year}",
+      "confirmRemove": "Delete holiday “{name}”?"
     },
     "settings": {
       "title": "Settings",
-      "channel": "General standup channel",
+      "channel": "General status channel",
       "off": "Off",
-      "helper": "Receives everyone's full morning standup (yesterday, plan, blockers). Project channels only get their own project's lines.",
-      "savedTo": "Standups now post to {channel}.",
-      "turnedOff": "General standup channel turned off."
+      "helper": "Gets everyone's full status. Project channels get only their own lines.",
+      "savedTo": "Status now posts to {channel}.",
+      "turnedOff": "General status channel is off."
     },
     "channel": {
-      "connect": "Connect the Slack app to choose channels.",
+      "connect": "Connect the Slack app to pick channels.",
       "notConnected": "Slack not connected",
       "search": "Search channels",
       "list": "Slack channels",
@@ -360,7 +387,7 @@
       "notFound": "Channel not found"
     },
     "server": {
-      "directoryInvalid": "Daily norm must be 0.25–24h; allowance 0–366 days in half days.",
+      "directoryInvalid": "Hours / day: 0.25–24. Vacation: 0–366 days, half days allowed.",
       "invalidChannel": "Not a valid Slack channel",
       "alreadyLinkedProject": "Already linked to {name}",
       "unknownHoliday": "Unknown holiday.",
@@ -371,13 +398,16 @@
       "unknownProject": "Unknown project.",
       "noChannelToRefresh": "This project has no Slack channel.",
       "officeCodeInvalid": "Code must be 2–8 letters or digits, like UA.",
-      "unknownOffice": "Unknown office."
+      "unknownOffice": "Unknown office.",
+      "hasEntries": "Has logged hours — archive instead.",
+      "promptTimeInvalid": "Use HH:MM, like 10:00.",
+      "timezoneInvalid": "Pick a timezone."
     },
     "offices": {
       "title": "Offices",
-      "helper": "Each person belongs to one office; it decides which public holidays apply to them.",
+      "helper": "A person's office sets their holidays and timezone for prompts.",
       "new": "New office",
-      "empty": "No offices yet. Add one to assign people and holidays.",
+      "empty": "No offices yet.",
       "editLabel": "Edit {name}",
       "newLabel": "New office",
       "code": "Code",
@@ -390,50 +420,53 @@
       "saved": "Saved {name}.",
       "edit": "Edit {name}",
       "delete": "Delete {name}",
-      "deleteBlocked": "Move its {count, plural, one {# person} other {# people}} to another office first",
-      "confirmDelete": "Delete {name}? Its holidays must be removed first.",
+      "deleteBlocked": "Move its {count, plural, one {# person} other {# people}} first",
+      "confirmDelete": "Delete office “{name}”?",
       "deleted": "Deleted {name}.",
       "deleteFailed": "Couldn't delete {name}. {reason}",
       "columns": {
         "code": "Code",
         "name": "Name",
         "members": "People",
-        "actions": "Actions"
-      }
+        "actions": "Actions",
+        "timezone": "Timezone"
+      },
+      "timezone": "Timezone",
+      "confirmDeleteBody": "Remove its holidays first. This can't be undone."
     }
   },
   "exports": {
     "label": "Export",
-    "week": "Week",
-    "month": "Month",
-    "menuFor": "Export {period}",
+    "week": "Export week",
+    "month": "Export month",
     "csv": "CSV",
     "pdf": "PDF"
   },
   "projectHours": {
-    "title": "This month by project",
-    "empty": "No hours logged this month yet.",
+    "title": "Hours by project",
+    "empty": "No hours this month.",
     "total": "Total"
   },
   "people": {
-    "back": "Directory",
     "office": "Office",
     "role": "Role",
     "status": "Status",
     "noOffice": "No office",
-    "noTitle": "No title in Slack",
+    "noTitle": "No title",
     "week": "{name}'s week",
     "totals": {
       "title": "Month totals",
-      "empty": "Nothing logged this month.",
+      "empty": "Nothing this month.",
       "hours": "Hours",
       "days": "Days",
       "vacSick": "Vac/Sick days",
       "holidays": "Holidays"
     },
     "standups": {
-      "title": "Recent standups",
-      "empty": "No standups in the last 14 days."
-    }
+      "title": "Recent status",
+      "empty": "No status in the last 14 days."
+    },
+    "backTeam": "Team",
+    "backDirectory": "People"
   }
 }

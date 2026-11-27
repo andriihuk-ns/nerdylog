@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { LogOut } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { MyProfile } from "@/contracts";
@@ -18,11 +19,14 @@ import { signOutAction } from "@/app/(dashboard)/sign-out-action";
 import { profileDisplayName, profileSubtitle } from "./profile-label";
 import { LocaleMenuRow } from "./locale-menu-group";
 import { ThemeMenuRow } from "./theme-menu-row";
+import { useActiveHref, type NavItem } from "./nav-links";
 
-export function UserMenu({ profile }: { profile: MyProfile }) {
+/** Avatar menu. A16: under 640px it also holds the page links (the top nav is hidden there). */
+export function UserMenu({ profile, navItems, navLabel }: { profile: MyProfile; navItems: NavItem[]; navLabel: string }) {
   const t = useTranslations("userMenu");
   const tRole = useTranslations("roles");
   const name = profileDisplayName(profile, t("signedIn"));
+  const active = useActiveHref(navItems);
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -41,6 +45,16 @@ export function UserMenu({ profile }: { profile: MyProfile }) {
           {profile.email ? <span className="truncate text-xs text-muted-foreground">{profile.email}</span> : null}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuGroup aria-label={navLabel} className="sm:hidden">
+          {navItems.map((item) => (
+            <DropdownMenuItem key={item.href} asChild className="min-h-11 font-medium data-[current=true]:bg-muted">
+              <Link href={item.href} aria-current={active === item.href ? "page" : undefined} data-current={active === item.href}>
+                {item.label}
+              </Link>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator className="sm:hidden" />
         <DropdownMenuGroup>
           <ThemeMenuRow />
           <LocaleMenuRow />

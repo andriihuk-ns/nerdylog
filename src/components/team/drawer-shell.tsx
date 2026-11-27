@@ -91,7 +91,7 @@ export function DrawerShell({ date, month, filters, children }: Props) {
             type="date"
             value={date}
             onChange={(e) => isIsoDate(e.target.value) && router.push(hrefFor(e.target.value), { scroll: false })}
-            className="tabular h-11 flex-1 rounded-md border border-input bg-card px-3"
+            className="tabular h-11 flex-1 rounded-md border border-input bg-card px-3 hover:border-input-hover focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"
           />
           <Button asChild variant="ghost" size="icon" className="hit-target">
             <Link href={hrefFor(addDays(date, 1))} scroll={false} aria-label={t("nextDay")}>

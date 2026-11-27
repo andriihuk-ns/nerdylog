@@ -23,7 +23,7 @@ const ICON: Record<ExportItem["kind"], LucideIcon> = { csv: FileSpreadsheet, pdf
 export function ExportMenus({ groups }: { groups: ExportGroups }) {
   const t = useTranslations("exports");
   return (
-    <div className="flex flex-wrap items-center gap-2" role="group" aria-label={t("label")}>
+    <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center" role="group" aria-label={t("label")}>
       <ExportMenu label={t("week")} items={groups.week} />
       <ExportMenu label={t("month")} items={groups.month} />
     </div>
@@ -35,7 +35,7 @@ function ExportMenu({ label, items }: { label: string; items: ExportItem[] }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="hit-target" aria-label={t("menuFor", { period: label })}>
+        <Button variant="outline" className="hit-target w-full sm:w-auto">
           {label}
           <ChevronDown aria-hidden />
         </Button>

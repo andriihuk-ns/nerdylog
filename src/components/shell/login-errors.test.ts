@@ -14,7 +14,7 @@ describe("login helpers", () => {
 
   it("falls back for unknown codes and ignores missing ones", () => {
     expect(loginErrorKey("weird")).toBe("unknown");
-    expect(en.login.errors.unknown).toBe("Sign-in failed. Please try again.");
+    expect(en.login.errors.unknown).toBe("Sign-in failed. Try again.");
     expect(loginErrorKey(undefined)).toBeNull();
     expect(loginErrorKey(["a", "b"])).toBeNull();
   });

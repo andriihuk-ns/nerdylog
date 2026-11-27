@@ -36,6 +36,7 @@
   --color-destructive: var(--destructive);
   --color-border: var(--border);
   --color-input: var(--input);
+  --color-input-hover: var(--input-hover);
   --color-ring: var(--ring);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
@@ -115,7 +116,8 @@
   --accent-foreground: #18181b;
   --destructive: #c81e1e;
   --border: #e4e4e7; /* decorative hairline */
-  --input: #8a8a93; /* form control edge, >= 3:1 */
+  --input: #d4d4d8; /* A16: light form control edge; focus gets a 2px ring */
+  --input-hover: #a1a1aa; /* hover edge */
   --ring: #71717a;
 
   /* Semantic (light) */
@@ -168,7 +170,8 @@
   --accent-foreground: #f4f4f5;
   --destructive: #f87171;
   --border: #2a2a2e;
-  --input: #6e6e76;
+  --input: #3f3f46;
+  --input-hover: #5c5c66;
   --ring: #a1a1aa;
 
   /* Semantic (dark): lighter ink, dark text on solid fills */

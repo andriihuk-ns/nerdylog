@@ -40,7 +40,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
   const actor = await requireActor();
   if (actor.role !== "admin") return <NoAccessPanel area="admin" />;
 
-  const [params, profile, t] = await Promise.all([searchParams, getCurrentProfile(), getTranslations("admin")]);
+  const [params, profile, t] = await Promise.all([searchParams, getCurrentProfile(), getTranslations("metadata")]);
   const tab = parseAdminTab(params.tab);
   const currentYear = Number(todayIn(profile.timezone).slice(0, 4));
   const year = parseYear(params.year, currentYear);
@@ -58,14 +58,14 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold tracking-[-0.01em]">{t("title")}</h1>
+      <h1 className="sr-only">{t("admin")}</h1>
       <AdminTabs
         tab={tab}
         year={year}
         officeId={officeId}
         panels={{
           directory: <DirectoryPanel users={users} projects={projects.filter((p) => p.isActive)} offices={offices} />,
-          projects: <ProjectsPanel projects={projects} channels={channels} />,
+          projects: <ProjectsPanel projects={projects} channels={channels} offices={offices} />,
           offices: <OfficesPanel offices={offices} />,
           holidays: (
             <HolidaysPanel key={`${officeId}-${year}`} holidays={holidays} offices={offices} officeId={officeId} year={year} currentYear={currentYear} />

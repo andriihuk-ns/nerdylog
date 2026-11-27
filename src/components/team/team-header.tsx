@@ -26,10 +26,11 @@ interface Props {
 
 export const STANDUPS_TOGGLE_ID = "standups-toggle";
 
-/** `‹ November 2026 ›`, Week ▾ / Month ▾ exports, Standups toggle, search + project filter. Keys: `[` / `]` month, `S` drawer. */
+/** `‹ November 2026 ›`, Export week ▾ / Export month ▾, Status toggle, search + project filter. Keys: `[` / `]` month, `S` drawer. */
 export function TeamHeader({ month, today, drawerDate, filters, projects, exports }: Props) {
   const router = useRouter();
   const t = useTranslations("team");
+  const tm = useTranslations("metadata");
   const tp = useTranslations("period");
   const f = useFormat();
   const prev = teamHref(shiftMonth(month, -1), drawerDate, filters);
@@ -45,8 +46,8 @@ export function TeamHeader({ month, today, drawerDate, filters, projects, export
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold tracking-[-0.01em]">{t("title")}</h1>
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <h1 className="sr-only">{tm("team")}</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <PeriodSwitcher
           unit="month"
           label={f.month(month)}
@@ -55,13 +56,9 @@ export function TeamHeader({ month, today, drawerDate, filters, projects, export
           todayHref={month === current ? undefined : teamHref(current, drawerDate, filters)}
           todayLabel={tp("thisMonth")}
         />
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:items-center">
           <ExportMenus groups={exports} />
-          <Button
-            asChild
-            variant={drawerDate ? "secondary" : "outline"}
-            className="hit-target"
-          >
+          <Button asChild variant={drawerDate ? "secondary" : "outline"} className="hit-target w-full sm:w-auto">
             <Link
               id={STANDUPS_TOGGLE_ID}
               href={toggleHref}

@@ -23,7 +23,7 @@ export async function ShellNav() {
       {profile.locale && profile.locale !== locale ? <LocaleSync locale={profile.locale} /> : null}
       <NavLinks items={items} label={t("main")} />
       <div className="ml-auto flex items-center">
-        <UserMenu profile={profile} />
+        <UserMenu profile={profile} navItems={items} navLabel={t("main")} />
       </div>
     </>
   );
@@ -32,7 +32,7 @@ export async function ShellNav() {
 export function ShellNavSkeleton() {
   return (
     <>
-      <div className="flex items-center gap-4" aria-hidden>
+      <div className="hidden items-center gap-4 sm:flex" aria-hidden>
         <Skeleton className="h-4 w-16" />
         <Skeleton className="h-4 w-12" />
       </div>

@@ -40,12 +40,18 @@ export default async function MyTimePage({ searchParams }: { searchParams: Searc
 
   return (
     <div className="flex flex-col gap-8">
-      <WeekView key={weekStart} weekStart={weekStart} today={today} entries={entries} projects={options} />
+      <WeekView
+        key={weekStart}
+        weekStart={weekStart}
+        today={today}
+        entries={entries}
+        projects={options}
+        actions={<ExportMenus groups={rangeExports({ from: weekStart, to: weekEnd }, month)} />}
+      />
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <ProjectHoursCard items={monthHours} month={month} />
         <PtoBalanceCard balance={pto} />
       </div>
-      <ExportMenus groups={rangeExports({ from: weekStart, to: weekEnd }, month)} />
     </div>
   );
 }

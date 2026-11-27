@@ -3,15 +3,24 @@
 import { useOptimistic, useTransition, type ReactNode } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ROLES, type DirectoryUser, type OfficeView, type Role } from "@/contracts";
+import {
+  ROLES,
+  type DirectoryUser,
+  type OfficeView,
+  type Role,
+} from "@/contracts";
 import { cn } from "@/lib/utils";
-import { updateDirectoryUserAction, type DirectoryPatch } from "@/app/(dashboard)/admin/actions";
+import {
+  updateDirectoryUserAction,
+  type DirectoryPatch,
+} from "@/app/(dashboard)/admin/actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
 import { FilterSelect } from "@/components/shell/filter-select";
 import { initials } from "@/components/lib/format";
 import { useFormat } from "@/hooks/use-format";
 import { useFieldSave } from "@/hooks/use-field-save";
+import { useConfirm } from "@/hooks/use-confirm";
 import type { FieldSave } from "@/hooks/save-state";
 import { NumberCommitInput } from "./number-commit-input";
 import { SaveIndicator } from "./save-indicator";
@@ -19,15 +28,25 @@ import { NONE } from "./directory-filters";
 
 type Field = keyof DirectoryPatch;
 
-/** One Team Directory row; every control saves optimistically with its own "Saving… / Saved ✓ / error" status. */
-export function DirectoryRow({ user, offices }: { user: DirectoryUser; offices: OfficeView[] }) {
-  const [view, applyPatch] = useOptimistic(user, (u: DirectoryUser, patch: DirectoryPatch) => ({ ...u, ...patch }));
+/** One Directory row (Status first, A16); every control saves optimistically with its own "Saving… / Saved ✓ / error" status. */
+export function DirectoryRow({
+  user,
+  offices,
+}: {
+  user: DirectoryUser;
+  offices: OfficeView[];
+}) {
+  const [view, applyPatch] = useOptimistic(
+    user,
+    (u: DirectoryUser, patch: DirectoryPatch) => ({ ...u, ...patch }),
+  );
   const [, startTransition] = useTransition();
   const { get, track } = useFieldSave();
   const t = useTranslations("admin.directory");
   const tc = useTranslations("common");
   const tRole = useTranslations("roles");
   const f = useFormat();
+  const { confirm, dialog } = useConfirm();
 
   function update(field: Field, patch: DirectoryPatch) {
     void track(
@@ -43,24 +62,63 @@ export function DirectoryRow({ user, offices }: { user: DirectoryUser; offices: 
     );
   }
 
+  async function setActive(isActive: boolean) {
+    if (!isActive) {
+      const ok = await confirm({
+        title: t("confirmArchive", { name: view.fullName }),
+        description: t("confirmArchiveBody"),
+        confirmLabel: t("archive"),
+      });
+      if (!ok) return;
+    }
+    update("isActive", { isActive });
+  }
+
   return (
-    <tr className={cn("border-b last:border-b-0", !view.isActive && "text-muted-foreground")}>
-      <th scope="row" className="px-2 py-2 text-left font-medium">
+    <tr
+      className={cn(
+        "h-16 border-b last:border-b-0",
+        !view.isActive && "text-muted-foreground",
+      )}
+    >
+      <Cell state={get("isActive")}>
+        <span className="flex items-center gap-2">
+          <Switch
+            checked={view.isActive}
+            onCheckedChange={(next) => void setActive(next)}
+            aria-label={t("activeFor", { name: view.fullName })}
+          />
+          <span className="text-xs whitespace-nowrap">
+            {view.isActive ? tc("active") : tc("archived")}
+          </span>
+        </span>
+        {dialog}
+      </Cell>
+      <th
+        scope="row"
+        className="sticky left-0 z-10 bg-card px-2 py-3 text-left align-middle font-medium"
+      >
         <Link
-          href={`/admin/people/${view.id}`}
+          href={`/people/${view.id}?from=directory`}
           className="flex min-h-11 items-center gap-3 rounded-md px-2 hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           <Avatar size="sm">
-            {view.avatarUrl ? <AvatarImage src={view.avatarUrl} alt="" /> : null}
+            {view.avatarUrl ? (
+              <AvatarImage src={view.avatarUrl} alt="" />
+            ) : null}
             <AvatarFallback>{initials(view.fullName)}</AvatarFallback>
           </Avatar>
           <span className="flex min-w-0 flex-col">
             <span className="truncate">{view.fullName}</span>
-            {view.email ? <span className="truncate text-xs font-normal text-muted-foreground">{view.email}</span> : null}
+            {view.email ? (
+              <span className="truncate text-xs font-normal text-muted-foreground">
+                {view.email}
+              </span>
+            ) : null}
           </span>
         </Link>
       </th>
-      <td className="max-w-48 px-2 py-2 text-sm">
+      <td className="max-w-48 px-2 py-3 align-middle text-sm">
         {view.title ? (
           <span className="block truncate" title={view.title}>
             {view.title}
@@ -76,8 +134,16 @@ export function DirectoryRow({ user, offices }: { user: DirectoryUser; offices: 
         <FilterSelect
           label={t("officeFor", { name: view.fullName })}
           value={view.officeId ?? NONE}
-          onChange={(v) => update("officeId", { officeId: v === NONE ? null : v })}
-          options={[{ value: NONE, label: t("noOffice") }, ...offices.map((o) => ({ value: o.id, label: `${o.code} · ${o.name}` }))]}
+          onChange={(v) =>
+            update("officeId", { officeId: v === NONE ? null : v })
+          }
+          options={[
+            { value: NONE, label: t("noOffice") },
+            ...offices.map((o) => ({
+              value: o.id,
+              label: `${o.code} · ${o.name}`,
+            })),
+          ]}
           className="w-40"
         />
       </Cell>
@@ -99,7 +165,9 @@ export function DirectoryRow({ user, offices }: { user: DirectoryUser; offices: 
           max={24}
           step={0.25}
           format={f.hours}
-          onCommit={(n) => n !== null && update("dailyNormHours", { dailyNormHours: n })}
+          onCommit={(n) =>
+            n !== null && update("dailyNormHours", { dailyNormHours: n })
+          }
         />
       </Cell>
       <Cell state={get("ptoAllowanceDays")} align="right">
@@ -115,27 +183,36 @@ export function DirectoryRow({ user, offices }: { user: DirectoryUser; offices: 
           onCommit={(n) => update("ptoAllowanceDays", { ptoAllowanceDays: n })}
         />
       </Cell>
-      <Cell state={get("isActive")}>
-        <span className="flex items-center gap-2">
-          <Switch
-            checked={view.isActive}
-            onCheckedChange={(isActive) => update("isActive", { isActive })}
-            aria-label={t("activeFor", { name: view.fullName })}
-          />
-          <span className="text-xs">{view.isActive ? tc("active") : tc("archived")}</span>
-        </span>
-      </Cell>
     </tr>
   );
 }
 
-/** Editable cell: control, then its save status underneath (fixed height, no row jump). */
-function Cell({ state, align = "left", children }: { state: FieldSave; align?: "left" | "right"; children: ReactNode }) {
+/** Editable cell: control centred in the row; its save status hangs just below it (no row jump). */
+function Cell({
+  state,
+  align = "left",
+  children,
+}: {
+  state: FieldSave;
+  align?: "left" | "right";
+  children: ReactNode;
+}) {
   return (
-    <td className="px-2 py-2 align-top">
-      <div className={cn("flex flex-col gap-0.5", align === "right" ? "items-end" : "items-start")}>
+    <td className="px-2 py-3 align-middle">
+      <div
+        className={cn(
+          "relative flex",
+          align === "right" ? "justify-end" : "justify-start",
+        )}
+      >
         {children}
-        <SaveIndicator state={state} className="max-w-40" />
+        <SaveIndicator
+          state={state}
+          className={cn(
+            "absolute top-full z-10 mt-0.5 max-w-40 bg-card",
+            align === "right" ? "right-0" : "left-0",
+          )}
+        />
       </div>
     </td>
   );

@@ -5,8 +5,8 @@ import type { DirectoryUser, OfficeView } from "@/contracts";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { initials } from "@/components/lib/format";
 
-/** A15 people page header: avatar, name, title, office, role, email; back to Directory. */
-export function PersonHeader({ user, office }: { user: DirectoryUser; office: OfficeView | undefined }) {
+/** People page header: avatar, name, title, office, role, email; back to Team or Directory. */
+export function PersonHeader({ user, office, from }: { user: DirectoryUser; office: OfficeView | undefined; from: "team" | "directory" }) {
   const t = useTranslations("people");
   const tRole = useTranslations("roles");
   const tc = useTranslations("common");
@@ -18,11 +18,11 @@ export function PersonHeader({ user, office }: { user: DirectoryUser; office: Of
   return (
     <header className="flex flex-col gap-4">
       <Link
-        href="/admin?tab=directory"
+        href={from === "directory" ? "/admin?tab=directory" : "/team"}
         className="hit-target inline-flex w-fit items-center gap-1 rounded-md text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
       >
         <ChevronLeft aria-hidden className="size-4" />
-        {t("back")}
+        {from === "directory" ? t("backDirectory") : t("backTeam")}
       </Link>
       <div className="flex flex-wrap items-center gap-4">
         <Avatar className="size-14">
@@ -30,7 +30,7 @@ export function PersonHeader({ user, office }: { user: DirectoryUser; office: Of
           <AvatarFallback>{initials(user.fullName)}</AvatarFallback>
         </Avatar>
         <div className="flex min-w-0 flex-col gap-0.5">
-          <h1 className="text-2xl font-semibold tracking-[-0.01em]">{user.fullName}</h1>
+          <h1 className="text-xl font-semibold tracking-[-0.01em] sm:text-2xl">{user.fullName}</h1>
           <p className="text-muted-foreground">
             {[user.title, user.email].filter(Boolean).join(" · ") || t("noTitle")}
           </p>

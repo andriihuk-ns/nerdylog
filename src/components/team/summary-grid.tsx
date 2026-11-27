@@ -1,11 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import type { IsoDate, MonthWeek, UserMonthRollup } from "@/contracts";
 import { cn } from "@/lib/utils";
 import { useGridNavigation } from "@/hooks/use-grid-navigation";
 import { useFormat } from "@/hooks/use-format";
 import { initials } from "@/components/lib/format";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SummaryCell } from "./summary-cell";
 import { bucketValues, SUB_COLUMNS, teamTotals } from "./team-summary";
 
@@ -13,17 +15,22 @@ interface Props {
   rows: UserMonthRollup[];
   weeks: MonthWeek[];
   today: IsoDate;
+  /** A16: Slack avatars by user id (initials when missing). */
+  avatars: Record<string, string | null>;
+  /** Own row links to /my-time; others to /people/[id]. */
+  selfId: string;
 }
 
-const STICKY = "sticky left-0 z-10 w-[220px] min-w-[220px] bg-card text-left";
+const STICKY = "sticky left-0 z-10 w-[150px] min-w-[150px] max-w-[150px] bg-card text-left sm:w-[220px] sm:min-w-[220px] sm:max-w-[220px]";
 const SUBS = [0, 1, 2, 3] as const;
 
 /** FR-WEB-04 / A2 Summary matrix: month-weeks × (Hours, Days, Vac/Sick, Holidays) + Monthly total. */
-export function SummaryGrid({ rows, weeks, today }: Props) {
+export function SummaryGrid({ rows, weeks, today, avatars, selfId }: Props) {
   const cols = (weeks.length + 1) * SUB_COLUMNS.length;
   const { gridRef, cellProps, handleNavKey } = useGridNavigation({ rows: rows.length, cols });
   const totals = teamTotals(rows, weeks.length);
   const t = useTranslations("team.grid");
+  const tTeam = useTranslations("team");
   const f = useFormat();
 
   return (
@@ -72,13 +79,18 @@ export function SummaryGrid({ rows, weeks, today }: Props) {
         <tbody>
           {rows.map((row, r) => (
             <tr key={row.userId}>
-              <th scope="row" className={cn(STICKY, "h-11 border-b px-4 font-medium")}>
-                <span className="flex items-center gap-2">
-                  <span aria-hidden className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs text-muted-foreground">
-                    {initials(row.fullName)}
-                  </span>
+              <th scope="row" className={cn(STICKY, "h-11 border-b px-1 font-medium sm:px-2")}>
+                <Link
+                  href={row.userId === selfId ? "/my-time" : `/people/${row.userId}?from=team`}
+                  title={tTeam("open", { name: row.fullName })}
+                  className="flex min-h-11 items-center gap-2 rounded-md px-2 hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                >
+                  <Avatar size="sm">
+                    {avatars[row.userId] ? <AvatarImage src={avatars[row.userId] ?? undefined} alt="" /> : null}
+                    <AvatarFallback>{initials(row.fullName)}</AvatarFallback>
+                  </Avatar>
                   <span className="truncate">{row.fullName}</span>
-                </span>
+                </Link>
               </th>
               {[...row.weeks, row.total].flatMap((bucket, g) => {
                 const isTotal = g === row.weeks.length;

@@ -7,6 +7,8 @@ import { upsertOfficeAction } from "@/app/(dashboard)/admin/office-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { timezoneOptions } from "./timezones";
 
 interface Props {
   office?: OfficeView; // omitted → create
@@ -16,13 +18,14 @@ interface Props {
 
 const CODE_PATTERN = /^[A-Z0-9]{2,8}$/;
 
-/** A15 office: short code (UA, PL) + name. */
+/** Office: short code (UA, PL), name and timezone (A16, used for status prompts). */
 export function OfficeForm({ office, onDone, onCancel }: Props) {
   const id = useId();
   const t = useTranslations("admin.offices");
   const tc = useTranslations("common");
   const [code, setCode] = useState(office?.code ?? "");
   const [name, setName] = useState(office?.name ?? "");
+  const [timezone, setTimezone] = useState(office?.timezone ?? "Europe/Kyiv");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -33,7 +36,7 @@ export function OfficeForm({ office, onDone, onCancel }: Props) {
     if (!name.trim()) return setError(t("nameRequired"));
     setError(null);
     startTransition(async () => {
-      const res = await upsertOfficeAction({ id: office?.id, code: normalized, name });
+      const res = await upsertOfficeAction({ id: office?.id, code: normalized, name, timezone });
       if (res.ok) onDone(res.data, !office);
       else setError(res.message);
     });
@@ -62,6 +65,21 @@ export function OfficeForm({ office, onDone, onCancel }: Props) {
       <div className="flex min-w-48 flex-1 flex-col gap-1.5">
         <Label htmlFor={`${id}-name`}>{t("name")}</Label>
         <Input id={`${id}-name`} value={name} onChange={(e) => setName(e.target.value)} required maxLength={120} placeholder={t("namePlaceholder")} className="h-11" />
+      </div>
+      <div className="flex w-full flex-col gap-1.5 sm:w-56">
+        <Label htmlFor={`${id}-tz`}>{t("timezone")}</Label>
+        <Select value={timezone} onValueChange={setTimezone}>
+          <SelectTrigger id={`${id}-tz`} className="h-11 w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {timezoneOptions(office?.timezone).map((tz) => (
+              <SelectItem key={tz} value={tz}>
+                {tz}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <Button type="button" variant="ghost" className="hit-target" onClick={onCancel}>
         {tc("cancel")}

@@ -31,13 +31,14 @@ export function TeamFilterBar({ month, drawerDate, filters, projects }: Props) {
   }, [debounced, filters, month, drawerDate, router]);
 
   return (
-    <div role="search" className="flex flex-wrap items-center gap-2">
-      <SearchInput value={query} onChange={setQuery} label={t("search")} className="min-w-56 flex-1 sm:max-w-sm" />
+    <div role="search" className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+      <SearchInput value={query} onChange={setQuery} label={t("search")} className="w-full sm:min-w-56 sm:max-w-sm sm:flex-1" />
       <FilterSelect
         label={t("project")}
         value={filters.project ?? ALL}
         onChange={(v) => router.replace(teamHref(month, drawerDate, { q: query, project: v === ALL ? null : v }), { scroll: false })}
         options={[{ value: ALL, label: t("allProjects") }, ...projects]}
+        className="w-full sm:w-48"
       />
     </div>
   );

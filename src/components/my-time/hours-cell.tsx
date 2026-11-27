@@ -13,7 +13,8 @@ export interface HoursCellProps {
   cell: MatrixCell;
   label: string; // "DogTeamPro, Tue, Nov 24"
   title: string; // "DogTeamPro · Tue, Nov 24" (note popover heading)
-  readOnly: boolean; // PTO day
+  readOnly: boolean; // PTO day or locked weekend
+  weekendLocked?: boolean; // A16: Sat/Sun still on "Weekend"
   weekend: boolean;
   columnTint: string;
   editing: string | null; // initial draft when editing
@@ -55,11 +56,13 @@ export function HoursCell(p: HoursCellProps) {
   }
 
   const hours = f.hours(p.cell.hours);
-  const spoken = p.readOnly
-    ? t("timeOff")
-    : p.cell.notes.length > 0
-      ? t("spokenWithNote", { hours, notes: p.cell.notes.join("; ") })
-      : t("spoken", { hours });
+  const spoken = p.weekendLocked
+    ? t("weekend")
+    : p.readOnly
+      ? t("timeOff")
+      : p.cell.notes.length > 0
+        ? t("spokenWithNote", { hours, notes: p.cell.notes.join("; ") })
+        : t("spoken", { hours });
 
   return (
     <td
@@ -71,7 +74,7 @@ export function HoursCell(p: HoursCellProps) {
       onDoubleClick={() => !p.readOnly && p.onStartEdit(current)}
       onClick={(e) => e.currentTarget.focus()}
       className={cn(
-        "relative h-11 min-w-[72px] border-b p-0 text-right outline-none transition-colors duration-[var(--duration-base)] ease-standard",
+        "relative h-11 min-w-[64px] border-b p-0 text-right outline-none transition-colors duration-[var(--duration-base)] ease-standard",
         "focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset focus-visible:outline-none",
         p.weekend && !p.columnTint && "bg-muted/50",
         p.columnTint,
@@ -101,7 +104,7 @@ export function HoursCell(p: HoursCellProps) {
                 {p.cell.notes.length > 0 ? (
                   <span aria-hidden className="size-1 rounded-full bg-muted-foreground/60" title={t("hasNote")} />
                 ) : null}
-                {p.readOnly ? "—" : p.cell.hours > 0 ? hours : "·"}
+                {p.weekendLocked ? "" : p.readOnly ? "—" : p.cell.hours > 0 ? hours : "·"}
               </span>
             )}
           </div>

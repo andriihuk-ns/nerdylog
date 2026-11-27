@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useOptimistic, useState, useTransition } from "react";
 import { Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
-import type { ProjectView, SlackChannelOption } from "@/contracts";
-import type { ProjectSaveResult } from "@/app/(dashboard)/admin/project-actions";
+import type { OfficeView, ProjectView, SlackChannelOption } from "@/contracts";
+import { deleteProjectAction, type ProjectSaveResult } from "@/app/(dashboard)/admin/project-actions";
 import { useToast } from "@/hooks/use-toast";
+import { useConfirm } from "@/hooks/use-confirm";
 import { Button } from "@/components/ui/button";
 import { Toast } from "@/components/ui/toast";
 import { ProjectForm } from "./project-form";
@@ -13,16 +14,26 @@ import { ProjectRow } from "./project-row";
 import { channelLabel, takenChannelMap } from "./channel-options";
 import { useMemberRefreshText } from "./use-member-refresh-text";
 
-const COLUMNS = ["name", "channel", "createdBy", "members", "status"] as const;
+const COLUMNS = ["name", "channel", "prompt", "createdBy", "members", "status"] as const;
 
-/** A15 Projects: name + Slack channel; members are the channel's members. Archived stay listed (muted). */
-export function ProjectsPanel({ projects, channels }: { projects: ProjectView[]; channels: SlackChannelOption[] | null }) {
+interface Props {
+  projects: ProjectView[];
+  channels: SlackChannelOption[] | null;
+  offices: OfficeView[];
+}
+
+/** Projects: name + Slack channel + status prompt (A16); members are the channel's members. Archived stay listed (muted). */
+export function ProjectsPanel({ projects, channels, offices }: Props) {
   const [editing, setEditing] = useState<string | "new" | null>(null);
   const { toast, show, dismiss } = useToast();
   const t = useTranslations("admin.projects");
   const tf = useTranslations("admin.projectForm");
+  const tc = useTranslations("common");
   const refreshText = useMemberRefreshText();
-  const sorted = [...projects].sort((a, b) => Number(b.isActive) - Number(a.isActive) || a.name.localeCompare(b.name));
+  const { confirm, dialog } = useConfirm();
+  const [list, removeOptimistic] = useOptimistic(projects, (cur: ProjectView[], id: string) => cur.filter((p) => p.id !== id));
+  const [, startRemove] = useTransition();
+  const sorted = [...list].sort((a, b) => Number(b.isActive) - Number(a.isActive) || a.name.localeCompare(b.name));
 
   function done({ project, members }: ProjectSaveResult, created: boolean) {
     setEditing(null);
@@ -34,10 +45,22 @@ export function ProjectsPanel({ projects, channels }: { projects: ProjectView[];
     show(`${saved} ${text}`, warn ? { tone: "error" } : {});
   }
 
+  async function remove(p: ProjectView) {
+    const ok = await confirm({ title: t("confirmDelete", { name: p.name }), description: tc("cantUndo"), confirmLabel: tc("delete") });
+    if (!ok) return;
+    startRemove(async () => {
+      removeOptimistic(p.id);
+      const res = await deleteProjectAction(p.id);
+      if (res.ok) show(t("deleted", { name: p.name }));
+      else show(t("deleteFailed", { name: p.name, reason: res.message }), { tone: "error" });
+    });
+  }
+
   const form = (project?: ProjectView) => (
     <ProjectForm
       project={project}
       channels={channels}
+      offices={offices}
       taken={takenChannelMap(projects, project?.id)}
       onDone={done}
       onCancel={() => setEditing(null)}
@@ -53,7 +76,7 @@ export function ProjectsPanel({ projects, channels }: { projects: ProjectView[];
           </h2>
           <p className="text-muted-foreground">{t("helper")}</p>
         </div>
-        <Button onClick={() => setEditing("new")} disabled={editing === "new"} className="hit-target">
+        <Button onClick={() => setEditing("new")} disabled={editing === "new"} className="hit-target w-full sm:w-auto">
           <Plus aria-hidden />
           {t("new")}
         </Button>
@@ -67,7 +90,7 @@ export function ProjectsPanel({ projects, channels }: { projects: ProjectView[];
             <thead>
               <tr className="border-b text-xs font-medium text-muted-foreground">
                 {COLUMNS.map((c) => (
-                  <th key={c} scope="col" className={c === "name" ? "h-10 px-4 text-left font-medium" : c === "members" ? "px-3 text-right font-medium" : "px-3 text-left font-medium"}>
+                  <th key={c} scope="col" className={c === "name" ? "sticky left-0 z-10 h-10 bg-card px-4 text-left font-medium" : c === "members" ? "px-3 text-right font-medium whitespace-nowrap" : "px-3 text-left font-medium whitespace-nowrap"}>
                     {t(`columns.${c}`)}
                   </th>
                 ))}
@@ -87,7 +110,9 @@ export function ProjectsPanel({ projects, channels }: { projects: ProjectView[];
                     key={p.id}
                     project={p}
                     channels={channels}
+                    offices={offices}
                     onEdit={() => setEditing(p.id)}
+                    onDelete={() => void remove(p)}
                     onToast={(message, tone, retry) => show(message, { tone, onRetry: retry })}
                   />
                 ),
@@ -97,6 +122,7 @@ export function ProjectsPanel({ projects, channels }: { projects: ProjectView[];
         )}
       </div>
       <Toast toast={toast} onDismiss={dismiss} />
+      {dialog}
     </section>
   );
 }

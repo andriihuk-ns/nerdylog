@@ -9,10 +9,11 @@ export interface NavItem {
   label: string;
 }
 
+/** Desktop nav (≥ 640px). On phones the same links live in the avatar menu (MobileNavItems). */
 export function NavLinks({ items, label }: { items: NavItem[]; label: string }) {
   const pathname = usePathname();
   return (
-    <nav aria-label={label} className="flex items-center gap-1">
+    <nav aria-label={label} className="hidden items-center gap-1 sm:flex">
       {items.map((item) => {
         const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
         return (
@@ -33,4 +34,10 @@ export function NavLinks({ items, label }: { items: NavItem[]; label: string }) 
       })}
     </nav>
   );
+}
+
+/** The nav item matching the current path (desktop nav and the phone menu). */
+export function useActiveHref(items: NavItem[]): string | null {
+  const pathname = usePathname();
+  return items.find((i) => pathname === i.href || pathname.startsWith(`${i.href}/`))?.href ?? null;
 }

@@ -3,6 +3,7 @@ import { useTranslations } from "next-intl";
 import { extractTicketRefs, type CheckinView } from "@/contracts";
 import { cn } from "@/lib/utils";
 import { initials } from "@/components/lib/format";
+import { ArtifactText } from "@/components/shell/artifact-text";
 
 /** Stream B card. Text only: no hours, totals or caps, ever (docs/05 §6.4). */
 export function StandupCard({ checkin, variant }: { checkin: CheckinView; variant: "plan" | "blocker" }) {
@@ -37,8 +38,8 @@ export function StandupCard({ checkin, variant }: { checkin: CheckinView; varian
           </span>
         ) : null}
       </header>
-      <p className={cn("text-[15px] leading-[22px] whitespace-pre-line", variant === "blocker" && "text-warning")}>
-        {text.trim() || <span className="text-muted-foreground">{t("noPlan")}</span>}
+      <p className={cn("text-[15px] leading-[22px]", variant === "blocker" && "text-warning")}>
+        {text.trim() ? <ArtifactText text={text} /> : <span className="text-muted-foreground">{t("noPlan")}</span>}
       </p>
       {refs.length > 0 ? (
         <ul className="flex flex-wrap gap-1" aria-label={t("tickets")}>

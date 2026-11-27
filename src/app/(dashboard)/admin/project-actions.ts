@@ -4,8 +4,8 @@ import { refresh } from "next/cache";
 import { z } from "zod";
 import type { ProjectView } from "@/contracts";
 import { requireActor } from "@/server/auth/session";
-import { listProjects, upsertProject } from "@/server/services/project-service";
-import { actionError, fail, ok, type ActionResult } from "../action-result";
+import { deleteProject, listProjects, upsertProject } from "@/server/services/project-service";
+import { actionError, fail, fieldErrorCode, ok, type ActionResult } from "../action-result";
 import { channelFailure, channelFieldError, type ChannelActionResult } from "./channel-result";
 import { channelIdSchema, ensureBotInChannel, serverCopy } from "./channel-guard";
 import { refreshMembers } from "./project-members";
@@ -18,6 +18,8 @@ const projectSchema = z.object({
   name: z.string().trim().min(1).max(120),
   slackChannelId: channelIdSchema,
   isActive: z.boolean(),
+  statusPromptTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).optional(), // A16 "HH:MM"
+  statusPromptOfficeId: z.uuid().nullable().optional(), // A16 (null → UA)
 });
 
 export type ProjectInput = z.input<typeof projectSchema>;
@@ -37,6 +39,7 @@ export async function upsertProjectAction(input: ProjectInput): Promise<ChannelA
     if (!parsed.success) {
       const field = parsed.error.issues[0]?.path[0];
       if (field === "slackChannelId") return channelFailure(t("invalidChannel"));
+      if (field === "statusPromptTime") return fail(t("promptTimeInvalid"));
       return fail(field === "name" ? t("nameRequired") : t("projectInvalid"));
     }
     const { id, slackChannelId } = parsed.data;
@@ -64,6 +67,25 @@ export async function upsertProjectAction(input: ProjectInput): Promise<ChannelA
     return ok({ project, members });
   } catch (err) {
     return channelFieldError(err) ?? actionError(err);
+  }
+}
+
+/** A16 admin: delete a project with no time entries; otherwise "Has logged hours — archive instead". */
+export async function deleteProjectAction(id: string): Promise<ActionResult> {
+  try {
+    const actor = await requireActor(ADMIN);
+    const t = await serverCopy();
+    if (!z.uuid().safeParse(id).success) return fail(t("unknownProject"));
+    try {
+      await deleteProject(actor, id);
+    } catch (err) {
+      if (fieldErrorCode(err, "_") === "has_entries") return fail(t("hasEntries"));
+      throw err;
+    }
+    refresh();
+    return ok();
+  } catch (err) {
+    return actionError(err);
   }
 }
 

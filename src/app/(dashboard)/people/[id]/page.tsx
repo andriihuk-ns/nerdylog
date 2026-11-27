@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import type { CheckinView, DirectoryUser, OfficeView, ProjectHours, ProjectView, UserMonthRollup } from "@/contracts";
 import { requireActor } from "@/server/auth/session";
@@ -11,7 +11,6 @@ import { getPtoBalance } from "@/server/services/pto-service";
 import { listCheckinsForUser } from "@/server/services/checkin-service";
 import { listWeekEntries } from "@/server/services/time-entry-service";
 import { addDays, monthForWeek, parseWeekParam, todayIn } from "@/components/lib/dates";
-import { NoAccessPanel } from "@/components/shell/state-panels";
 import { ExportMenus } from "@/components/shell/export-menu";
 import { rangeExports } from "@/components/shell/export-href";
 import { PersonHeader } from "@/components/people/person-header";
@@ -20,7 +19,7 @@ import { RecentStandups } from "@/components/people/recent-standups";
 import { PtoBalanceCard } from "@/components/my-time/pto-balance-card";
 import { ProjectHoursCard } from "@/components/my-time/project-hours-card";
 import { WeekView } from "@/components/my-time/week-view";
-import { projectOptions } from "../../../my-time/project-options";
+import { projectOptions } from "../../my-time/project-options";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: (await getTranslations("metadata"))("person") };
@@ -29,10 +28,10 @@ export async function generateMetadata(): Promise<Metadata> {
 type Params = Promise<{ id: string }>;
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
-/** A15 people page (admin only): profile, PTO, month totals, hours by project, recent standups, editable week. */
+/** A16 people page (managers + admins; members go to /my-time): profile, PTO, totals, hours, status, editable week. */
 export default async function PersonPage({ params, searchParams }: { params: Params; searchParams: SearchParams }) {
   const actor = await requireActor();
-  if (actor.role !== "admin") return <NoAccessPanel area="admin" />;
+  if (actor.role === "member") redirect("/my-time");
 
   const [{ id }, query, t] = await Promise.all([params, searchParams, getTranslations("people")]);
   const [directory, offices]: [DirectoryUser[], OfficeView[]] = await Promise.all([listDirectory(actor), listOffices(actor)]);
@@ -63,7 +62,7 @@ export default async function PersonPage({ params, searchParams }: { params: Par
 
   return (
     <div className="flex flex-col gap-8">
-      <PersonHeader user={user} office={offices.find((o) => o.id === user.officeId)} />
+      <PersonHeader user={user} office={offices.find((o) => o.id === user.officeId)} from={query.from === "directory" && actor.role === "admin" ? "directory" : "team"} />
       <div className="grid gap-6 lg:grid-cols-3">
         <MonthTotalsCard totals={totals} month={month} />
         <ProjectHoursCard items={hours} month={month} />
@@ -76,10 +75,10 @@ export default async function PersonPage({ params, searchParams }: { params: Par
         entries={entries}
         projects={options}
         userId={user.id}
-        basePath={`/admin/people/${user.id}`}
+        basePath={`/people/${user.id}`}
         title={t("week", { name: user.fullName })}
+        actions={<ExportMenus groups={rangeExports({ from: weekStart, to: weekEnd }, month, { userIds: user.id })} />}
       />
-      <ExportMenus groups={rangeExports({ from: weekStart, to: weekEnd }, month, { userIds: user.id })} />
       <RecentStandups checkins={checkins} />
     </div>
   );

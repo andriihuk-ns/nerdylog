@@ -13,9 +13,9 @@ describe("actionError", () => {
   it("maps service errors to readable messages", async () => {
     expect(await actionError(named("ForbiddenError"))).toEqual({
       ok: false,
-      message: "You don't have permission to do that.",
+      message: "You can't do that.",
     });
-    expect((await actionError(named("NotFoundError"))).message).toMatch(/no longer exists/);
+    expect((await actionError(named("NotFoundError"))).message).toMatch(/is gone/);
     expect(await actionError(named("InvalidInputError", "Hours must be a multiple of 0.25"))).toEqual({
       ok: false,
       message: "Hours must be a multiple of 0.25",

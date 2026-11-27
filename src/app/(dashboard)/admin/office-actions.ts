@@ -18,18 +18,29 @@ const officeSchema = z.object({
     .transform((s) => s.toUpperCase())
     .pipe(z.string().regex(/^[A-Z0-9]{2,8}$/)),
   name: z.string().trim().min(1).max(120),
+  timezone: z.string().trim().min(1).max(64).refine(isTimezone), // A16 IANA
 });
+
+function isTimezone(tz: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en", { timeZone: tz });
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export type OfficeInput = z.input<typeof officeSchema>;
 
-/** A15 admin: create or rename an office (code is unique, 2–8 letters/digits, stored upper-case). */
+/** Admin: create or edit an office (code unique, 2–8 letters/digits, upper-case; A16 IANA timezone). */
 export async function upsertOfficeAction(input: OfficeInput): Promise<ActionResult<OfficeView>> {
   try {
     const actor = await requireActor(ADMIN);
     const parsed = officeSchema.safeParse(input);
     if (!parsed.success) {
       const t = await serverCopy();
-      return fail(parsed.error.issues[0]?.path[0] === "code" ? t("officeCodeInvalid") : t("nameRequired"));
+      const field = parsed.error.issues[0]?.path[0];
+      return fail(field === "code" ? t("officeCodeInvalid") : field === "timezone" ? t("timezoneInvalid") : t("nameRequired"));
     }
     const office: OfficeView = await upsertOffice(actor, parsed.data);
     refresh();
