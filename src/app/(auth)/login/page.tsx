@@ -5,6 +5,8 @@ import { getTranslations } from "next-intl/server";
 import { AnimatedLogo } from "@/components/brand/animated-logo";
 import { LocaleSwitcher } from "@/components/shell/locale-switcher";
 import { loginErrorKey, signInHref } from "@/components/shell/login-errors";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
@@ -56,7 +58,7 @@ function SignInButton({ href, label }: { href: string; label: string }) {
     // Plain <a>: /auth/sign-in is a route handler that redirects to Slack.
     <a
       href={href}
-      className="flex h-11 w-[318px] max-w-full items-center justify-center gap-1.5 rounded-[10px] border bg-card px-[11px] text-sm leading-5 font-medium text-foreground shadow-[0_0.1px_2px_rgba(0,0,0,0.1)] transition-colors duration-[var(--duration-base)] ease-spring hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      className={cn(buttonVariants(), "h-11 w-[318px] max-w-full")}
     >
       <span className="flex size-5 shrink-0 items-center justify-center" aria-hidden>
         {/* eslint-disable-next-line @next/next/no-img-element -- static multicolour mark from the design */}
