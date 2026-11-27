@@ -1,6 +1,6 @@
 import type { IsoDate, ProjectView } from "@/contracts";
 import { buildProjectPrompt } from "../blocks/project-prompt";
-import { sendDm, showOnlyTo } from "../private-delivery";
+import { showInChannelOrDm } from "../private-delivery";
 import type { SlackActorProfile, SlackDeps } from "../types";
 import { openModalFast } from "./modal-loader";
 import { promptDenial } from "./project-access";
@@ -16,10 +16,10 @@ function errorMessage(error: unknown): string {
 }
 
 /**
- * A16/A31 cron: `claimProjectPrompts` returns only projects newly claimed for their office-local day
- * (project_prompts dedup). Each member gets the prompt in the project channel visible only to them,
- * plus a copy in the bot DM; nothing is posted publicly. A project counts as failed when it has no
- * recipient or a DM could not be delivered (not retried until the schedule changes).
+ * A16/A33 cron: `claimProjectPrompts` returns only projects newly claimed for their office-local day
+ * (project_prompts dedup). Each member sees the prompt in the project channel, visible only to them
+ * (bot DM if Slack refuses); nothing is posted publicly. A project counts as failed when it has no
+ * recipient or someone got neither (not retried until the schedule changes).
  */
 export async function runProjectPrompts(deps: Pick<SlackDeps, "slack" | "tempo" | "now">): Promise<ProjectPromptResult> {
   const targets = await deps.tempo.claimProjectPrompts(deps.now());
@@ -28,8 +28,7 @@ export async function runProjectPrompts(deps: Pick<SlackDeps, "slack" | "tempo" 
       const results = await Promise.allSettled(
         target.recipients.map(async ({ slackUserId, locale }) => {
           const message = buildProjectPrompt({ ...target, locale });
-          await showOnlyTo(deps, target.slackChannelId, slackUserId, message);
-          await sendDm(deps, slackUserId, message);
+          await showInChannelOrDm(deps, target.slackChannelId, slackUserId, message);
         }),
       );
       for (const r of results) {

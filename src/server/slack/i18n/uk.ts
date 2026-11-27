@@ -94,7 +94,6 @@ export const uk: Messages = {
   "err.notMemberGeneric": "Час не збережено: тебе немає в одному з цих каналів проєктів. Попроси адміна додати тебе.",
 
   // A31/A32 private prompt and confirmations
-  "common.onlyYou": "Це бачиш лише ти",
   "prompt.title": "📝 Щоденний статус · {project}",
   "prompt.body": "Як минув день *{date}*? Запиши години й задачі, це займе хвилину.",
   "prompt.button": "Записати час",

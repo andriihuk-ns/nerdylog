@@ -94,7 +94,6 @@ export const en = {
   "err.notMemberGeneric": "Your time was not saved: you're not in one of those project channels. Ask an admin to add you.",
 
   // A31/A32 private prompt and confirmations
-  "common.onlyYou": "Only you can see this",
   "prompt.title": "📝 Daily status · {project}",
   "prompt.body": "How did *{date}* go? Log your hours and tasks, it takes a minute.",
   "prompt.button": "Log time",

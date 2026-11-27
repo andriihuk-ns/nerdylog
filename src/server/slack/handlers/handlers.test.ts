@@ -219,7 +219,7 @@ describe("A11 channel routing", () => {
   const shown = (slack: ReturnType<typeof fakeDeps>["slack"]) =>
     new Map(slack.postEphemeral.mock.calls.map((c) => [c[0], JSON.stringify(c)]));
 
-  it("A31: shows each project's lines only to the submitter, never plan or blockers, and DMs one copy", async () => {
+  it("A33: a quick Logged line per project, only for the submitter, no task text and no DM", async () => {
     const { deps, slack } = fakeDeps();
     await routeSubmission(
       deps,
@@ -228,20 +228,17 @@ describe("A11 channel routing", () => {
     );
     const seen = shown(slack);
     expect(slack.postEphemeral.mock.calls.every((c) => c[1] === "U123")).toBe(true);
-    expect(seen.get("C_DTP")).toContain("*DogTeamPro* · 5h\\n• 4h — Map modal DOG-1364\\n• 1h — Review");
-    expect(seen.get("C_DTP")).not.toContain("Changelly");
-    expect(seen.get("C_CNG")).toContain("*Changelly* · 2.5h\\n• 2.5h — Swap fix");
-    const sent = posts(slack);
-    expect([...sent.keys()].sort()).toEqual(["C_STANDUP", "D_U123"]);
-    expect(sent.get("D_U123")).toMatch(/^✅ Logged 7\.5h · /);
-    for (const text of [...seen.values(), sent.get("D_U123")]) expect(text).not.toMatch(/Secret plan|Blocked on API/);
+    expect(seen.get("C_DTP")).toContain("✅ Logged 5h · DogTeamPro · ");
+    expect(seen.get("C_CNG")).toContain("✅ Logged 2.5h · Changelly · ");
+    for (const text of seen.values()) expect(text).not.toMatch(/Map modal|Swap fix|Secret plan|Blocked on API/);
+    expect([...posts(slack).keys()]).toEqual(["C_STANDUP"]);
   });
 
-  it("log submission: private lines and DM only, no general card", async () => {
+  it("log submission: channel line only, no DM or general card", async () => {
     const { deps, slack, tempo } = fakeDeps();
     await routeSubmission(deps, profile, input("log", [entry(PROJECT_ID, 3, "Map modal")]));
     expect([...shown(slack).keys()]).toEqual(["C_DTP"]);
-    expect([...posts(slack).keys()]).toEqual(["D_U123"]);
+    expect(slack.postMessage).not.toHaveBeenCalled();
     expect(tempo.getStandupChannelId).not.toHaveBeenCalled();
     expect(tempo.setCheckinChannelTs).not.toHaveBeenCalled();
   });
@@ -254,7 +251,7 @@ describe("A11 channel routing", () => {
     expect(slack.postEphemeral).not.toHaveBeenCalled();
   });
 
-  it("no general standup channel → no card; projects without a channel show nothing there", async () => {
+  it("no general standup channel → no card; a project without a channel is confirmed by DM", async () => {
     const { deps, slack, tempo } = fakeDeps();
     tempo.getStandupChannelId.mockResolvedValueOnce(null);
     tempo.listProjectChannels.mockResolvedValueOnce([{ projectId: PROJECT_ID, projectName: "DogTeamPro", slackChannelId: "C_DTP" }]);
@@ -288,7 +285,7 @@ describe("A11 channel routing", () => {
     errors.mockRestore();
   });
 
-  it("one failing ephemeral does not stop the others or the DM", async () => {
+  it("one refused channel falls back to a DM and does not stop the others", async () => {
     const { deps, slack, tempo } = fakeDeps();
     const errors = vi.spyOn(console, "error").mockImplementation(() => undefined);
     slack.postEphemeral.mockImplementation(async (channel: string) => {

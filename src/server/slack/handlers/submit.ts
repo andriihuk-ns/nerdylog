@@ -3,7 +3,7 @@ import { InvalidInputError } from "@/server/services/errors";
 import { buildLoggedMessage, buildTimeOffMessage } from "../blocks/confirmation";
 import { buildStandupCard } from "../blocks/standup-card";
 import { localeOf, t } from "../i18n";
-import { sendDm, showOnlyTo, type PrivateMessage } from "../private-delivery";
+import { sendDm, showInChannelOrDm } from "../private-delivery";
 import type { SlackActorProfile, SlackDeps } from "../types";
 import { notMemberMessage } from "./project-access";
 
@@ -16,9 +16,9 @@ function isNotMemberError(error: unknown): boolean {
 }
 
 /**
- * A31/A32: nothing about a submission is posted publicly to project channels. Work: each project
- * channel shows that project's hours only to the submitter, and the bot DM gets all of them.
- * Time off: a DM confirmation. One failing delivery never blocks the others.
+ * A31–A33: nothing about a submission is posted publicly to project channels. Work: each project
+ * channel shows a quick "Logged" line only to the submitter (bot DM if that is impossible).
+ * Time off has no channel, so it is confirmed by DM. One failure never blocks the others.
  */
 export async function sendConfirmations(
   deps: SlackDeps,
@@ -26,26 +26,29 @@ export async function sendConfirmations(
   input: SlackSubmissionInput,
 ): Promise<void> {
   const locale = localeOf(profile);
-  const dm = (message: PrivateMessage) =>
-    sendDm(deps, profile.slackUserId, message, { unfurl: true }).catch((error) => {
-      console.error("slack: confirmation DM failed", errorMessage(error));
-    });
+  const logFailure = (error: unknown) => console.error("slack: confirmation failed", errorMessage(error));
   const work = input.entries.filter((e) => e.entryType === "work" && e.projectId);
   if (work.length === 0) {
     const timeOff = input.entries.filter((e) => e.entryType !== "work");
-    if (timeOff.length > 0) await dm(buildTimeOffMessage(timeOff, locale, deps.appBaseUrl));
+    if (timeOff.length > 0) {
+      await sendDm(deps, profile.slackUserId, buildTimeOffMessage(timeOff, locale, deps.appBaseUrl)).catch(logFailure);
+    }
     return;
   }
   const projects = await deps.tempo.listProjects(profile);
   const names = new Map(projects.map((p) => [p.id, p.name]));
   const channels = new Map((await deps.tempo.listProjectChannels()).map((c) => [c.projectId, c.slackChannelId]));
-  const ephemerals = [...new Set(work.map((e) => e.projectId!))].map(async (projectId) => {
-    const channel = channels.get(projectId);
-    if (!channel) return;
-    const own = work.filter((e) => e.projectId === projectId);
-    await showOnlyTo(deps, channel, profile.slackUserId, buildLoggedMessage(own, names, locale, deps.appBaseUrl));
-  });
-  await Promise.all([...ephemerals, dm(buildLoggedMessage(work, names, locale, deps.appBaseUrl))]);
+  await Promise.all(
+    [...new Set(work.map((e) => e.projectId!))].map(async (projectId) => {
+      const own = work.filter((e) => e.projectId === projectId);
+      const message = buildLoggedMessage(own, names.get(projectId), locale, deps.appBaseUrl);
+      const channel = channels.get(projectId);
+      const sent = channel
+        ? showInChannelOrDm(deps, channel, profile.slackUserId, message)
+        : sendDm(deps, profile.slackUserId, message);
+      await sent.catch(logFailure);
+    }),
+  );
 }
 
 /**

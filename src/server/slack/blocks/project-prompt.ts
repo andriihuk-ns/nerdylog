@@ -3,7 +3,7 @@ import { isoDateSchema, type IsoDate, type Locale } from "@/contracts";
 import { longDate } from "../dates";
 import { t } from "../i18n";
 import { ACTION } from "../ids";
-import { context, header, mrkdwnSection, plain, type SlackMessage } from "./common";
+import { header, mrkdwnSection, plain, type SlackMessage } from "./common";
 
 /** Value of the "Log time & status" button: which project, and the default work date. */
 export const promptButtonValueSchema = z.object({ projectId: z.string().min(1), logDate: isoDateSchema });
@@ -55,7 +55,6 @@ export function buildProjectPrompt({ projectId, projectName, logDate, locale }: 
           },
         ],
       },
-      context(t(locale, "common.onlyYou")),
     ],
   };
 }
