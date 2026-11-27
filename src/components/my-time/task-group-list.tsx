@@ -73,7 +73,7 @@ export function TaskGroupList({ summaries }: { summaries: readonly string[] }) {
           type="button"
           variant="ghost"
           size="sm"
-          className="hit-target h-11 w-full justify-center gap-1.5 bg-white px-1.5 text-center text-xs text-muted-foreground hover:bg-white hover:text-muted-foreground focus-visible:bg-white active:bg-white aria-expanded:bg-white"
+          className="hit-target h-11 w-full justify-center gap-1.5 bg-transparent px-1.5 text-center text-xs text-muted-foreground hover:bg-transparent hover:text-muted-foreground focus-visible:bg-transparent active:bg-transparent aria-expanded:bg-transparent"
           aria-expanded={expanded}
           onClick={() => setExpanded((value) => !value)}
         >
