@@ -6,6 +6,7 @@ import { checklistItemLinks, MAX_LINK_LENGTH, MAX_TASK_TEXT_LENGTH, taskTextLeng
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 
 interface Props {
   items: ChecklistItem[];
@@ -51,7 +52,10 @@ export function ChecklistEditor({ items, onChange, maxItems = 20 }: Props) {
         const length = taskTextLength(item.text);
         const tooLong = length > MAX_TASK_TEXT_LENGTH;
         return (
-          <fieldset key={index} className="flex w-full min-w-0 flex-col gap-2 rounded-lg border p-3">
+          <fieldset
+            key={index}
+            className={cn("flex w-full min-w-0 flex-col gap-2 rounded-lg border p-3", tooLong && "border-destructive")}
+          >
             <legend className="px-1 text-xs font-medium text-muted-foreground">
               {t("itemLabel", { number: index + 1 })}
             </legend>
@@ -63,8 +67,8 @@ export function ChecklistEditor({ items, onChange, maxItems = 20 }: Props) {
               placeholder={t("itemPlaceholder")}
               aria-invalid={tooLong || undefined}
               aria-label={t("itemLabel", { number: index + 1 })}
-              // The fieldset is the card, so the description has no border or focus ring of its own.
-              className="min-h-19 w-full resize-none rounded-none border-0 bg-transparent px-1 py-2 text-sm hover:border-0 focus-visible:ring-0 focus-visible:outline-none dark:bg-transparent"
+              // The fieldset is the card, so the description has no border, focus ring or error ring of its own.
+              className="min-h-19 w-full resize-none rounded-none border-0 bg-transparent px-1 py-2 text-sm hover:border-0 focus-visible:ring-0 focus-visible:outline-none aria-invalid:ring-0 dark:bg-transparent"
             />
             {tooLong ? (
               <p role="alert" className="px-1 text-xs text-destructive">
