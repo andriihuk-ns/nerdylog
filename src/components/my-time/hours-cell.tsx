@@ -80,7 +80,7 @@ export function HoursCell(p: HoursCellProps) {
         }
       }}
       className={cn(
-        "relative min-w-[112px] border-b p-0 text-right align-top outline-none transition-colors duration-[var(--duration-base)] ease-standard",
+        "relative min-w-[112px] border-b border-l border-border p-0 text-right align-top outline-none transition-colors duration-[var(--duration-base)] ease-standard",
         "focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset focus-visible:outline-none",
         p.weekend && !p.columnTint && "bg-muted/50",
         p.columnTint,

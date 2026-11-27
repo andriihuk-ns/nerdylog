@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { channelLabel } from "./channel-options";
 import { ProjectMemberAllocationControl } from "./project-member-allocation";
 import { useMemberRefreshText } from "./use-member-refresh-text";
+import { TABLE_EDGE_PADDING } from "@/components/shell/table-styles";
 
 interface Props {
   project: ProjectView;
@@ -89,7 +90,7 @@ export function ProjectDetailPanel({ project, channels }: Props) {
       <section className="flex flex-col gap-3" aria-label={t("team")}>
         {project.memberAllocations.length > 0 ? (
           <div className="overflow-x-auto rounded-lg border bg-card">
-            <table className="w-full border-collapse">
+            <table className={`w-full border-collapse ${TABLE_EDGE_PADDING}`}>
               <thead>
                 <tr className="border-b text-xs font-medium text-muted-foreground">
                   <th scope="col" className="sticky left-0 z-10 h-10 bg-card px-4 text-left font-medium">{t("columns.name")}</th>

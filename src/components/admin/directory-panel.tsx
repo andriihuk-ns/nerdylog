@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Toast } from "@/components/ui/toast";
 import { SearchInput } from "@/components/shell/search-input";
 import { FilterSelect } from "@/components/shell/filter-select";
+import { TABLE_EDGE_PADDING } from "@/components/shell/table-styles";
 import { DirectoryRow } from "./directory-row";
 import {
   ALL,
@@ -145,7 +146,7 @@ export function DirectoryPanel({ users, projects, offices }: Props) {
               {t("showing", { shown: shown.length, total: users.length })}
             </p>
           ) : null}
-          <table className="w-full border-collapse">
+          <table className={`w-full border-collapse ${TABLE_EDGE_PADDING}`}>
             <thead>
               <tr className="border-b text-xs font-medium text-muted-foreground">
                 {COLUMNS.map((c) => (

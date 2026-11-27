@@ -10,6 +10,7 @@ import { initials } from "@/components/lib/format";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SummaryCell } from "./summary-cell";
 import { bucketValues, SUB_COLUMNS, teamTotals } from "./team-summary";
+import { TABLE_EDGE_PADDING } from "@/components/shell/table-styles";
 
 interface Props {
   rows: UserMonthRollup[];
@@ -35,7 +36,7 @@ export function SummaryGrid({ rows, weeks, today, avatars, selfId }: Props) {
 
   return (
     <div className="overflow-x-auto rounded-lg border bg-card">
-      <table ref={gridRef} role="grid" aria-readonly aria-label={t("label")} className="w-full border-collapse">
+      <table ref={gridRef} role="grid" aria-readonly aria-label={t("label")} className={`w-full border-collapse ${TABLE_EDGE_PADDING}`}>
         <thead>
           <tr>
             <th scope="col" rowSpan={2} className={cn(STICKY, "border-b px-4 text-xs font-medium text-muted-foreground")}>

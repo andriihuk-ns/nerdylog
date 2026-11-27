@@ -10,6 +10,7 @@ import { useFormat } from "@/hooks/use-format";
 import { useConfirm } from "@/hooks/use-confirm";
 import { Button } from "@/components/ui/button";
 import { Toast } from "@/components/ui/toast";
+import { TABLE_EDGE_PADDING } from "@/components/shell/table-styles";
 import { OfficeForm } from "./office-form";
 
 /** Offices: code, name, timezone (A16), member count; create, rename, delete (only when empty, confirmed). */
@@ -57,7 +58,7 @@ export function OfficesPanel({ offices }: { offices: OfficeView[] }) {
         {sorted.length === 0 && editing !== "new" ? (
           <p className="p-6 text-muted-foreground">{t("empty")}</p>
         ) : (
-          <table className="w-full border-collapse">
+          <table className={`w-full border-collapse ${TABLE_EDGE_PADDING}`}>
             <thead>
               <tr className="border-b text-xs font-medium text-muted-foreground">
                 <th scope="col" className="h-10 w-24 px-4 text-left font-medium">{t("columns.code")}</th>
