@@ -97,6 +97,9 @@ export interface ProjectView {
   createdBy: { userId: string; fullName: string } | null; // A15
   memberIds: string[]; // A15: Tempo users in the project's Slack channel (cached)
   isMember: boolean; // A15: whether the calling actor is a member
+  statusPromptTime: string; // A16: "HH:MM" in the prompt office's timezone, default "10:00"
+  statusPromptOfficeId: string | null; // A16: office whose timezone + holidays apply (null → UA)
+  hasTimeEntries: boolean; // A16: delete allowed only when false
 }
 /** Everyone sees all projects (A15); isMember tells the UI whether to show "Ask {creator}". */
 export type ListProjects = (actor: Actor, opts?: { includeArchived?: boolean }) => Promise<ProjectView[]>;
@@ -105,7 +108,11 @@ export interface UpsertProjectInput {
   name: string;
   slackChannelId: string | null; // required when creating
   isActive?: boolean;
+  statusPromptTime?: string; // A16 "HH:MM" (00:00–23:59), default "10:00"
+  statusPromptOfficeId?: string | null; // A16
 }
+/** A16 admin: delete a project with no time entries; otherwise InvalidInputError { _: ["has_entries"] } (archive instead). */
+export type DeleteProject = (actor: Actor, id: string) => Promise<void>;
 /** admin. Sets created_by on create. Caller refreshes members afterwards (ReplaceProjectMembers). */
 export type UpsertProject = (actor: Actor, input: UpsertProjectInput) => Promise<ProjectView>;
 /**
@@ -141,10 +148,11 @@ export interface OfficeView {
   id: string;
   code: string; // "UA", "PL"
   name: string;
+  timezone: string; // A16 IANA, e.g. "Europe/Kyiv"
   memberCount: number;
 }
 export type ListOffices = (actor: Actor) => Promise<OfficeView[]>; // any signed-in user
-export type UpsertOffice = (actor: Actor, input: { id?: string; code: string; name: string }) => Promise<OfficeView>; // admin
+export type UpsertOffice = (actor: Actor, input: { id?: string; code: string; name: string; timezone: string }) => Promise<OfficeView>; // admin
 /** admin. Only when the office has no members and no holidays; otherwise InvalidInputError. */
 export type DeleteOffice = (actor: Actor, id: string) => Promise<void>;
 
@@ -163,7 +171,22 @@ export interface PingTarget {
  * not a company holiday, not on PTO that day, and inserts their daily_pings row
  * (ON CONFLICT DO NOTHING) — only users newly claimed are returned.
  */
-export type ClaimMorningPings = (now: Date) => Promise<PingTarget[]>;
+export type ClaimMorningPings = (now: Date) => Promise<PingTarget[]>; // A16: no longer called (personal DM removed)
+
+// ── A16: per-project status prompt in the project channel ───────────────────
+export interface ProjectPromptTarget {
+  projectId: string;
+  projectName: string;
+  slackChannelId: string;
+  localDate: IsoDate; // in the prompt office's timezone
+  logDate: IsoDate; // previous business day for that office (default date in the modal)
+}
+/**
+ * src/server/services/project-prompt-service.ts (system, cron). Active projects with a channel whose
+ * office-local time is in [statusPromptTime, +90 min) on a weekday that is not that office's holiday;
+ * inserts project_prompts (ON CONFLICT DO NOTHING) and returns only newly claimed projects.
+ */
+export type ClaimProjectPrompts = (now: Date) => Promise<ProjectPromptTarget[]>;
 
 // ── src/server/services/export-service.ts ────────────────────────────────────
 export interface ExportRange {
