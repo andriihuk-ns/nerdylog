@@ -472,11 +472,11 @@
     "backDirectory": "Люди"
   },
   "checklist": {
-    "addItem": "Додати пункт",
-    "removeItem": "Видалити пункт",
+    "addItem": "Додати задачу",
+    "removeItem": "Прибрати задачу",
     "addLink": "Додати посилання",
-    "removeLink": "Видалити посилання",
-    "itemPlaceholder": "Що зробив?",
+    "removeLink": "Прибрати посилання",
+    "itemPlaceholder": "Коротко опиши, що зроблено",
     "linkPlaceholder": "https://...",
     "toggleDone": "Позначити виконаним"
   }

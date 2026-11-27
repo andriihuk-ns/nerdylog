@@ -472,11 +472,11 @@
     "backDirectory": "People"
   },
   "checklist": {
-    "addItem": "Add item",
-    "removeItem": "Remove item",
+    "addItem": "Add task",
+    "removeItem": "Remove task",
     "addLink": "Add link",
     "removeLink": "Remove link",
-    "itemPlaceholder": "What did you do?",
+    "itemPlaceholder": "What did you work on?",
     "linkPlaceholder": "https://...",
     "toggleDone": "Mark done"
   }

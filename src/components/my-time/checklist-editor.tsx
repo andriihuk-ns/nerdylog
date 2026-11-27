@@ -118,7 +118,7 @@ export function ChecklistEditor({ items, onChange, maxItems = 20 }: Props) {
         );
       })}
       {items.length < maxItems ? (
-        <Button type="button" variant="ghost" size="sm" onClick={add} className="h-8 self-start px-2 text-xs">
+        <Button type="button" variant="outline" size="sm" onClick={add} className="h-8 w-full justify-center text-xs">
           <Plus className="mr-1 size-3.5" aria-hidden />
           {t("addItem")}
         </Button>

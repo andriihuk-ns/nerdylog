@@ -62,8 +62,12 @@ function projectRow(n: number, projects: ProjectView[], locale: Locale, meta: Mo
       type: "input",
       block_id: rowBlock.taskItem(n, i),
       label: plain(taskMeta.count === 1 ? t(locale, "time.taskLabel") : t(locale, "time.taskItemLabel", { i })),
-      ...(i === 1 ? { hint: plain(t(locale, "time.taskHint")) } : {}),
-      element: { type: "plain_text_input", action_id: INPUT_ACTION, max_length: 500 },
+      element: {
+        type: "plain_text_input",
+        action_id: INPUT_ACTION,
+        max_length: 500,
+        placeholder: plain(t(locale, "time.taskPlaceholder")),
+      },
     });
     if (hasLink) {
       blocks.push({
@@ -79,16 +83,15 @@ function projectRow(n: number, projects: ProjectView[], locale: Locale, meta: Mo
       });
     }
     blocks.push({
-      type: "actions",
+      type: "section",
       block_id: rowBlock.taskItemActions(n, i),
-      elements: [
-        {
-          type: "button",
-          action_id: ACTION.toggleTaskLink,
-          value: `${n}:${i}`,
-          text: plain(t(locale, hasLink ? "time.removeTaskLink" : "time.addTaskLink")),
-        },
-      ],
+      text: { type: "mrkdwn", text: t(locale, "time.taskHint") },
+      accessory: {
+        type: "button",
+        action_id: ACTION.toggleTaskLink,
+        value: `${n}:${i}`,
+        text: plain(t(locale, hasLink ? "time.removeTaskLink" : "time.addTaskLink")),
+      },
     });
   }
   const taskBtns = [];
@@ -101,6 +104,7 @@ function projectRow(n: number, projects: ProjectView[], locale: Locale, meta: Mo
   if (taskBtns.length > 0) {
     blocks.push({ type: "actions", block_id: rowBlock.taskActions(n), elements: taskBtns });
   }
+  blocks.push(divider());
   return blocks;
 }
 
