@@ -9,6 +9,15 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Disabled controls keep pointer events (for the not-allowed cursor), so hover styles skip them. */
+@custom-variant hover {
+  @media (hover: hover) {
+    &:hover:not(:disabled, [data-disabled], [aria-disabled="true"]) {
+      @slot;
+    }
+  }
+}
+
 @theme inline {
   /* Type. --font-inter is set by next/font in layout.tsx when loaded. */
   --font-sans:
@@ -265,6 +274,27 @@
     outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
+  /* Pointer on everything clickable. In base, so cursor-grab / cursor-text utilities still win. */
+  :where(
+    a[href],
+    button,
+    summary,
+    select,
+    label:has(input[type="checkbox"], input[type="radio"], [role="switch"], [role="checkbox"]),
+    input:is([type="button"], [type="submit"], [type="reset"], [type="checkbox"], [type="radio"], [type="file"], [type="color"], [type="range"]),
+    [role="button"],
+    [role="link"],
+    [role="tab"],
+    [role="switch"],
+    [role="checkbox"],
+    [role="radio"],
+    [role="option"],
+    [role="menuitem"],
+    [role="menuitemcheckbox"],
+    [role="menuitemradio"]
+  ) {
+    cursor: pointer;
+  }
   time,
   data {
     font-variant-numeric: tabular-nums;
@@ -272,6 +302,14 @@
   ::selection {
     background: color-mix(in srgb, var(--foreground) 14%, transparent);
   }
+}
+
+/* Unlayered on purpose: a disabled control beats any cursor utility. */
+:disabled,
+[aria-disabled="true"],
+[data-disabled],
+label:has(:disabled) {
+  cursor: not-allowed;
 }
 
 /* Reduced motion: keep state changes, drop movement */

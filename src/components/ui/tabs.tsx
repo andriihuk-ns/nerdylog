@@ -69,7 +69,7 @@ function TabsTrigger({
         // Base: equal-height segment; color/background/shadow ease with the pill timing.
         "relative inline-flex h-full flex-1 items-center justify-center gap-1.5 rounded-md px-3 text-sm font-medium whitespace-nowrap text-muted-foreground select-none",
         "transition-[color,background-color,box-shadow] duration-(--duration-base) ease-spring",
-        "hover:text-foreground disabled:pointer-events-none disabled:opacity-50",
+        "hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         "group-data-vertical/tabs:w-full group-data-vertical/tabs:justify-start group-data-vertical/tabs:py-1.5",
         "has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
