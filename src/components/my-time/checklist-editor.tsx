@@ -7,26 +7,18 @@ import {
   inlineLinks,
   MAX_LINK_LENGTH,
   MAX_TASK_TEXT_LENGTH,
-  removeInlineLink,
   taskTextLength,
   type ChecklistItem,
 } from "@/contracts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { TaskTextField } from "./task-text-field";
 
 interface Props {
   items: ChecklistItem[];
   onChange: (items: ChecklistItem[]) => void;
   maxItems?: number;
-}
-
-/** `field-sizing: content` grows the textarea by itself; browsers without it get the height set here. */
-function fitToContent(element: HTMLTextAreaElement | null) {
-  if (!element || CSS.supports("field-sizing", "content")) return;
-  element.style.height = "auto";
-  element.style.height = `${element.scrollHeight}px`;
 }
 
 /** Task-first editor: the description gets the flexible width, with compact link/remove actions. */
@@ -57,7 +49,7 @@ export function ChecklistEditor({ items, onChange, maxItems = 20 }: Props) {
     <div className="flex flex-col items-start gap-2.5">
       {items.map((item, index) => {
         const links = checklistItemLinks(item);
-        const typed = inlineLinks(item.text);
+        const typedCount = inlineLinks(item.text).length;
         const length = taskTextLength(item.text);
         const tooLong = length > MAX_TASK_TEXT_LENGTH;
         return (
@@ -68,43 +60,17 @@ export function ChecklistEditor({ items, onChange, maxItems = 20 }: Props) {
             <legend className="px-1 text-xs font-medium text-muted-foreground">
               {t("itemLabel", { number: index + 1 })}
             </legend>
-            <Textarea
-              value={item.text}
-              onChange={(event) => update(index, { text: event.target.value })}
-              rows={3}
-              ref={(element) => fitToContent(element)}
-              placeholder={t("itemPlaceholder")}
-              aria-invalid={tooLong || undefined}
-              aria-label={t("itemLabel", { number: index + 1 })}
-              // The fieldset is the card, so the description has no border, focus ring or error ring of its own.
-              className="min-h-19 w-full resize-none rounded-none border-0 bg-transparent px-1 py-2 text-sm hover:border-0 focus-visible:ring-0 focus-visible:outline-none aria-invalid:ring-0 dark:bg-transparent"
+            <TaskTextField
+              number={index + 1}
+              text={item.text}
+              tooLong={tooLong}
+              onChange={(text) => update(index, { text })}
             />
             {tooLong ? (
               <p role="alert" className="px-1 text-xs text-destructive">
                 {t("textTooLong", { count: length, max: MAX_TASK_TEXT_LENGTH })}
               </p>
             ) : null}
-            {typed.map((link, linkIndex) => (
-              <div key={`text-${linkIndex}`} className="flex min-w-0 items-center gap-2">
-                <Input
-                  type="url"
-                  value={link}
-                  readOnly
-                  aria-label={t("linkLabel", { number: index + 1, link: linkIndex + 1 })}
-                  className="h-11 min-w-0 flex-1 text-sm text-muted-foreground"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="hit-target size-11 shrink-0 text-muted-foreground hover:text-destructive"
-                  onClick={() => update(index, { text: removeInlineLink(item.text, linkIndex) })}
-                  aria-label={t("removeSpecificLink", { number: linkIndex + 1 })}
-                >
-                  <X className="size-4" aria-hidden />
-                </Button>
-              </div>
-            ))}
             {links.map((link, linkIndex) => (
               <div key={linkIndex} className="flex min-w-0 items-center gap-2">
                 <Input
@@ -113,7 +79,7 @@ export function ChecklistEditor({ items, onChange, maxItems = 20 }: Props) {
                   onChange={(event) => updateLinks(index, links.map((value, current) => current === linkIndex ? event.target.value : value))}
                   placeholder={t("linkPlaceholder")}
                   maxLength={MAX_LINK_LENGTH}
-                  aria-label={t("linkLabel", { number: index + 1, link: typed.length + linkIndex + 1 })}
+                  aria-label={t("linkLabel", { number: index + 1, link: typedCount + linkIndex + 1 })}
                   className="h-11 min-w-0 flex-1 text-sm"
                 />
                 <Button
@@ -122,7 +88,7 @@ export function ChecklistEditor({ items, onChange, maxItems = 20 }: Props) {
                   size="icon"
                   className="hit-target size-11 shrink-0 text-muted-foreground hover:text-destructive"
                   onClick={() => updateLinks(index, links.filter((_, current) => current !== linkIndex))}
-                  aria-label={t("removeSpecificLink", { number: typed.length + linkIndex + 1 })}
+                  aria-label={t("removeSpecificLink", { number: typedCount + linkIndex + 1 })}
                 >
                   <X className="size-4" aria-hidden />
                 </Button>
