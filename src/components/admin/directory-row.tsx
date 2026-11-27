@@ -24,6 +24,9 @@ import { useConfirm } from "@/hooks/use-confirm";
 import { NumberCommitInput } from "./number-commit-input";
 import { NONE } from "./directory-filters";
 
+/** Touch-sized in the phone cards; 32px inside the table, like the project allocation controls. */
+const COMPACT_SELECT = "w-full md:min-h-8 md:data-[size=default]:h-8";
+
 /** One Directory row (Status first, A16); every control saves optimistically and reports via bottom toast. */
 export function DirectoryRow({
   user,
@@ -69,7 +72,7 @@ export function DirectoryRow({
   return (
     <tr
       className={cn(
-        "h-16 border-b md:last:border-b-0",
+        "h-11 border-b md:last:border-b-0",
         "max-md:relative max-md:grid max-md:grid-cols-2 max-md:gap-3",
         CARD_ROW,
         !view.isActive && "text-muted-foreground",
@@ -87,11 +90,11 @@ export function DirectoryRow({
       </Cell>
       <th
         scope="row"
-        className="bg-card text-left align-middle font-medium max-md:col-span-2 max-md:min-w-0 max-md:pr-12 md:sticky md:left-0 md:z-10 md:px-2 md:py-3"
+        className="bg-card text-left align-middle font-medium max-md:col-span-2 max-md:min-w-0 max-md:pr-12 md:sticky md:left-0 md:z-10 md:px-2 md:py-1"
       >
         <Link
           href={`/people/${view.id}?from=directory`}
-          className="flex min-h-11 items-center gap-3 rounded-md md:px-2 hover:bg-muted/60 hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          className="flex min-h-11 items-center gap-3 rounded-md md:min-h-9 md:px-2 hover:bg-muted/60 hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           <Avatar size="sm">
             {view.avatarUrl ? (
@@ -99,7 +102,7 @@ export function DirectoryRow({
             ) : null}
             <AvatarFallback>{initials(view.fullName)}</AvatarFallback>
           </Avatar>
-          <span className="flex min-w-0 flex-col">
+          <span className="flex min-w-0 flex-col leading-tight">
             <span className="truncate">{view.fullName}</span>
             {view.email ? (
               <span className="truncate text-xs font-normal text-muted-foreground">
@@ -109,7 +112,7 @@ export function DirectoryRow({
           </span>
         </Link>
       </th>
-      <td className={cn("text-sm max-md:col-span-2 max-md:min-w-0 md:max-w-48 md:px-2 md:py-3 md:align-middle", !view.title && "max-md:hidden")}>
+      <td className={cn("text-sm max-md:col-span-2 max-md:min-w-0 md:max-w-48 md:px-2 md:py-1 md:align-middle", !view.title && "max-md:hidden")}>
         {view.title ? (
           <span className="block truncate" title={view.title}>
             {view.title}
@@ -135,7 +138,7 @@ export function DirectoryRow({
               label: `${o.code} · ${o.name}`,
             })),
           ]}
-          className="w-full md:w-40"
+          className={cn(COMPACT_SELECT, "md:w-40")}
         />
       </Cell>
       <Cell label={t("columns.role")}>
@@ -144,7 +147,7 @@ export function DirectoryRow({
           value={view.role}
           onChange={(role) => update({ role: role as Role })}
           options={ROLES.map((r) => ({ value: r, label: tRole(r) }))}
-          className="w-full md:w-32"
+          className={cn(COMPACT_SELECT, "md:w-32")}
         />
       </Cell>
       <Cell align="right" label={t("columns.allowance")}>
@@ -157,7 +160,7 @@ export function DirectoryRow({
           step={0.5}
           allowEmpty
           format={f.count}
-          className="w-full md:w-24"
+          className="w-full md:h-8 md:w-24"
           onCommit={(n) => update({ ptoAllowanceDays: n })}
         />
       </Cell>
@@ -171,7 +174,7 @@ export function DirectoryRow({
           step={0.5}
           allowEmpty
           format={f.count}
-          className="w-full md:w-24"
+          className="w-full md:h-8 md:w-24"
           onCommit={(n) => update({ sickAllowanceDays: n })}
         />
       </Cell>
@@ -192,7 +195,7 @@ function Cell({
   children: ReactNode;
 }) {
   return (
-    <td className={cn("max-md:min-w-0 md:px-2 md:py-3 md:align-middle", className)}>
+    <td className={cn("max-md:min-w-0 md:px-2 md:py-1 md:align-middle", className)}>
       {label ? <span aria-hidden className={CARD_LABEL}>{label}</span> : null}
       <div className={cn("flex", align === "right" ? "justify-start md:justify-end" : "justify-start")}>
         {children}
