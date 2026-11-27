@@ -82,10 +82,7 @@ export function ChecklistEditor({ items, onChange, maxItems = 20 }: Props) {
             </div>
             {links.map((link, linkIndex) => (
               <div key={linkIndex} className="flex min-w-0 items-center gap-2">
-                <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
-                  <LinkIcon aria-hidden className="size-4" />
-                  {t("linkNumber", { number: linkIndex + 1 })}
-                </span>
+                <LinkIcon aria-hidden className="ml-1 size-4 shrink-0 text-muted-foreground" />
                 <Input
                   type="url"
                   value={link}

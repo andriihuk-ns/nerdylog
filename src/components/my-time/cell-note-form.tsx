@@ -6,7 +6,6 @@ import { useTranslations } from "next-intl";
 import {
   checklistSearchText,
   checklistItemLinks,
-  extractArtifactLinks,
   extractTicketRefs,
   MAX_CHECKLIST_ITEMS,
   MAX_TASK_SUMMARY_LENGTH,
@@ -20,7 +19,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { parseHoursInput } from "@/components/lib/format";
 import { useConfirm } from "@/hooks/use-confirm";
-import { ArtifactChip } from "@/components/shell/artifact-text";
 import { ChecklistEditor } from "./checklist-editor";
 
 const QUICK_HOURS = [
@@ -52,13 +50,11 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
   const [formError, setFormError] = useState<string | null>(null);
   const searchText = checklistSearchText(items);
   const refs = extractTicketRefs(searchText);
-  const links = extractArtifactLinks(searchText);
   const t = useTranslations("myTime");
   const tc = useTranslations("common");
   const { confirm, dialog } = useConfirm();
-  const isNewEntry = entryCount === 0;
   const parsedHours = parseHoursInput(hours);
-  const canSave = parsedHours.ok && (!isNewEntry || parsedHours.value > 0);
+  const canSave = parsedHours.ok && parsedHours.value > 0 && items.length > 0 && items.every((item) => item.text.trim());
 
   async function deleteLog() {
     const confirmed = await confirm({
@@ -75,28 +71,26 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
       setHoursError(t(`input.${parsedHours.error}`));
       return;
     }
-    if (isNewEntry && parsedHours.value === 0) {
+    if (parsedHours.value === 0) {
       setHoursError(t("note.hoursRequired"));
       return;
     }
     setHoursError(null);
-    const activeItems = items.filter((item) => item.text.trim() || checklistItemLinks(item).length > 0);
-    if (activeItems.some((item) => !item.text.trim())) {
+    if (items.length === 0 || items.some((item) => !item.text.trim())) {
       setFormError(t("note.taskRequired"));
       return;
     }
-    if (activeItems.some((item) => checklistItemLinks(item).some((link) => !link.trim()))) {
-      setFormError(t("note.linkRequired"));
-      return;
-    }
     const cleaned = items
-      .map((item) => ({
-        text: item.text.trim(),
-        ...(item.link?.trim() ? { link: item.link.trim() } : {}),
-        ...(item.additionalLinks?.length ? { additionalLinks: item.additionalLinks.map((link) => link.trim()) } : {}),
-        done: item.done,
-      }))
-      .filter((item) => item.text.length > 0 || Boolean(item.link) || Boolean(item.additionalLinks?.length));
+      .map((item) => {
+        const [link, ...additionalLinks] = checklistItemLinks(item).map((value) => value.trim()).filter(Boolean);
+        return {
+          text: item.text.trim(),
+          ...(link ? { link } : {}),
+          ...(additionalLinks.length ? { additionalLinks } : {}),
+          done: item.done,
+        };
+      })
+      .filter((item) => item.text.length > 0);
     const summary = cleaned.length > 0 ? serializeChecklist(cleaned) : "";
     if (summary.length > MAX_TASK_SUMMARY_LENGTH) {
       setFormError(t("note.tooLong", { max: MAX_TASK_SUMMARY_LENGTH }));
@@ -120,16 +114,16 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
           <div className="flex max-w-sm flex-col gap-1.5">
             <Label htmlFor="cell-hours">
               {t("note.hours")}
-              {isNewEntry ? <span aria-hidden="true"> *</span> : null}
+              <span aria-hidden="true"> *</span>
             </Label>
             <Input
               id="cell-hours"
               inputMode="decimal"
               autoComplete="off"
               autoFocus
-              required={isNewEntry}
+              required
               value={hours}
-              aria-required={isNewEntry || undefined}
+              aria-required="true"
               aria-invalid={hoursError ? true : undefined}
               onChange={(event) => {
                 const raw = event.target.value;
@@ -180,15 +174,6 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
               maxItems={MAX_CHECKLIST_ITEMS}
             />
             {formError ? <p role="alert" className="text-sm text-destructive">{formError}</p> : null}
-            {links.length > 0 ? (
-              <ul className="flex flex-wrap gap-1" aria-label={t("note.links")}>
-                {links.map((link) => (
-                  <li key={link.url} className="max-w-full">
-                    <ArtifactChip link={link} />
-                  </li>
-                ))}
-              </ul>
-            ) : null}
             {refs.length > 0 ? (
               <ul className="flex flex-wrap gap-1" aria-label={t("note.detected")}>
                 {refs.map((reference) => (

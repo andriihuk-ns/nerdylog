@@ -42,6 +42,7 @@ export function chipLabel(link: ArtifactLink): string {
 export function ArtifactChip({ link }: { link: ArtifactLink }) {
   const Icon = ICONS[link.provider];
   const label = chipLabel(link);
+  const favicon = faviconUrl(link.url);
   return (
     <a
       href={link.url}
@@ -51,10 +52,24 @@ export function ArtifactChip({ link }: { link: ArtifactLink }) {
       data-provider={link.provider}
       className="mx-0.5 inline-flex max-w-full items-center gap-1 rounded-md border bg-muted/60 px-1.5 py-px align-baseline text-xs font-medium text-foreground no-underline hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
     >
-      <Icon aria-hidden className="size-3 shrink-0 text-muted-foreground" />
+      <span aria-hidden="true" className="relative size-3 shrink-0">
+        <Icon className="absolute inset-0 size-3 text-muted-foreground" />
+        {/* Favicons are already tiny; direct loading keeps arbitrary linked hosts out of image config. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        {favicon ? <img src={favicon} alt="" loading="lazy" className="absolute inset-0 size-3 rounded-[2px]" /> : null}
+      </span>
       <span className="max-w-48 truncate">{label}</span>
     </a>
   );
+}
+
+function faviconUrl(url: string): string | null {
+  try {
+    const hostname = new URL(url).hostname;
+    return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(hostname)}&sz=32`;
+  } catch {
+    return null;
+  }
 }
 
 /**
