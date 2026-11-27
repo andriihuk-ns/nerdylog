@@ -17,7 +17,7 @@ import { ProjectForm } from "./project-form";
 import { ProjectRow } from "./project-row";
 import { channelLabel, takenChannelMap } from "./channel-options";
 import { useMemberRefreshText } from "./use-member-refresh-text";
-import { TABLE_EDGE_PADDING } from "@/components/shell/table-styles";
+import { CARD_FRAME, CARD_TABLE, TABLE_EDGE_PADDING } from "@/components/shell/table-styles";
 
 const COLUMNS = ["status", "name", "channel", "prompt"] as const;
 
@@ -98,7 +98,7 @@ export function ProjectsPanel({ projects, channels, offices }: Props) {
           {t("new")}
         </Button>
       </div>
-      <div className="overflow-x-auto rounded-lg border bg-card">
+      <div className={cn("overflow-x-auto rounded-lg border bg-card", visible.length > 0 && CARD_FRAME)}>
         {sorted.length === 0 ? (
           <p className="p-6 text-muted-foreground">{t("empty")}</p>
         ) : visible.length === 0 ? (
@@ -107,7 +107,7 @@ export function ProjectsPanel({ projects, channels, offices }: Props) {
             <Button variant="outline" className="hit-target" onClick={() => setQuery("")}>{t("clearSearch")}</Button>
           </div>
         ) : (
-          <table className={`w-full border-collapse ${TABLE_EDGE_PADDING}`}>
+          <table className={cn("w-full border-collapse", CARD_TABLE, TABLE_EDGE_PADDING)}>
             <thead>
               <tr className="border-b text-xs font-medium text-muted-foreground">
                 {COLUMNS.map((c) => (

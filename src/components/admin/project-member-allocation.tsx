@@ -10,6 +10,8 @@ import {
   type ProjectMemberAllocation,
 } from "@/contracts";
 import { updateProjectMemberAllocationAction } from "@/app/(dashboard)/admin/project-actions";
+import { CARD_ROW } from "@/components/shell/table-styles";
+import { cn } from "@/lib/utils";
 import { initials } from "@/components/lib/format";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -42,8 +44,8 @@ export function ProjectMemberAllocationControl({ projectId, projectName, member,
   );
 
   return (
-    <tr aria-busy={pending} className="h-11 border-b last:border-b-0">
-      <th scope="row" className="sticky left-0 z-10 bg-card px-4 text-left align-middle font-medium">
+    <tr aria-busy={pending} className={cn("h-11 border-b max-md:flex max-md:flex-col max-md:gap-3 md:last:border-b-0", CARD_ROW)}>
+      <th scope="row" className="bg-card text-left align-middle font-medium md:sticky md:left-0 md:z-10 md:px-4">
         <span className="flex items-center gap-3">
           <Avatar size="sm">
             {member.avatarUrl ? <AvatarImage src={member.avatarUrl} alt="" /> : null}
@@ -52,7 +54,7 @@ export function ProjectMemberAllocationControl({ projectId, projectName, member,
           <span className="block max-w-56 truncate" title={member.fullName}>{member.fullName}</span>
         </span>
       </th>
-      <td className="px-3 py-1 align-middle">
+      <td className="align-middle md:px-3 md:py-1">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <div role="group" aria-label={t("allocationPresets", { name: member.fullName })} className="flex flex-wrap items-center gap-1">
             {PROJECT_ALLOCATION_PRESETS.map((value) => {
@@ -86,7 +88,7 @@ export function ProjectMemberAllocationControl({ projectId, projectName, member,
               max={MAX_MONTH_ALLOCATION_HOURS}
               step={0.5}
               format={f.hours}
-              className="w-16 sm:h-8"
+              className="w-20 sm:h-8"
               onCommit={(hours) => hours !== null && save(hours)}
             />
             {t("allocationHoursUnit")}

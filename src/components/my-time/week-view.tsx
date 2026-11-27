@@ -172,6 +172,7 @@ export function WeekView({ weekStart, today, entries, holidayNames, projects, us
       </div>
       <WeekGrid
         matrix={matrix}
+        today={today}
         display={display}
         holidayNames={holidayNames}
         addable={addable}

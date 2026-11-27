@@ -17,6 +17,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
 import { FilterSelect } from "@/components/shell/filter-select";
+import { CARD_LABEL, CARD_ROW } from "@/components/shell/table-styles";
 import { initials } from "@/components/lib/format";
 import { useFormat } from "@/hooks/use-format";
 import { useConfirm } from "@/hooks/use-confirm";
@@ -68,11 +69,13 @@ export function DirectoryRow({
   return (
     <tr
       className={cn(
-        "h-16 border-b last:border-b-0",
+        "h-16 border-b md:last:border-b-0",
+        "max-md:relative max-md:grid max-md:grid-cols-2 max-md:gap-3",
+        CARD_ROW,
         !view.isActive && "text-muted-foreground",
       )}
     >
-      <Cell>
+      <Cell className="max-md:absolute max-md:top-5 max-md:right-3">
         <span className="flex items-center gap-2">
           <Switch
             checked={view.isActive}
@@ -84,11 +87,11 @@ export function DirectoryRow({
       </Cell>
       <th
         scope="row"
-        className="sticky left-0 z-10 bg-card px-2 py-3 text-left align-middle font-medium"
+        className="bg-card text-left align-middle font-medium max-md:col-span-2 max-md:min-w-0 max-md:pr-12 md:sticky md:left-0 md:z-10 md:px-2 md:py-3"
       >
         <Link
           href={`/people/${view.id}?from=directory`}
-          className="flex min-h-11 items-center gap-3 rounded-md px-2 hover:bg-muted/60 hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          className="flex min-h-11 items-center gap-3 rounded-md md:px-2 hover:bg-muted/60 hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           <Avatar size="sm">
             {view.avatarUrl ? (
@@ -106,7 +109,7 @@ export function DirectoryRow({
           </span>
         </Link>
       </th>
-      <td className="max-w-48 px-2 py-3 align-middle text-sm">
+      <td className={cn("text-sm max-md:col-span-2 max-md:min-w-0 md:max-w-48 md:px-2 md:py-3 md:align-middle", !view.title && "max-md:hidden")}>
         {view.title ? (
           <span className="block truncate" title={view.title}>
             {view.title}
@@ -118,7 +121,7 @@ export function DirectoryRow({
           </span>
         )}
       </td>
-      <Cell>
+      <Cell label={t("columns.office")}>
         <FilterSelect
           label={t("officeFor", { name: view.fullName })}
           value={view.officeId ?? NONE}
@@ -132,19 +135,19 @@ export function DirectoryRow({
               label: `${o.code} · ${o.name}`,
             })),
           ]}
-          className="w-40"
+          className="w-full md:w-40"
         />
       </Cell>
-      <Cell>
+      <Cell label={t("columns.role")}>
         <FilterSelect
           label={t("roleFor", { name: view.fullName })}
           value={view.role}
           onChange={(role) => update({ role: role as Role })}
           options={ROLES.map((r) => ({ value: r, label: tRole(r) }))}
-          className="w-32"
+          className="w-full md:w-32"
         />
       </Cell>
-      <Cell align="right">
+      <Cell align="right" label={t("columns.allowance")}>
         <NumberCommitInput
           key={view.ptoAllowanceDays ?? "none"}
           value={view.ptoAllowanceDays}
@@ -154,10 +157,11 @@ export function DirectoryRow({
           step={0.5}
           allowEmpty
           format={f.count}
+          className="w-full md:w-24"
           onCommit={(n) => update({ ptoAllowanceDays: n })}
         />
       </Cell>
-      <Cell align="right">
+      <Cell align="right" label={t("columns.sickAllowance")}>
         <NumberCommitInput
           key={view.sickAllowanceDays ?? "sick-none"}
           value={view.sickAllowanceDays}
@@ -167,6 +171,7 @@ export function DirectoryRow({
           step={0.5}
           allowEmpty
           format={f.count}
+          className="w-full md:w-24"
           onCommit={(n) => update({ sickAllowanceDays: n })}
         />
       </Cell>
@@ -176,19 +181,20 @@ export function DirectoryRow({
 
 function Cell({
   align = "left",
+  label,
+  className,
   children,
 }: {
   align?: "left" | "right";
+  /** Column name, shown above the value when the row is a card. */
+  label?: string;
+  className?: string;
   children: ReactNode;
 }) {
   return (
-    <td className="px-2 py-3 align-middle">
-      <div
-        className={cn(
-          "flex",
-          align === "right" ? "justify-end" : "justify-start",
-        )}
-      >
+    <td className={cn("max-md:min-w-0 md:px-2 md:py-3 md:align-middle", className)}>
+      {label ? <span aria-hidden className={CARD_LABEL}>{label}</span> : null}
+      <div className={cn("flex", align === "right" ? "justify-start md:justify-end" : "justify-start")}>
         {children}
       </div>
     </td>

@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { channelLabel } from "./channel-options";
 import { ProjectMemberAllocationControl } from "./project-member-allocation";
 import { useMemberRefreshText } from "./use-member-refresh-text";
-import { TABLE_EDGE_PADDING } from "@/components/shell/table-styles";
+import { CARD_FRAME, CARD_TABLE, TABLE_EDGE_PADDING } from "@/components/shell/table-styles";
 import { cityName } from "./timezones";
 
 interface Props {
@@ -56,8 +56,8 @@ export function ProjectDetailPanel({ project, offices, channels }: Props) {
         {t("backToProjects")}
       </Link>
 
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
+      <header className="flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
           <h1 id="project-detail-title" className="truncate text-2xl font-semibold tracking-tight">{project.name}</h1>
           <dl className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
             <div className="inline-flex items-center gap-1.5">
@@ -98,8 +98,8 @@ export function ProjectDetailPanel({ project, offices, channels }: Props) {
 
       <section className="flex flex-col gap-3" aria-label={t("team")}>
         {project.memberAllocations.length > 0 ? (
-          <div className="overflow-x-auto rounded-lg border bg-card">
-            <table className={`w-full border-collapse ${TABLE_EDGE_PADDING}`}>
+          <div className={cn("overflow-x-auto rounded-lg border bg-card", CARD_FRAME)}>
+            <table className={cn("w-full border-collapse", CARD_TABLE, TABLE_EDGE_PADDING)}>
               <thead>
                 <tr className="border-b text-xs font-medium text-muted-foreground">
                   <th scope="col" className="sticky left-0 z-10 h-10 bg-card px-4 text-left font-medium">{t("columns.name")}</th>

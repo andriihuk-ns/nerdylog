@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Toast } from "@/components/ui/toast";
 import { SearchInput } from "@/components/shell/search-input";
 import { FilterSelect } from "@/components/shell/filter-select";
-import { TABLE_EDGE_PADDING } from "@/components/shell/table-styles";
+import { CARD_FRAME, CARD_TABLE, TABLE_EDGE_PADDING } from "@/components/shell/table-styles";
 import { DirectoryRow } from "./directory-row";
 import {
   ALL,
@@ -138,7 +138,7 @@ export function DirectoryPanel({ users, projects, offices }: Props) {
           </Button>
         </div>
       ) : (
-        <FloatingHead className="rounded-lg border bg-card">
+        <FloatingHead className={cn("rounded-lg border bg-card", CARD_FRAME)}>
           {hasFilters(filters) ? (
             <p
               className="border-b px-4 py-2 text-xs text-muted-foreground"
@@ -147,7 +147,7 @@ export function DirectoryPanel({ users, projects, offices }: Props) {
               {t("showing", { shown: shown.length, total: users.length })}
             </p>
           ) : null}
-          <table className={`w-full border-collapse ${TABLE_EDGE_PADDING}`}>
+          <table className={cn("w-full border-collapse", CARD_TABLE, TABLE_EDGE_PADDING)}>
             <thead>
               <tr className="border-b text-xs font-medium text-muted-foreground">
                 {COLUMNS.map((c) => (

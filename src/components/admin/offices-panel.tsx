@@ -10,7 +10,8 @@ import { useFormat } from "@/hooks/use-format";
 import { useConfirm } from "@/hooks/use-confirm";
 import { Button } from "@/components/ui/button";
 import { Toast } from "@/components/ui/toast";
-import { TABLE_EDGE_PADDING } from "@/components/shell/table-styles";
+import { CARD_FRAME, CARD_ROW, CARD_TABLE, TABLE_EDGE_PADDING } from "@/components/shell/table-styles";
+import { cn } from "@/lib/utils";
 import { OfficeForm } from "./office-form";
 
 /** Offices: code, name, timezone (A16), member count; create, rename, delete (only when empty, confirmed). */
@@ -49,16 +50,16 @@ export function OfficesPanel({ offices }: { offices: OfficeView[] }) {
           {t("new")}
         </Button>
       </div>
-      <div className="overflow-x-auto rounded-lg border bg-card">
+      <div className={cn("overflow-x-auto rounded-lg border bg-card", sorted.length > 0 && CARD_FRAME)}>
         {editing === "new" ? (
-          <div className="border-b">
+          <div className="border-b max-md:mb-3 max-md:rounded-lg max-md:border max-md:bg-card">
             <OfficeForm onDone={done} onCancel={() => setEditing(null)} />
           </div>
         ) : null}
         {sorted.length === 0 && editing !== "new" ? (
           <p className="p-6 text-muted-foreground">{t("empty")}</p>
         ) : (
-          <table className={`w-full border-collapse ${TABLE_EDGE_PADDING}`}>
+          <table className={cn("w-full border-collapse", CARD_TABLE, TABLE_EDGE_PADDING)}>
             <thead>
               <tr className="border-b text-xs font-medium text-muted-foreground">
                 <th scope="col" className="h-10 w-px pr-2 pl-4 text-left font-medium whitespace-nowrap">{t("columns.code")}</th>
@@ -73,18 +74,21 @@ export function OfficesPanel({ offices }: { offices: OfficeView[] }) {
             <tbody>
               {sorted.map((o) =>
                 editing === o.id ? (
-                  <tr key={o.id} className="border-b last:border-b-0">
-                    <td colSpan={5}>
+                  <tr key={o.id} className="border-b max-md:block max-md:rounded-lg max-md:border max-md:bg-card md:last:border-b-0">
+                    <td colSpan={5} className="max-md:block">
                       <OfficeForm office={o} onDone={done} onCancel={() => setEditing(null)} />
                     </td>
                   </tr>
                 ) : (
-                  <tr key={o.id} className="h-11 border-b last:border-b-0">
-                    <td className="pr-2 pl-4 font-mono text-xs font-medium">{o.code}</td>
-                    <th scope="row" className="px-4 text-left font-medium">{o.name}</th>
-                    <td className="px-3 text-sm whitespace-nowrap text-muted-foreground">{o.timezone}</td>
-                    <td className="tabular px-3 text-right font-medium">{f.count(o.memberCount)}</td>
-                    <td className="px-2">
+                  <tr key={o.id} className={cn("h-11 border-b max-md:grid max-md:grid-cols-[auto_minmax(0,1fr)_auto] max-md:items-center max-md:gap-x-3 max-md:gap-y-1 md:last:border-b-0", CARD_ROW)}>
+                    <td className="font-mono text-xs font-medium md:pr-2 md:pl-4">{o.code}</td>
+                    <th scope="row" className="min-w-0 text-left font-medium md:px-4">{o.name}</th>
+                    <td className="text-sm text-muted-foreground max-md:col-span-3 md:px-3 md:whitespace-nowrap">{o.timezone}</td>
+                    <td className="tabular font-medium max-md:col-span-3 md:px-3 md:text-right">
+                      <span aria-hidden className="mr-2 text-xs font-normal text-muted-foreground md:hidden">{t("columns.members")}</span>
+                      {f.count(o.memberCount)}
+                    </td>
+                    <td className="max-md:col-start-3 max-md:row-start-1 md:px-2">
                       <span className="flex justify-end gap-1">
                         <Button variant="ghost" size="icon" className="hit-target" onClick={() => setEditing(o.id)} aria-label={t("edit", { name: o.name })}>
                           <Pencil aria-hidden />

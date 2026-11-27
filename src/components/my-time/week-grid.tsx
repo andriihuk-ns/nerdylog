@@ -16,10 +16,12 @@ import type { CommitMove } from "./cell-editor";
 import { DAY_STATUS_COLUMN, type DayDisplay } from "./day-status";
 import { DayStatusPill } from "./day-status-pill";
 import { HoursCell } from "./hours-cell";
+import { WeekDayList } from "./week-day-list";
 import type { MatrixRow, ProjectOption, ProjectRef, WeekMatrix } from "./week-matrix";
 
-interface Props {
+export interface WeekGridProps {
   matrix: WeekMatrix;
+  today: IsoDate; // preselected day in the phone layout
   /** A16: per-day pill state incl. display-only "weekend" (locks the column). */
   display: DayDisplay[];
   holidayNames: Array<{ date: IsoDate; name: string }>;
@@ -32,11 +34,13 @@ interface Props {
   onAddProject: (project: ProjectRef) => void;
 }
 
+type Props = WeekGridProps;
 type Draft = { row: number; col: number; draft: string } | null;
 
 export const cellKey = (projectId: string, date: IsoDate) => `${projectId}:${date}`;
 
-export function WeekGrid({ matrix, display, holidayNames, addable, pendingKeys, failedKey, onSaveCell, onSetStatus, onRemoveRow, onAddProject }: Props) {
+export function WeekGrid(props: Props) {
+  const { matrix, display, holidayNames, addable, pendingKeys, failedKey, onSaveCell, onSetStatus, onRemoveRow, onAddProject } = props;
   const { days, rows } = matrix;
   const { gridRef, focusCell, handleNavKey, cellProps } = useGridNavigation({ rows: rows.length, cols: days.length });
   const [editing, setEditing] = useState<Draft>(null);
@@ -60,6 +64,9 @@ export function WeekGrid({ matrix, display, holidayNames, addable, pendingKeys, 
   }
 
   return (
+    <>
+    <WeekDayList {...props} />
+    <div className="hidden md:block">
     <FloatingHead className="rounded-lg border bg-card" rows={1}>
       <table ref={gridRef} role="grid" aria-label={t("grid.label")} className={`${WEEK_TABLE_WIDTH} border-collapse ${TABLE_EDGE_PADDING}`}>
         <colgroup>
@@ -183,5 +190,7 @@ export function WeekGrid({ matrix, display, holidayNames, addable, pendingKeys, 
         </tfoot>
       </table>
     </FloatingHead>
+    </div>
+    </>
   );
 }

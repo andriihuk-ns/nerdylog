@@ -70,7 +70,8 @@ export function FloatingHead({ children, className, rows }: Props) {
     };
     const build = () => {
       const table = frame.querySelector("table");
-      if (!table?.tHead) {
+      // No head to float, or it is hidden because the table is shown as cards.
+      if (!table?.tHead || table.tHead.offsetHeight === 0) {
         strip.replaceChildren();
         track.hidden = true;
         return;

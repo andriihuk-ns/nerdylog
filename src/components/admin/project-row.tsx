@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { channelLabel, findChannel } from "./channel-options";
 import { useMemberRefreshText } from "./use-member-refresh-text";
+import { CARD_ROW } from "@/components/shell/table-styles";
 import { cityName } from "./timezones";
 
 interface Props {
@@ -59,9 +60,14 @@ export function ProjectRow({ project: p, channels, offices, onEdit, onDelete, on
         if (event.target instanceof Element && event.target.closest("a, button, input, [role='switch'], [data-row-action]")) return;
         router.push(href);
       }}
-      className={cn("group h-11 cursor-pointer border-b last:border-b-0 hover:bg-muted/50", !active && "text-muted-foreground")}
+      className={cn(
+        "group h-11 cursor-pointer border-b hover:bg-muted/50 md:last:border-b-0",
+        "max-md:grid max-md:grid-cols-[minmax(0,1fr)_auto] max-md:items-center max-md:gap-x-3 max-md:gap-y-1",
+        CARD_ROW,
+        !active && "text-muted-foreground",
+      )}
     >
-      <td className="pr-2 pl-3">
+      <td className="max-md:col-start-2 max-md:row-start-1 max-md:justify-self-end md:pr-2 md:pl-3">
         <Switch
           checked={active}
           onCheckedChange={setActive}
@@ -69,18 +75,18 @@ export function ProjectRow({ project: p, channels, offices, onEdit, onDelete, on
           aria-label={t("statusFor", { name: p.name })}
         />
       </td>
-      <th scope="row" className="max-w-56 truncate px-4 text-left font-medium">
+      <th scope="row" className="truncate text-left font-medium max-md:col-start-1 max-md:row-start-1 md:max-w-56 md:px-4">
         <Link href={href} className="rounded-sm underline-offset-4 hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           {p.name}
         </Link>
       </th>
-      <td className="px-3 whitespace-nowrap">
+      <td className="text-sm max-md:col-span-2 max-md:min-w-0 max-md:truncate md:px-3 md:text-base md:whitespace-nowrap">
         <ChannelCell channels={channels} channelId={p.slackChannelId} />
       </td>
-      <td className="tabular px-3 text-sm whitespace-nowrap text-muted-foreground">
+      <td className="tabular text-sm text-muted-foreground max-md:col-start-1 max-md:row-start-3 md:px-3 md:whitespace-nowrap">
         {t("asksAt", { time: p.statusPromptTime, zone: cityName(p.statusPromptTimezone ?? office?.timezone ?? "Europe/Kyiv") })}
       </td>
-      <td className="px-2">
+      <td className="max-md:col-start-2 max-md:row-start-3 md:px-2">
         <span data-row-action className="flex justify-end gap-1">
           <Button
             variant="ghost"

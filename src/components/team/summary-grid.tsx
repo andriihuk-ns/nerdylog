@@ -9,6 +9,7 @@ import { FloatingHead } from "@/components/shell/floating-head";
 import { useFormat } from "@/hooks/use-format";
 import { initials } from "@/components/lib/format";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { SummaryCards } from "./summary-cards";
 import { SummaryCell } from "./summary-cell";
 import { bucketValues, SUB_COLUMNS, teamTotals } from "./team-summary";
 import { PINNED_EDGE_LEFT, PINNED_EDGE_RIGHT, TABLE_EDGE_PADDING } from "@/components/shell/table-styles";
@@ -37,6 +38,9 @@ export function SummaryGrid({ rows, weeks, today, avatars, selfId }: Props) {
   const f = useFormat();
 
   return (
+    <>
+    <SummaryCards rows={rows} weeks={weeks} avatars={avatars} selfId={selfId} />
+    <div className="hidden md:block">
     <FloatingHead className="rounded-lg border bg-card">
       <table
         ref={gridRef}
@@ -153,5 +157,7 @@ export function SummaryGrid({ rows, weeks, today, avatars, selfId }: Props) {
         </tfoot>
       </table>
     </FloatingHead>
+    </div>
+    </>
   );
 }
