@@ -1,4 +1,4 @@
-import type { MorningReminderTarget } from "@/contracts";
+import { checklistToText, parseChecklist, type MorningReminderTarget } from "@/contracts";
 import { ACTION } from "../ids";
 import { intlTag, t } from "../i18n";
 import { header, plain, type SlackMessage } from "./common";
@@ -14,13 +14,23 @@ function workHours(value: number, locale: MorningReminderTarget["locale"]): stri
   return t(locale, "unit.hours", { n: formatted });
 }
 
+/** Saved summaries are checklist JSON (or legacy plain text); one task stays on the project line. */
+function taskText(summary: string): string {
+  const items = parseChecklist(summary);
+  if (!items) return summary.trim();
+  // A task's own text may span lines, so count items rather than lines.
+  const tasks = items.map((item) => checklistToText([item])).filter(Boolean);
+  if (tasks.length === 1) return tasks[0].replace(/^• /, "");
+  return tasks.map((task) => `\n    ${task}`).join("");
+}
+
 function details(target: MorningReminderTarget): string[] {
   return target.entries.map((entry) => {
     if (entry.entryType !== "work") {
       return `• ${t(target.locale, PTO_LABELS[entry.entryType])}`;
     }
     const project = entry.projectName ?? "";
-    const task = entry.taskSummary || t(target.locale, "morning.noTask");
+    const task = taskText(entry.taskSummary) || t(target.locale, "morning.noTask");
     return `• ${project} — ${workHours(entry.hours, target.locale)} · ${task}`;
   });
 }
