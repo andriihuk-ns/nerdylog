@@ -2,7 +2,15 @@
 
 import { Link as LinkIcon, Plus, Trash2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { checklistItemLinks, MAX_LINK_LENGTH, MAX_TASK_TEXT_LENGTH, taskTextLength, type ChecklistItem } from "@/contracts";
+import {
+  checklistItemLinks,
+  inlineLinks,
+  MAX_LINK_LENGTH,
+  MAX_TASK_TEXT_LENGTH,
+  removeInlineLink,
+  taskTextLength,
+  type ChecklistItem,
+} from "@/contracts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -49,6 +57,7 @@ export function ChecklistEditor({ items, onChange, maxItems = 20 }: Props) {
     <div className="flex flex-col items-start gap-2.5">
       {items.map((item, index) => {
         const links = checklistItemLinks(item);
+        const typed = inlineLinks(item.text);
         const length = taskTextLength(item.text);
         const tooLong = length > MAX_TASK_TEXT_LENGTH;
         return (
@@ -75,6 +84,27 @@ export function ChecklistEditor({ items, onChange, maxItems = 20 }: Props) {
                 {t("textTooLong", { count: length, max: MAX_TASK_TEXT_LENGTH })}
               </p>
             ) : null}
+            {typed.map((link, linkIndex) => (
+              <div key={`text-${linkIndex}`} className="flex min-w-0 items-center gap-2">
+                <Input
+                  type="url"
+                  value={link}
+                  readOnly
+                  aria-label={t("linkLabel", { number: index + 1, link: linkIndex + 1 })}
+                  className="h-11 min-w-0 flex-1 text-sm text-muted-foreground"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="hit-target size-11 shrink-0 text-muted-foreground hover:text-destructive"
+                  onClick={() => update(index, { text: removeInlineLink(item.text, linkIndex) })}
+                  aria-label={t("removeSpecificLink", { number: linkIndex + 1 })}
+                >
+                  <X className="size-4" aria-hidden />
+                </Button>
+              </div>
+            ))}
             {links.map((link, linkIndex) => (
               <div key={linkIndex} className="flex min-w-0 items-center gap-2">
                 <Input
@@ -83,7 +113,7 @@ export function ChecklistEditor({ items, onChange, maxItems = 20 }: Props) {
                   onChange={(event) => updateLinks(index, links.map((value, current) => current === linkIndex ? event.target.value : value))}
                   placeholder={t("linkPlaceholder")}
                   maxLength={MAX_LINK_LENGTH}
-                  aria-label={t("linkLabel", { number: index + 1, link: linkIndex + 1 })}
+                  aria-label={t("linkLabel", { number: index + 1, link: typed.length + linkIndex + 1 })}
                   className="h-11 min-w-0 flex-1 text-sm"
                 />
                 <Button
@@ -92,7 +122,7 @@ export function ChecklistEditor({ items, onChange, maxItems = 20 }: Props) {
                   size="icon"
                   className="hit-target size-11 shrink-0 text-muted-foreground hover:text-destructive"
                   onClick={() => updateLinks(index, links.filter((_, current) => current !== linkIndex))}
-                  aria-label={t("removeSpecificLink", { number: linkIndex + 1 })}
+                  aria-label={t("removeSpecificLink", { number: typed.length + linkIndex + 1 })}
                 >
                   <X className="size-4" aria-hidden />
                 </Button>

@@ -143,3 +143,24 @@ export function segmentTextWithLinks(text: string): TextSegment[] {
   if (last < text.length) segments.push({ type: "text", text: text.slice(last) });
   return segments;
 }
+
+/** A36: every URL typed inside a text, exactly as written and in order (duplicates kept). */
+export function inlineLinks(text: string): string[] {
+  return text.match(URL_REGEX) ?? [];
+}
+
+/** Cuts the n-th typed URL out of a text, with the brackets that only wrapped it. */
+export function removeInlineLink(text: string, index: number): string {
+  const match = [...text.matchAll(URL_REGEX)][index];
+  if (!match) return text;
+  let before = text.slice(0, match.index);
+  let after = text.slice(match.index + match[0].length);
+  if (before.endsWith("(") && after.startsWith(")")) {
+    before = before.slice(0, -1);
+    after = after.slice(1);
+  }
+  // Close the gap the link leaves, without touching line breaks elsewhere.
+  if (/^([ \t.,;:!?)]|$)/.test(after)) before = before.replace(/[ \t]+$/, "");
+  if (!before || before.endsWith("\n")) after = after.replace(/^[ \t]+/, "");
+  return before + after;
+}

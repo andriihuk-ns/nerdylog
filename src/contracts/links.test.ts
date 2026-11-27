@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractArtifactLinks, parseArtifactLink, segmentTextWithLinks } from "./links";
+import { extractArtifactLinks, inlineLinks, parseArtifactLink, removeInlineLink, segmentTextWithLinks } from "./links";
 
 describe("parseArtifactLink", () => {
   it.each([
@@ -47,5 +47,24 @@ describe("extractArtifactLinks / segmentTextWithLinks", () => {
 
   it("returns the text unchanged when there are no links", () => {
     expect(segmentTextWithLinks("plain")).toEqual([{ type: "text", text: "plain" }]);
+  });
+});
+
+describe("typed links (A36)", () => {
+  const text = "Overhaul (https://www.figma.com/), moved to React (https://react.dev/) and https://a.dev/x.";
+
+  it("lists URLs as written, in order", () => {
+    expect(inlineLinks(text)).toEqual(["https://www.figma.com/", "https://react.dev/", "https://a.dev/x"]);
+  });
+
+  it("removes one URL with its wrapping brackets and gap", () => {
+    expect(removeInlineLink(text, 0)).toBe("Overhaul, moved to React (https://react.dev/) and https://a.dev/x.");
+    expect(removeInlineLink(text, 2)).toBe("Overhaul (https://www.figma.com/), moved to React (https://react.dev/) and.");
+  });
+
+  it("keeps line breaks and ignores a missing index", () => {
+    expect(removeInlineLink("https://a.dev first\nsecond", 0)).toBe("first\nsecond");
+    expect(removeInlineLink("one\nhttps://a.dev two", 0)).toBe("one\ntwo");
+    expect(removeInlineLink("no links", 0)).toBe("no links");
   });
 });
