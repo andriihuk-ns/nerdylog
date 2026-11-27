@@ -1,5 +1,5 @@
 import { and, asc, eq, gte, inArray, isNotNull } from "drizzle-orm";
-import type { IsoDate } from "@/contracts";
+import type { IsoDate, Locale } from "@/contracts";
 import { offices, projectMembers, projectPrompts, projects, users } from "../schema";
 import type { DbOrTx } from "./types";
 
@@ -53,14 +53,14 @@ export async function deleteProjectPromptsSince(db: DbOrTx, projectId: string, s
   await db.delete(projectPrompts).where(and(eq(projectPrompts.projectId, projectId), gte(projectPrompts.promptDate, since)));
 }
 
-/** A31: Slack ids of the active members of each project; the prompt goes to them privately. */
+/** A31: active members of each project (A32: with their locale); the prompt goes to them privately. */
 export async function listPromptRecipientRows(
   db: DbOrTx,
   projectIds: readonly string[],
-): Promise<Array<{ projectId: string; slackUserId: string }>> {
+): Promise<Array<{ projectId: string; slackUserId: string; locale: Locale }>> {
   if (projectIds.length === 0) return [];
   return db
-    .select({ projectId: projectMembers.projectId, slackUserId: users.slackUserId })
+    .select({ projectId: projectMembers.projectId, slackUserId: users.slackUserId, locale: users.locale })
     .from(projectMembers)
     .innerJoin(users, eq(users.id, projectMembers.userId))
     .where(and(inArray(projectMembers.projectId, [...projectIds]), eq(users.isActive, true)));

@@ -128,7 +128,7 @@ export function promptWindowCandidates(
 export function selectPromptTargets(
   candidates: readonly PromptCandidate[],
   holidaysByOffice: ReadonlyMap<string, ReadonlySet<IsoDate>>,
-): Array<Omit<ProjectPromptTarget, "memberSlackIds">> {
+): Array<Omit<ProjectPromptTarget, "recipients">> {
   const none = new Set<IsoDate>();
   return candidates.flatMap(({ project, officeId, clock }) => {
     const holidays = (officeId && holidaysByOffice.get(officeId)) || none;

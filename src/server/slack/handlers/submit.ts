@@ -1,10 +1,9 @@
 import type { SlackSubmissionInput } from "@/contracts";
 import { InvalidInputError } from "@/server/services/errors";
-import { buildProjectLinesMessage, groupProjectLines } from "../blocks/project-lines";
+import { buildLoggedMessage, buildTimeOffMessage } from "../blocks/confirmation";
 import { buildStandupCard } from "../blocks/standup-card";
-import { formatHours } from "../dates";
 import { localeOf, t } from "../i18n";
-import { sendDm, showOnlyTo } from "../private-delivery";
+import { sendDm, showOnlyTo, type PrivateMessage } from "../private-delivery";
 import type { SlackActorProfile, SlackDeps } from "../types";
 import { notMemberMessage } from "./project-access";
 
@@ -17,39 +16,36 @@ function isNotMemberError(error: unknown): boolean {
 }
 
 /**
- * A31: the submitter's own work lines are never posted publicly. Each project channel shows that
- * project's lines only to the submitter, and the bot DM gets one "Logged Xh" copy of all of them.
- * One failing delivery never blocks the others.
+ * A31/A32: nothing about a submission is posted publicly to project channels. Work: each project
+ * channel shows that project's hours only to the submitter, and the bot DM gets all of them.
+ * Time off: a DM confirmation. One failing delivery never blocks the others.
  */
-export async function sendLoggedLines(
+export async function sendConfirmations(
   deps: SlackDeps,
   profile: SlackActorProfile,
   input: SlackSubmissionInput,
 ): Promise<void> {
-  const work = input.entries.filter((e) => e.entryType === "work" && e.projectId);
-  if (work.length === 0) return;
   const locale = localeOf(profile);
+  const dm = (message: PrivateMessage) =>
+    sendDm(deps, profile.slackUserId, message, { unfurl: true }).catch((error) => {
+      console.error("slack: confirmation DM failed", errorMessage(error));
+    });
+  const work = input.entries.filter((e) => e.entryType === "work" && e.projectId);
+  if (work.length === 0) {
+    const timeOff = input.entries.filter((e) => e.entryType !== "work");
+    if (timeOff.length > 0) await dm(buildTimeOffMessage(timeOff, locale, deps.appBaseUrl));
+    return;
+  }
   const projects = await deps.tempo.listProjects(profile);
   const names = new Map(projects.map((p) => [p.id, p.name]));
-  const header = (entries: typeof work) =>
-    t(locale, "common.loggedHeader", { hours: formatHours(entries.reduce((sum, e) => sum + e.hours, 0), locale) });
-  const byProject = [...new Set(work.map((e) => e.projectId!))].map((projectId) => {
-    const entries = work.filter((e) => e.projectId === projectId);
-    const lines = groupProjectLines(names.get(projectId) ?? "Project", entries).get(projectId)!;
-    return { projectId, entries, lines };
-  });
   const channels = new Map((await deps.tempo.listProjectChannels()).map((c) => [c.projectId, c.slackChannelId]));
-  const ephemerals = byProject.map(async ({ projectId, entries, lines }) => {
+  const ephemerals = [...new Set(work.map((e) => e.projectId!))].map(async (projectId) => {
     const channel = channels.get(projectId);
-    if (channel) await showOnlyTo(deps, channel, profile.slackUserId, buildProjectLinesMessage([header(entries), ...lines]));
+    if (!channel) return;
+    const own = work.filter((e) => e.projectId === projectId);
+    await showOnlyTo(deps, channel, profile.slackUserId, buildLoggedMessage(own, names, locale, deps.appBaseUrl));
   });
-  const dm = buildProjectLinesMessage([header(work), ...byProject.flatMap((p) => p.lines)]);
-  await Promise.all([
-    ...ephemerals,
-    sendDm(deps, profile.slackUserId, dm, { unfurl: true }).catch((error) => {
-      console.error("slack: logged DM failed", errorMessage(error));
-    }),
-  ]);
+  await Promise.all([...ephemerals, dm(buildLoggedMessage(work, names, locale, deps.appBaseUrl))]);
 }
 
 /**
@@ -99,8 +95,8 @@ export async function routeSubmission(
   input: SlackSubmissionInput,
 ): Promise<void> {
   await Promise.all([
-    sendLoggedLines(deps, profile, input).catch((error) => {
-      console.error("slack: logged lines failed", errorMessage(error));
+    sendConfirmations(deps, profile, input).catch((error) => {
+      console.error("slack: confirmations failed", errorMessage(error));
     }),
     broadcastStandup(deps, profile, input).catch((error) => {
       console.error("slack: standup broadcast failed", errorMessage(error));

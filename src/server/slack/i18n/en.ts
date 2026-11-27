@@ -15,7 +15,6 @@ export const en = {
   "common.formExpired": "This form has expired. Please open it again.",
   "common.formNotYours": "This form belongs to someone else.",
   "common.loadFailed": "Something went wrong loading nerdylog. Please try again.",
-  "common.loggedHeader": "Logged {hours}",
   "common.saveFailedDm": "nerdylog could not save your last submission. Please try again or use the web panel.",
 
   // Modal titles (Slack caps titles at 24 characters)
@@ -94,14 +93,24 @@ export const en = {
   "err.notMemberDm": "Your time for {project} was not saved. {hint}",
   "err.notMemberGeneric": "Your time was not saved: you're not in one of those project channels. Ask an admin to add you.",
 
+  // A31/A32 private prompt and confirmations
+  "common.onlyYou": "Only you can see this",
+  "prompt.title": "📝 Daily status · {project}",
+  "prompt.body": "How did *{date}* go? Log your hours and tasks, it takes a minute.",
+  "prompt.button": "Log time",
+  "logged.title": "✅ Logged {hours}",
+  "logged.project": "Project",
+  "logged.openWeb": "Open My Time",
+  "timeOff.title": "🌴 Time off saved",
+
   // A19 personal morning reminder
-  "morning.title": "Last workday · {date}",
-  "morning.noEntries": "You haven't logged your time for {date} yet. Add yesterday's hours and task summaries while they're fresh.",
-  "morning.summary": "You logged {hours} across {count} project entries on {date}.",
-  "morning.timeOffOnly": "You recorded time off on {date}.",
+  "morning.title": "Good morning ☀️ {date}",
+  "morning.noEntries": "Nothing is logged for {date} yet. Add your hours while it's fresh.",
+  "morning.summary": "You logged {hours} on {date} (entries: {count}).",
+  "morning.timeOffOnly": "You had time off on {date}.",
   "morning.noTask": "Task details not added",
-  "morning.logYesterday": "Log missing time",
-  "morning.logMore": "Log more time",
+  "morning.logYesterday": "Log hours",
+  "morning.logMore": "Add more",
 
   // App Home
   "home.yourWeek": "Your week",

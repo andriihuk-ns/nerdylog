@@ -217,7 +217,7 @@ describe("A11 channel routing", () => {
     new Map(slack.postMessage.mock.calls.map((c) => [(c as unknown[])[0] as string, (c as unknown[])[1] as string]));
 
   const shown = (slack: ReturnType<typeof fakeDeps>["slack"]) =>
-    new Map(slack.postEphemeral.mock.calls.map((c) => [c[0], c[2]]));
+    new Map(slack.postEphemeral.mock.calls.map((c) => [c[0], JSON.stringify(c)]));
 
   it("A31: shows each project's lines only to the submitter, never plan or blockers, and DMs one copy", async () => {
     const { deps, slack } = fakeDeps();
@@ -228,11 +228,12 @@ describe("A11 channel routing", () => {
     );
     const seen = shown(slack);
     expect(slack.postEphemeral.mock.calls.every((c) => c[1] === "U123")).toBe(true);
-    expect(seen.get("C_DTP")).toBe("Logged 5h\nDogTeamPro · 4h · Map modal DOG-1364 (DOG-1364)\nDogTeamPro · 1h · Review");
-    expect(seen.get("C_CNG")).toBe("Logged 2.5h\nChangelly · 2.5h · Swap fix");
+    expect(seen.get("C_DTP")).toContain("*DogTeamPro* · 5h\\n• 4h — Map modal DOG-1364\\n• 1h — Review");
+    expect(seen.get("C_DTP")).not.toContain("Changelly");
+    expect(seen.get("C_CNG")).toContain("*Changelly* · 2.5h\\n• 2.5h — Swap fix");
     const sent = posts(slack);
     expect([...sent.keys()].sort()).toEqual(["C_STANDUP", "D_U123"]);
-    expect(sent.get("D_U123")).toMatch(/^Logged 7\.5h\n/);
+    expect(sent.get("D_U123")).toMatch(/^✅ Logged 7\.5h · /);
     for (const text of [...seen.values(), sent.get("D_U123")]) expect(text).not.toMatch(/Secret plan|Blocked on API/);
   });
 
@@ -245,10 +246,12 @@ describe("A11 channel routing", () => {
     expect(tempo.setCheckinChannelTs).not.toHaveBeenCalled();
   });
 
-  it("PTO-only submission posts nothing", async () => {
+  it("A32: time off is confirmed by DM only, in the user's locale", async () => {
     const { deps, slack } = fakeDeps();
-    await routeSubmission(deps, profile, input("pto", [entry(null, 0, "", "vacation")]));
-    expect(slack.postMessage).not.toHaveBeenCalled();
+    await routeSubmission(deps, { ...profile, locale: "uk" }, input("pto", [entry(null, 0, "", "vacation")]));
+    expect([...posts(slack).keys()]).toEqual(["D_U123"]);
+    expect(posts(slack).get("D_U123")).toMatch(/Відсутність збережено: Відпустка · .* · 1 день/);
+    expect(slack.postEphemeral).not.toHaveBeenCalled();
   });
 
   it("no general standup channel → no card; projects without a channel show nothing there", async () => {

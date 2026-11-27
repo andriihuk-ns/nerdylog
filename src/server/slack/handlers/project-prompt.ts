@@ -25,9 +25,9 @@ export async function runProjectPrompts(deps: Pick<SlackDeps, "slack" | "tempo" 
   const targets = await deps.tempo.claimProjectPrompts(deps.now());
   const delivered = await Promise.all(
     targets.map(async (target) => {
-      const message = buildProjectPrompt(target);
       const results = await Promise.allSettled(
-        target.memberSlackIds.map(async (slackUserId) => {
+        target.recipients.map(async ({ slackUserId, locale }) => {
+          const message = buildProjectPrompt({ ...target, locale });
           await showOnlyTo(deps, target.slackChannelId, slackUserId, message);
           await sendDm(deps, slackUserId, message);
         }),

@@ -189,7 +189,7 @@ export interface ProjectPromptTarget {
   slackChannelId: string;
   localDate: IsoDate; // in the prompt office's timezone
   logDate: IsoDate; // previous business day for that office (default date in the modal)
-  memberSlackIds: string[]; // A31: active project members who receive the prompt privately
+  recipients: Array<{ slackUserId: string; locale: Locale }>; // A31/A32: active members, each in their web locale
 }
 /**
  * src/server/services/project-prompt-service.ts (system, cron). Active projects with a channel whose

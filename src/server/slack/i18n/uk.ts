@@ -16,7 +16,6 @@ export const uk: Messages = {
   "common.formExpired": "Ця форма вже застаріла. Відкрий її ще раз.",
   "common.formNotYours": "Ця форма належить комусь іншому.",
   "common.loadFailed": "Не вдалося завантажити nerdylog. Спробуй ще раз.",
-  "common.loggedHeader": "Записано {hours}",
   "common.saveFailedDm": "nerdylog не зміг зберегти твій останній запис. Спробуй ще раз або скористайся веб-панеллю.",
 
   // Modal titles (≤ 24 characters)
@@ -94,14 +93,24 @@ export const uk: Messages = {
   "err.notMemberDm": "Час для {project} не збережено. {hint}",
   "err.notMemberGeneric": "Час не збережено: тебе немає в одному з цих каналів проєктів. Попроси адміна додати тебе.",
 
+  // A31/A32 private prompt and confirmations
+  "common.onlyYou": "Це бачиш лише ти",
+  "prompt.title": "📝 Щоденний статус · {project}",
+  "prompt.body": "Як минув день *{date}*? Запиши години й задачі, це займе хвилину.",
+  "prompt.button": "Записати час",
+  "logged.title": "✅ Записано {hours}",
+  "logged.project": "Проєкт",
+  "logged.openWeb": "Відкрити «Мій час»",
+  "timeOff.title": "🌴 Відсутність збережено",
+
   // A19 personal morning reminder
-  "morning.title": "Останній робочий день · {date}",
-  "morning.noEntries": "За {date} ще немає твого запису часу. Додай учорашні години й короткі описи задач, поки пам’ятаєш.",
-  "morning.summary": "За {date} записано {hours} у {count} проєктних рядках.",
-  "morning.timeOffOnly": "За {date} є запис про відсутність.",
+  "morning.title": "Доброго ранку ☀️ {date}",
+  "morning.noEntries": "За {date} ще нічого не записано. Додай години, поки пам’ятаєш.",
+  "morning.summary": "За {date} записано {hours} (записів: {count}).",
+  "morning.timeOffOnly": "{date} у тебе була відсутність.",
   "morning.noTask": "Опис задачі не додано",
-  "morning.logYesterday": "Записати пропущений час",
-  "morning.logMore": "Додати ще час",
+  "morning.logYesterday": "Записати години",
+  "morning.logMore": "Додати ще",
 
   // App Home
   "home.yourWeek": "Твій тиждень",

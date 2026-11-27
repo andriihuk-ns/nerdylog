@@ -1,7 +1,9 @@
 import { z } from "zod";
-import { isoDateSchema, type IsoDate } from "@/contracts";
+import { isoDateSchema, type IsoDate, type Locale } from "@/contracts";
+import { longDate } from "../dates";
+import { t } from "../i18n";
 import { ACTION } from "../ids";
-import { header, mrkdwnSection, plain, type SlackMessage } from "./common";
+import { context, header, mrkdwnSection, plain, type SlackMessage } from "./common";
 
 /** Value of the "Log time & status" button: which project, and the default work date. */
 export const promptButtonValueSchema = z.object({ projectId: z.string().min(1), logDate: isoDateSchema });
@@ -26,35 +28,34 @@ export interface ProjectPromptInput {
   projectId: string;
   projectName: string;
   logDate: IsoDate;
+  locale: Locale;
 }
 
 /** Slack caps header text at 150 characters. */
 const HEADER_MAX = 150;
 
-/**
- * A16/A31: the daily status prompt of a project, sent privately to each member. The copy stays
- * English; the modal it opens is in the clicker's own locale.
- */
-export function buildProjectPrompt({ projectId, projectName, logDate }: ProjectPromptInput): SlackMessage {
-  const title = `Daily status · ${projectName}`.slice(0, HEADER_MAX);
-  const line = "Log yesterday's hours.";
+/** A16/A31/A32: a project's daily status prompt, sent privately to one member in their locale. */
+export function buildProjectPrompt({ projectId, projectName, logDate, locale }: ProjectPromptInput): SlackMessage {
+  const title = t(locale, "prompt.title", { project: projectName }).slice(0, HEADER_MAX);
+  const body = t(locale, "prompt.body", { date: longDate(logDate, locale) });
   return {
-    text: `${title}: ${line}`,
+    text: `${title}: ${body.replace(/\*/g, "")}`,
     blocks: [
       header(title),
-      mrkdwnSection(line),
+      mrkdwnSection(body),
       {
         type: "actions",
         elements: [
           {
             type: "button",
             action_id: ACTION.projectStatusOpen,
-            text: plain("Log time & status"),
+            text: plain(t(locale, "prompt.button")),
             style: "primary",
             value: encodePromptValue({ projectId, logDate }),
           },
         ],
       },
+      context(t(locale, "common.onlyYou")),
     ],
   };
 }

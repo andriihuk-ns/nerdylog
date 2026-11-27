@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ProjectPromptTarget, SlackSubmissionInput } from "@/contracts";
-import { buildProjectLinesMessage } from "../blocks/project-lines";
 import { buildProjectPrompt, decodePromptValue } from "../blocks/project-prompt";
 import { buildStandupCard } from "../blocks/standup-card";
 import { ACTION, BLOCK, CALLBACK, INPUT_ACTION, rowBlock } from "../ids";
@@ -28,7 +27,7 @@ const target = (over: Partial<ProjectPromptTarget> = {}): ProjectPromptTarget =>
   slackChannelId: "C_DTP",
   localDate: "2026-11-26",
   logDate: "2026-11-25",
-  memberSlackIds: ["U123"],
+  recipients: [{ slackUserId: "U123", locale: "en" }],
   ...over,
 });
 
@@ -57,12 +56,11 @@ describe("A16 project status prompt (cron)", () => {
     expect(tempo.resolveUser).not.toHaveBeenCalled(); // recipients come with the target, no per-user lookup
 
     const [, text, blocks] = slack.postMessage.mock.calls[0] as unknown as [string, string, Json[]];
-    expect(text).toBe("Daily status · DogTeamPro: Log yesterday's hours.");
-    expect(blocks.map((b) => b.type)).toEqual(["header", "section", "actions"]);
-    expect((blocks[0].text as Json).text).toBe("Daily status · DogTeamPro");
-    expect((blocks[1].text as Json).text).toBe("Log yesterday's hours.");
+    expect(text).toMatch(/^📝 Daily status · DogTeamPro: How did Wednesday.*25 November go\?/);
+    expect(blocks.map((b) => b.type)).toEqual(["header", "section", "actions", "context"]);
+    expect((blocks[0].text as Json).text).toBe("📝 Daily status · DogTeamPro");
     const [button] = (blocks[2] as { elements: Json[] }).elements;
-    expect(button).toMatchObject({ type: "button", action_id: ACTION.projectStatusOpen, style: "primary", text: { text: "Log time & status" } });
+    expect(button).toMatchObject({ type: "button", action_id: ACTION.projectStatusOpen, style: "primary", text: { text: "Log time" } });
     expect(JSON.parse(button.value as string)).toEqual({ projectId: PROJECT_ID, logDate: "2026-11-25" });
   });
 
@@ -76,10 +74,21 @@ describe("A16 project status prompt (cron)", () => {
     errors.mockRestore();
   });
 
+  it("A32: each recipient gets the prompt in their own locale", async () => {
+    const { deps, slack, tempo } = fakeDeps();
+    tempo.claimProjectPrompts.mockResolvedValueOnce([
+      target({ recipients: [{ slackUserId: "U123", locale: "en" }, { slackUserId: "U456", locale: "uk" }] }),
+    ]);
+    await runProjectPrompts(deps);
+    const byUser = new Map(slack.postEphemeral.mock.calls.map((c) => [c[1], c[2]]));
+    expect(byUser.get("U123")).toContain("Daily status");
+    expect(byUser.get("U456")).toContain("Щоденний статус");
+  });
+
   it("A31: a failed ephemeral still delivers the DM; a project without members counts as failed", async () => {
     const { deps, slack, tempo } = fakeDeps();
     const errors = vi.spyOn(console, "error").mockImplementation(() => undefined);
-    tempo.claimProjectPrompts.mockResolvedValueOnce([target(), target({ memberSlackIds: [] })]);
+    tempo.claimProjectPrompts.mockResolvedValueOnce([target(), target({ recipients: [] })]);
     slack.postEphemeral.mockRejectedValueOnce(new Error("user_not_in_channel"));
     expect(await runProjectPrompts(deps)).toEqual({ claimed: 2, posted: 1, failed: 1 });
     expect(slack.postMessage).toHaveBeenCalledTimes(1);
@@ -93,7 +102,7 @@ describe("A16 project status prompt (cron)", () => {
   });
 
   it("button value round-trips; malformed values are rejected", () => {
-    const msg = buildProjectPrompt({ projectId: PROJECT_ID, projectName: "X", logDate: "2026-11-25" });
+    const msg = buildProjectPrompt({ projectId: PROJECT_ID, projectName: "X", logDate: "2026-11-25", locale: "en" });
     const value = ((msg.blocks[2] as unknown as { elements: Json[] }).elements[0].value as string);
     expect(decodePromptValue(value)).toEqual({ projectId: PROJECT_ID, logDate: "2026-11-25" });
     expect(decodePromptValue("2026-11-25")).toBeNull();
@@ -266,7 +275,8 @@ describe("A17 artifact links in bot posts", () => {
       ],
     };
     await routeSubmission(deps, profile, input);
-    const [channel, text, , options] = slack.postMessage.mock.calls[0] as unknown as [string, string, unknown, unknown];
+    const [channel, , blocks, options] = slack.postMessage.mock.calls[0] as unknown as [string, string, unknown, unknown];
+    const text = JSON.stringify(blocks);
     expect(channel).toBe("D_U123");
     expect(text).toContain("|Figma · Map modal v2>");
     expect(text).toContain(`<${JIRA}|Jira · DOG-1364>`);
@@ -293,7 +303,6 @@ describe("A17 artifact links in bot posts", () => {
   });
 
   it("plain text is still escaped and text without URLs is unchanged", () => {
-    expect(buildProjectLinesMessage(["A · 1h · x <y> & z"]).text).toBe("A · 1h · x &lt;y&gt; &amp; z");
     const card = buildStandupCard({ fullName: "A", avatarUrl: null, yesterday: [], plannedToday: "<!here>", blockers: "" });
     expect(JSON.stringify(card.blocks)).toContain("&lt;!here&gt;");
   });

@@ -43,6 +43,6 @@ export const claimProjectPrompts: ClaimProjectPrompts = async (now) => {
   const recipients = await listPromptRecipientRows(db, due.map((t) => t.projectId));
   return due.map((t) => ({
     ...t,
-    memberSlackIds: recipients.filter((r) => r.projectId === t.projectId).map((r) => r.slackUserId),
+    recipients: recipients.filter((r) => r.projectId === t.projectId).map(({ slackUserId, locale }) => ({ slackUserId, locale })),
   }));
 };

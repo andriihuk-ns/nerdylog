@@ -13,7 +13,7 @@ export interface StandupCardInput {
 }
 
 /** Slack section fields are capped at 2000 characters. Never cuts a `<url|label>` link in half. */
-function clip(text: string, max = 1900): string {
+export function clip(text: string, max = 1900): string {
   if (text.length <= max) return text;
   let cut = text.slice(0, max - 1);
   const open = cut.lastIndexOf("<");
@@ -21,7 +21,7 @@ function clip(text: string, max = 1900): string {
   return `${cut}…`;
 }
 
-function formatTaskForSlack(raw: string): string {
+export function formatTaskForSlack(raw: string): string {
   const items = parseChecklist(raw);
   if (!items) return linkifyMrkdwn(raw.trim());
   const lines = items
