@@ -4,9 +4,7 @@ import { useState, type FormEvent } from "react";
 import { Trash2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
-  checklistSearchText,
   checklistItemLinks,
-  extractTicketRefs,
   MAX_CHECKLIST_ITEMS,
   MAX_TASK_SUMMARY_LENGTH,
   serializeChecklist,
@@ -48,8 +46,6 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
   });
   const [hoursError, setHoursError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
-  const searchText = checklistSearchText(items);
-  const refs = extractTicketRefs(searchText);
   const t = useTranslations("myTime");
   const tc = useTranslations("common");
   const { confirm, dialog } = useConfirm();
@@ -174,15 +170,6 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
               maxItems={MAX_CHECKLIST_ITEMS}
             />
             {formError ? <p role="alert" className="text-sm text-destructive">{formError}</p> : null}
-            {refs.length > 0 ? (
-              <ul className="flex flex-wrap gap-1" aria-label={t("note.detected")}>
-                {refs.map((reference) => (
-                  <li key={reference} className="rounded-sm bg-muted px-1.5 py-0.5 font-mono text-xs">
-                    {reference}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
           </section>
         </div>
       </div>

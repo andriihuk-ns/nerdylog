@@ -147,7 +147,6 @@
       "linkRequired": "Add a URL for each link field or remove the empty link.",
       "tooLong": "Keep task details under {max} characters.",
       "placeholder": "What did you do? Ticket IDs like DOG-1364 are picked up.",
-      "detected": "Detected tickets",
       "linksHint": "Paste links to Jira, Figma, Asana, Drive… — they show as previews.",
       "links": "Links"
     },
