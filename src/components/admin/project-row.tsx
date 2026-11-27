@@ -80,7 +80,7 @@ export function ProjectRow({ project: p, channels, offices, onEdit, onDelete, on
           {p.name}
         </Link>
       </th>
-      <td className="text-sm max-md:col-span-2 max-md:min-w-0 max-md:truncate md:px-3 md:text-base md:whitespace-nowrap">
+      <td className="text-sm max-md:col-span-2 max-md:min-w-0 max-md:truncate md:px-3 md:whitespace-nowrap">
         <ChannelCell channels={channels} channelId={p.slackChannelId} />
       </td>
       <td className="tabular text-sm text-muted-foreground max-md:col-start-1 max-md:row-start-3 md:px-3 md:whitespace-nowrap">
