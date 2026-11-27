@@ -98,7 +98,7 @@ export function ChecklistEditor({ items, onChange, maxItems = 20 }: Props) {
               <Button
                 type="button"
                 variant="ghost"
-                className="hit-target h-11 gap-1.5 px-2 text-sm"
+                className="hit-target h-11 gap-1.5 px-3 text-sm"
                 onClick={() => updateLinks(index, [...links, ""])}
                 aria-label={t("addLink", { number: index + 1 })}
               >
