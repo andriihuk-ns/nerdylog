@@ -9,7 +9,7 @@ import { useGridNavigation } from "@/hooks/use-grid-navigation";
 import { isWeekend } from "@/components/lib/dates";
 import { useFormat } from "@/hooks/use-format";
 import { AddProjectRow } from "./add-project-row";
-import { STICKY_PROJECT_COLUMN } from "./week-grid-styles";
+import { DAY_COLUMN, STICKY_PROJECT_COLUMN, STICKY_TOTAL_COLUMN } from "./week-grid-styles";
 import { TABLE_EDGE_PADDING } from "@/components/shell/table-styles";
 import type { CommitMove } from "./cell-editor";
 import { DAY_STATUS_COLUMN, type DayDisplay } from "./day-status";
@@ -60,7 +60,12 @@ export function WeekGrid({ matrix, display, holidayNames, addable, pendingKeys, 
 
   return (
     <div className="overflow-x-auto rounded-lg border bg-card">
-      <table ref={gridRef} role="grid" aria-label={t("grid.label")} className={`w-full border-collapse ${TABLE_EDGE_PADDING}`}>
+      <table ref={gridRef} role="grid" aria-label={t("grid.label")} className={`w-full table-fixed border-collapse ${TABLE_EDGE_PADDING}`}>
+        <colgroup>
+          <col className="w-[132px] sm:w-[200px]" />
+          {days.map((d) => <col key={d} className={DAY_COLUMN} />)}
+          <col className="w-24" />
+        </colgroup>
         <thead>
           <tr className="text-xs font-medium text-muted-foreground">
             <th scope="col" className={cn(STICKY_PROJECT_COLUMN, "h-10 border-b px-3 font-medium sm:px-4")}>
@@ -74,6 +79,7 @@ export function WeekGrid({ matrix, display, holidayNames, addable, pendingKeys, 
                   scope="col"
                   className={cn(
                     "h-10 border-b border-l border-border px-3 text-center font-medium",
+                    DAY_COLUMN,
                     DAY_STATUS_COLUMN[display[i]] || (isWeekend(d) && "bg-muted/50"),
                   )}
                 >
@@ -81,14 +87,14 @@ export function WeekGrid({ matrix, display, holidayNames, addable, pendingKeys, 
                 </th>
               );
             })}
-            <th scope="col" className="h-10 border-b border-l-2 border-border px-4 text-right font-semibold text-foreground">
+            <th scope="col" className={cn(STICKY_TOTAL_COLUMN, "h-10 border-b border-l-2 border-border px-4 font-semibold text-foreground")}>
               {t("grid.total")}
             </th>
           </tr>
           <tr>
             <td className={cn(STICKY_PROJECT_COLUMN, "border-b px-3 text-xs text-muted-foreground sm:px-4")}>{t("grid.dayStatus")}</td>
             {days.map((d, i) => (
-              <td key={d} className={cn("border-b border-l border-border px-1 py-1", DAY_STATUS_COLUMN[display[i]])}>
+              <td key={d} className={cn(DAY_COLUMN, "border-b border-l border-border px-1 py-1", DAY_STATUS_COLUMN[display[i]])}>
                 <DayStatusPill
                   status={display[i]}
                   dayLabel={f.dayLong(d)}
@@ -99,7 +105,7 @@ export function WeekGrid({ matrix, display, holidayNames, addable, pendingKeys, 
                 />
               </td>
             ))}
-            <td className="border-b border-l-2 border-border" />
+            <td className={cn(STICKY_TOTAL_COLUMN, "border-b border-l-2 border-border")} />
           </tr>
         </thead>
         <tbody>
@@ -156,7 +162,7 @@ export function WeekGrid({ matrix, display, holidayNames, addable, pendingKeys, 
                     />
                   );
                 })}
-                <td className="tabular h-11 border-b border-l-2 border-border px-4 text-right align-top font-semibold">{f.hours(row.total)}</td>
+                <td className={cn(STICKY_TOTAL_COLUMN, "tabular h-11 border-b border-l-2 border-border px-4 align-top font-semibold")}>{f.hours(row.total)}</td>
               </tr>
             );
           })}
@@ -168,11 +174,11 @@ export function WeekGrid({ matrix, display, holidayNames, addable, pendingKeys, 
               {t("grid.dailyTotal")}
             </th>
             {matrix.dayTotals.map((total, i) => (
-              <td key={days[i]} className="tabular h-11 border-l border-border px-3 text-right">
+              <td key={days[i]} className={cn(DAY_COLUMN, "tabular h-11 border-l border-border px-3 text-right")}>
                 {total > 0 ? f.hours(total) : <span className="text-muted-foreground">·</span>}
               </td>
             ))}
-            <td className="tabular h-11 border-l-2 border-border px-4 text-right">{f.hours(matrix.weekTotal)}</td>
+            <td className={cn(STICKY_TOTAL_COLUMN, "tabular h-11 border-l-2 border-border px-4")}>{f.hours(matrix.weekTotal)}</td>
           </tr>
         </tfoot>
       </table>

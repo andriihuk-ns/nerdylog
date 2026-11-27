@@ -4,7 +4,7 @@ import { Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { ProjectOption, ProjectRef } from "./week-matrix";
-import { STICKY_PROJECT_COLUMN } from "./week-grid-styles";
+import { DAY_COLUMN, STICKY_PROJECT_COLUMN, STICKY_TOTAL_COLUMN } from "./week-grid-styles";
 
 interface Props {
   options: ProjectOption[];
@@ -50,9 +50,9 @@ export function AddProjectRow({ options, dayCount, onAdd }: Props) {
         </Select>
       </td>
       {Array.from({ length: dayCount }, (_, index) => (
-        <td key={index} aria-hidden="true" className="border-b border-l border-border" />
+        <td key={index} aria-hidden="true" className={`${DAY_COLUMN} border-b border-l border-border`} />
       ))}
-      <td aria-hidden="true" className="border-b border-l-2 border-border" />
+      <td aria-hidden="true" className={`${STICKY_TOTAL_COLUMN} border-b border-l-2 border-border`} />
     </tr>
   );
 }
