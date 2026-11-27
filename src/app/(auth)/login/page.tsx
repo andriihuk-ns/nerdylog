@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AlertCircle } from "lucide-react";
 import { getTranslations } from "next-intl/server";
-import { NerdylogLogo } from "@/components/brand/nerdylog-logo";
+import { AnimatedLogo } from "@/components/brand/animated-logo";
 import { LocaleSwitcher } from "@/components/shell/locale-switcher";
 import { loginErrorKey, signInHref } from "@/components/shell/login-errors";
 
@@ -18,16 +18,19 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
   const t = await getTranslations("login");
   return (
     <main className="relative flex min-h-dvh flex-1 flex-col items-center justify-center gap-10 bg-card px-4 py-12">
-      <LocaleSwitcher className="absolute top-4 right-4 sm:top-6 sm:right-6" />
+      <LocaleSwitcher className="login-fade absolute top-4 right-4 sm:top-6 sm:right-6" />
       <div className="flex w-[297px] max-w-full flex-col items-center gap-2.5">
         <h1 className="text-foreground">
-          <NerdylogLogo height={40} />
+          <AnimatedLogo height={40} />
         </h1>
-        <p className="text-center text-sm leading-5 text-muted-foreground">{t("tagline")}</p>
+        <p className="login-tagline text-center text-sm leading-5 text-muted-foreground">{t("tagline")}</p>
       </div>
-      <Suspense fallback={<SignInButton href="/auth/sign-in" label={t("signIn")} />}>
-        <LoginActions searchParams={searchParams} />
-      </Suspense>
+      {/* The wrapper animates, so the Suspense swap does not replay the entrance. */}
+      <div className="login-actions">
+        <Suspense fallback={<SignInButton href="/auth/sign-in" label={t("signIn")} />}>
+          <LoginActions searchParams={searchParams} />
+        </Suspense>
+      </div>
     </main>
   );
 }
