@@ -35,12 +35,15 @@
     pointer-events: none;
     background: linear-gradient(
       105deg,
-      transparent 30%,
-      color-mix(in srgb, var(--primary-foreground) 28%, transparent) 50%,
-      transparent 70%
+      transparent 5%,
+      color-mix(in srgb, var(--primary-foreground) 24%, transparent) 50%,
+      transparent 95%
     );
     transform: translateX(-100%);
-    animation: login-shimmer 2.8s var(--ease-standard) 1.2s infinite;
+  }
+
+  [data-loaded] .login-shimmer::after {
+    animation: login-shimmer 4.5s ease-in-out 800ms infinite;
   }
 
   .login-fade {
@@ -57,12 +60,12 @@
   }
 }
 
-/* One quick sweep, then a rest until the next cycle. */
+/* One slow sweep, then a rest until the next cycle. */
 @keyframes login-shimmer {
   from {
     transform: translateX(-100%);
   }
-  45%,
+  60%,
   to {
     transform: translateX(100%);
   }

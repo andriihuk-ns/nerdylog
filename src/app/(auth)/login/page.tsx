@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AlertCircle } from "lucide-react";
 import { getTranslations } from "next-intl/server";
+import { AfterPageLoad } from "@/components/brand/after-page-load";
 import { AnimatedLogo } from "@/components/brand/animated-logo";
 import { LocaleSwitcher } from "@/components/shell/locale-switcher";
 import { loginErrorKey, signInHref } from "@/components/shell/login-errors";
@@ -28,11 +29,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
         <p className="login-tagline text-center text-sm leading-5 text-muted-foreground">{t("tagline")}</p>
       </div>
       {/* The wrapper animates, so the Suspense swap does not replay the entrance. */}
-      <div className="login-actions">
+      <AfterPageLoad className="login-actions">
         <Suspense fallback={<SignInButton href="/auth/sign-in" label={t("signIn")} />}>
           <LoginActions searchParams={searchParams} />
         </Suspense>
-      </div>
+      </AfterPageLoad>
     </main>
   );
 }
