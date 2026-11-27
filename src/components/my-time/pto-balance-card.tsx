@@ -19,20 +19,20 @@ export function PtoBalanceCard({ balance }: { balance: PtoBalance }) {
       <dl className="grid grid-cols-2 gap-4 border-t pt-4">
         <div className="flex flex-col gap-1">
           <dt className="text-xs font-medium text-muted-foreground">{t("vacationBalance")}</dt>
-          <dd>
+          <dd className="flex flex-col gap-1">
             {remainingDays !== null && allowanceDays !== null ? (
-              <BalanceValue remaining={remainingDays} allowance={allowanceDays} label="left" />
+              <BalanceValue remaining={remainingDays} />
             ) : <span className="text-sm text-muted-foreground">{t("noAllowance")}</span>}
-            <span className="mt-1 block text-xs text-muted-foreground">{t("used", { count: vacationUsedDays, value: f.count(vacationUsedDays) })}</span>
+            <span className="text-xs text-muted-foreground">{t("used", { count: vacationUsedDays, value: f.count(vacationUsedDays) })}</span>
           </dd>
         </div>
         <div className="flex flex-col gap-1">
           <dt className="text-xs font-medium text-muted-foreground">{t("sickDays")}</dt>
-          <dd>
+          <dd className="flex flex-col gap-1">
             {sickRemainingDays !== null && sickAllowanceDays !== null ? (
-              <BalanceValue remaining={sickRemainingDays} allowance={sickAllowanceDays} label="sickLeft" />
+              <BalanceValue remaining={sickRemainingDays} />
             ) : <span className="text-sm text-muted-foreground">{t("noSickAllowance")}</span>}
-            <span className="mt-1 block text-xs text-muted-foreground">{t("used", { count: sickUsedDays, value: f.count(sickUsedDays) })}</span>
+            <span className="text-xs text-muted-foreground">{t("used", { count: sickUsedDays, value: f.count(sickUsedDays) })}</span>
           </dd>
         </div>
       </dl>
@@ -40,21 +40,11 @@ export function PtoBalanceCard({ balance }: { balance: PtoBalance }) {
   );
 }
 
-function BalanceValue({ remaining, allowance, label }: { remaining: number; allowance: number; label: "left" | "sickLeft" }) {
-  const t = useTranslations("pto");
+function BalanceValue({ remaining }: { remaining: number }) {
   const f = useFormat();
   return (
-    <>
-      <data value={remaining} className={cn("tabular block text-2xl font-semibold", remaining < 0 && "text-pto")}>
-        {f.count(remaining)}
-      </data>
-      <span className="text-xs text-muted-foreground">
-        {t.rich(label, {
-          remaining,
-          allowance: f.count(allowance),
-          n: (chunks) => <span className="tabular">{chunks}</span>,
-        })}
-      </span>
-    </>
+    <data value={remaining} className={cn("tabular block text-2xl font-semibold", remaining < 0 && "text-pto")}>
+      {f.count(remaining)}
+    </data>
   );
 }

@@ -124,7 +124,11 @@ export function ChannelPicker({ channels, value, onChange, taken, noneLabel, dis
           <ChevronsUpDown aria-hidden className="size-4 opacity-60" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] p-2" onKeyDown={onKeyDown}>
+      <PopoverContent
+        align="start"
+        className="max-h-[var(--radix-popover-content-available-height)] w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] overflow-hidden p-2"
+        onKeyDown={onKeyDown}
+      >
         <Input
           value={query}
           onChange={(e) => {
@@ -138,7 +142,7 @@ export function ChannelPicker({ channels, value, onChange, taken, noneLabel, dis
           autoFocus
           className="h-10"
         />
-        <ul id={listId} role="listbox" aria-label={t("list")} className="max-h-72 overflow-y-auto">
+        <ul id={listId} role="listbox" aria-label={t("list")} className="min-h-0 max-h-72 overflow-y-auto">
           {rows.length === 0 ? <li className="px-2 py-3 text-muted-foreground">{t("noMatch")}</li> : null}
           {rows.map((row, i) => (
             <li
