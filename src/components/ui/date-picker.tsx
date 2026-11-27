@@ -56,7 +56,8 @@ export function DatePicker({ value, mode = "date", label, onChange, id, classNam
   }
 
   function selectedClass(selected: boolean) {
-    return cn("h-11 min-w-11 rounded-md px-1 text-sm", selected ? "bg-muted text-foreground hover:bg-muted" : "hover:bg-muted");
+    // Shorter with a mouse so the calendar fits next to a mid-screen trigger; touch keeps 44px.
+    return cn("h-11 min-w-11 rounded-md px-1 text-sm pointer-fine:h-9 pointer-fine:min-w-9", selected ? "bg-muted text-foreground hover:bg-muted" : "hover:bg-muted");
   }
 
   const display = !value ? placeholder ?? label : mode === "year" ? value : mode === "month" ? f.month(value) : f.dayLong(fallbackDate);
@@ -83,7 +84,11 @@ export function DatePicker({ value, mode = "date", label, onChange, id, classNam
           {triggerText ? <span aria-live="polite" className="whitespace-nowrap border-b border-dashed border-muted-foreground pb-0.5">{triggerText}</span> : <><span className="truncate">{display}</span><CalendarDays aria-hidden className="size-4 shrink-0 text-muted-foreground" /></>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-[calc(100vw-1rem)] max-w-[22rem] gap-3 p-3">
+      <PopoverContent
+        align="start"
+        collisionPadding={8}
+        className="max-h-(--radix-popover-content-available-height) w-[calc(100vw-1rem)] max-w-[22rem] gap-3 overflow-y-auto p-3 pointer-fine:max-w-[19rem] pointer-fine:gap-1"
+      >
         <div className="flex h-11 items-center justify-between gap-2">
           <Button type="button" variant="ghost" size="icon" className="hit-target size-11" aria-label={t("previous", { unit: panel === "years" ? "year" : panel === "months" ? "year" : "month" })} onClick={() => navigate(-1)}>
             <ChevronLeft aria-hidden className="size-4" />

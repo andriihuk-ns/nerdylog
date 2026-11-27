@@ -47,7 +47,7 @@ export function HolidayForm({ office, year, currentYear, onDone, onCancel }: Pro
       </div>
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="holiday-date">{t("date")}</Label>
-        <DatePicker id="holiday-date" value={date} label={t("date")} placeholder={t("pickDate")} onChange={setDate} className="w-full justify-start" />
+        <DatePicker id="holiday-date" value={date} label={t("date")} placeholder={t("pickDate")} onChange={setDate} className="w-full" />
       </div>
       {error ? (
         <p role="alert" className="text-destructive">
