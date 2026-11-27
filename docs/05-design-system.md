@@ -136,7 +136,7 @@ Keyboard (grid uses `role="grid"`, roving tabindex):
 - Clicking an editable project/day cell opens the task editor dialog; Enter, F2, and typing a digit still start direct hours entry.
 - The week grid, team summary and People directory headers stay under the app header while the page scrolls; the frame loses its top radius while stuck.
 - Task editor: “Add link” is a ghost button below the description.
-- Task editor: each task is one card with a borderless, multi-line, vertically resizable description (no outline on hover or focus). URLs pasted into it move to the task's link fields. The editor shows no detected-ticket chips.
+- Task editor: each task is one card with a borderless, multi-line description (three lines by default, grows with the text, no resize handle) (no outline on hover or focus). URLs pasted into it move to the task's link fields. The editor shows no detected-ticket chips.
 - Each work cell shows up to two lines of its task/link groups below the hours, with a card-colored fade and chevron to expand longer details. “Add tasks” / “Edit tasks” opens a group editor with up to 10 tasks, one optional link per task, and a save that preserves the hours. When several time entries share a project/day cell, their groups are combined for editing and saved together.
 - `[` / `]` previous / next week. `T` today.
 - Use the calendar icon to jump directly to any date's week; export actions share the `Export → Week/Month → CSV/PDF` menu.

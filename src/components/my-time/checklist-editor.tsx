@@ -15,6 +15,13 @@ interface Props {
   maxItems?: number;
 }
 
+/** `field-sizing: content` grows the textarea by itself; browsers without it get the height set here. */
+function fitToContent(element: HTMLTextAreaElement | null) {
+  if (!element || CSS.supports("field-sizing", "content")) return;
+  element.style.height = "auto";
+  element.style.height = `${element.scrollHeight}px`;
+}
+
 /** Task-first editor: the description gets the flexible width, with compact link/remove actions. */
 export function ChecklistEditor({ items, onChange, maxItems = 20 }: Props) {
   const t = useTranslations("checklist");
@@ -63,12 +70,13 @@ export function ChecklistEditor({ items, onChange, maxItems = 20 }: Props) {
               value={item.text}
               onChange={(event) => update(index, { text: event.target.value })}
               onPaste={(event) => paste(index, event)}
-              rows={2}
+              rows={3}
+              ref={(element) => fitToContent(element)}
               placeholder={t("itemPlaceholder")}
               maxLength={500}
               aria-label={t("itemLabel", { number: index + 1 })}
               // The fieldset is the card, so the description has no border or focus ring of its own.
-              className="min-h-16 w-full resize-y rounded-none border-0 bg-transparent px-1 py-2 text-sm hover:border-0 focus-visible:ring-0 focus-visible:outline-none dark:bg-transparent"
+              className="min-h-19 w-full resize-none rounded-none border-0 bg-transparent px-1 py-2 text-sm hover:border-0 focus-visible:ring-0 focus-visible:outline-none dark:bg-transparent"
             />
             {links.map((link, linkIndex) => (
               <div key={linkIndex} className="flex min-w-0 items-center gap-2">
