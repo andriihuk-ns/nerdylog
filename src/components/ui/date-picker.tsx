@@ -18,13 +18,14 @@ interface Props {
   onChange: (value: string) => void;
   id?: string;
   className?: string;
-  iconOnly?: boolean;
+  /** Shows this text, dash-underlined, as the trigger instead of a field button. */
+  triggerText?: string;
   placeholder?: string;
 }
 
 const pad = (value: number) => String(value).padStart(2, "0");
 
-export function DatePicker({ value, mode = "date", label, onChange, id, className, iconOnly = false, placeholder }: Props) {
+export function DatePicker({ value, mode = "date", label, onChange, id, className, triggerText, placeholder }: Props) {
   const locale = useLocale();
   const t = useTranslations("period");
   const f = useFormat();
@@ -75,12 +76,11 @@ export function DatePicker({ value, mode = "date", label, onChange, id, classNam
         <Button
           id={id}
           type="button"
-          variant={iconOnly ? "ghost" : "outline"}
-          size={iconOnly ? "icon" : "default"}
-          aria-label={label}
-          className={cn("hit-target h-11", iconOnly ? "w-11 shrink-0 p-0" : "w-full justify-between rounded-lg bg-card px-3 text-left font-normal", className)}
+          variant={triggerText ? "ghost" : "outline"}
+          aria-label={triggerText ? `${triggerText}. ${label}` : label}
+          className={cn("hit-target h-11", triggerText ? "tabular min-w-0 px-2 font-medium" : "w-full justify-between rounded-lg bg-card px-3 text-left font-normal", className)}
         >
-          {iconOnly ? <CalendarDays aria-hidden className="size-4" /> : <><span className="truncate">{display}</span><CalendarDays aria-hidden className="size-4 shrink-0 text-muted-foreground" /></>}
+          {triggerText ? <span aria-live="polite" className="truncate underline decoration-muted-foreground decoration-dashed decoration-1 underline-offset-[6px]">{triggerText}</span> : <><span className="truncate">{display}</span><CalendarDays aria-hidden className="size-4 shrink-0 text-muted-foreground" /></>}
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-[calc(100vw-1rem)] max-w-[22rem] gap-3 p-3">

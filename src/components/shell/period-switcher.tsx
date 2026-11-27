@@ -19,7 +19,7 @@ interface Props {
   preserveParams?: Record<string, string>;
 }
 
-/** `‹  Nov 23 – 29, 2026  ›  Today`. Keyboard: `[` / `]` / `T` are wired by the page. */
+/** `‹  Nov 23 – 29, 2026  ›  Today`; the dash-underlined period opens the date picker. Keyboard: `[` / `]` / `T` are wired by the page. */
 export function PeriodSwitcher({ label, unit, prevHref, nextHref, todayHref, todayLabel, action, pickerValue, preserveParams = {} }: Props) {
   const router = useRouter();
   const t = useTranslations("period");
@@ -37,9 +37,14 @@ export function PeriodSwitcher({ label, unit, prevHref, nextHref, todayHref, tod
           <ChevronLeft aria-hidden />
         </Link>
       </Button>
-      <p className={`tabular min-w-0 text-center text-sm font-medium whitespace-nowrap ${unit === "year" ? "sm:min-w-20" : "sm:min-w-44"}`} aria-live="polite">
-        {label}
-      </p>
+      <DatePicker
+        mode={unit}
+        value={pickerValue}
+        label={t("jumpTo", { unit })}
+        triggerText={label}
+        onChange={selectPeriod}
+        className={unit === "year" ? "sm:min-w-20" : "sm:min-w-44"}
+      />
       <Button asChild variant="ghost" size="icon" className="hit-target">
         <Link href={nextHref} scroll={false} aria-label={t("next", { unit })} aria-keyshortcuts="]">
           <ChevronRight aria-hidden />
@@ -52,7 +57,6 @@ export function PeriodSwitcher({ label, unit, prevHref, nextHref, todayHref, tod
           </Link>
         </Button>
       ) : null}
-      <DatePicker mode={unit} value={pickerValue} label={t("jumpTo", { unit })} onChange={selectPeriod} iconOnly />
     </div>
   );
 }

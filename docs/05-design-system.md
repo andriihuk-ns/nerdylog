@@ -141,7 +141,7 @@ Keyboard (grid uses `role="grid"`, roving tabindex):
 - Task editor: each task is one card with a borderless, multi-line description (three lines by default, grows with the text, no resize handle) (no outline on hover or focus). Pasted URLs stay in the text where they were and render as chips at that position; links added with “Add link” render after the text. Text over 500 characters (links not counted) is never cut: it shows an error and blocks save. The editor shows no detected-ticket chips.
 - Each work cell shows up to two lines of its task/link groups below the hours, with a card-colored fade and chevron to expand longer details. “Add tasks” / “Edit tasks” opens a group editor with up to 10 tasks, one optional link per task, and a save that preserves the hours. When several time entries share a project/day cell, their groups are combined for editing and saved together.
 - `[` / `]` previous / next week. `T` today.
-- Use the calendar icon to jump directly to any date's week; export actions share the `Export → Week/Month → CSV/PDF` menu.
+- Click the dash-underlined date range to jump directly to any date's week; export actions share the `Export → Week/Month → CSV/PDF` menu.
 - Day pill: Space cycles Work → Vac → Sick → Hol; changing to PTO with logged hours asks once "Clear 6.0h on Wed?".
 
 States: loading = skeleton grid 5 rows; empty week = grid with the user's active projects and a muted line "No hours yet. Type a number in any cell, or log from Slack with /log."; optimistic and error as shared.
@@ -155,7 +155,7 @@ Layout:
 - Values: Hours 1 decimal, Days 1–2 decimals (`hours ÷ dailyNormHours`), counts as integers or `.5`. Zero shows as `·` in `muted-foreground` to cut noise.
 - `Vac/Sick > 0`: cell `pto-subtle`, text `pto`. Holidays > 0: text `holiday`. Monthly total group has a 1 px `foreground` at 20 % left rule and Body-strong numbers.
 - Under 1024 px: month-week groups collapse to Hours only, with a toggle "Show all columns"; horizontal scroll with sticky name column.
-- The four monthly-total columns stay pinned to the right edge while weeks scroll. The calendar picker jumps directly to any month; exports use the shared `Export → Week/Month → CSV/PDF` menu.
+- The four monthly-total columns stay pinned to the right edge while weeks scroll. Clicking the dash-underlined month opens the picker to jump directly to any month; exports use the shared `Export → Week/Month → CSV/PDF` menu.
 
 Keyboard: grid navigation as 6.2 (read-only; Enter on a row opens that person's `/my-time` for the week, for managers). `[` / `]` previous / next month. `S` toggles the Standup drawer.
 
