@@ -5,6 +5,7 @@ import { Trash2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
   checklistSearchText,
+  checklistItemLinks,
   extractArtifactLinks,
   extractTicketRefs,
   MAX_CHECKLIST_ITEMS,
@@ -44,7 +45,7 @@ interface Props {
 export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onCancel }: Props) {
   const [hours, setHours] = useState(hoursDraft);
   const [items, setItems] = useState<ChecklistItem[]>(() => {
-    const saved = notes.flatMap(taskSummaryToItems).filter((item) => item.text.trim() || item.link?.trim());
+    const saved = notes.flatMap(taskSummaryToItems).filter((item) => item.text.trim() || checklistItemLinks(item).some((link) => link.trim()));
     return saved.length > 0 ? saved : [{ text: "", done: false }];
   });
   const [hoursError, setHoursError] = useState<string | null>(null);
@@ -79,12 +80,12 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
       return;
     }
     setHoursError(null);
-    const activeItems = items.filter((item) => item.text.trim() || item.link !== undefined);
+    const activeItems = items.filter((item) => item.text.trim() || checklistItemLinks(item).length > 0);
     if (activeItems.some((item) => !item.text.trim())) {
       setFormError(t("note.taskRequired"));
       return;
     }
-    if (activeItems.some((item) => item.link !== undefined && !item.link.trim())) {
+    if (activeItems.some((item) => checklistItemLinks(item).some((link) => !link.trim()))) {
       setFormError(t("note.linkRequired"));
       return;
     }
@@ -92,9 +93,10 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
       .map((item) => ({
         text: item.text.trim(),
         ...(item.link?.trim() ? { link: item.link.trim() } : {}),
+        ...(item.additionalLinks?.length ? { additionalLinks: item.additionalLinks.map((link) => link.trim()) } : {}),
         done: item.done,
       }))
-      .filter((item) => item.text.length > 0 || Boolean(item.link));
+      .filter((item) => item.text.length > 0 || Boolean(item.link) || Boolean(item.additionalLinks?.length));
     const summary = cleaned.length > 0 ? serializeChecklist(cleaned) : "";
     if (summary.length > MAX_TASK_SUMMARY_LENGTH) {
       setFormError(t("note.tooLong", { max: MAX_TASK_SUMMARY_LENGTH }));

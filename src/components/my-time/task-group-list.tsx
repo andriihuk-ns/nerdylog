@@ -4,14 +4,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Circle, CircleCheck } from "lucide-react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { taskSummaryToItems } from "@/contracts";
+import { checklistItemLinks, taskSummaryToItems } from "@/contracts";
 import { ArtifactText } from "@/components/shell/artifact-text";
 import { Button } from "@/components/ui/button";
 
 /** Compact read view for the same task/link groups used by the web editor and Slack modal. */
 export function TaskGroupList({ summaries }: { summaries: readonly string[] }) {
   const items = useMemo(
-    () => summaries.flatMap(taskSummaryToItems).filter((item) => item.text.trim() || item.link?.trim()),
+    () => summaries.flatMap(taskSummaryToItems).filter((item) => item.text.trim() || checklistItemLinks(item).some((link) => link.trim())),
     [summaries],
   );
   const contentRef = useRef<HTMLUListElement>(null);
@@ -45,17 +45,17 @@ export function TaskGroupList({ summaries }: { summaries: readonly string[] }) {
           {items.map((item, index) => {
             const Icon = item.done ? CircleCheck : Circle;
             return (
-              <li key={`${index}-${item.text}-${item.link ?? ""}`} className="flex min-w-0 items-start gap-1.5">
+              <li key={`${index}-${item.text}`} className="flex min-w-0 items-start gap-1.5">
                 <Icon aria-hidden className="mt-0.5 size-3.5 shrink-0" />
                 <span className="min-w-0 break-words">
                   <span className={item.done ? "line-through decoration-muted-foreground/60" : undefined}>
                     <ArtifactText text={item.text} />
                   </span>
-                  {item.link ? (
-                    <span className="mt-1 block">
-                      <ArtifactText text={item.link} />
+                  {checklistItemLinks(item).map((link, linkIndex) => (
+                    <span key={`${link}-${linkIndex}`} className="mt-1 block">
+                      <ArtifactText text={link} />
                     </span>
-                  ) : null}
+                  ))}
                 </span>
               </li>
             );

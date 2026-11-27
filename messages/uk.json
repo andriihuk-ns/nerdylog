@@ -503,11 +503,15 @@
   },
   "checklist": {
     "itemLabel": "Задача {number}",
-    "linkLabel": "Посилання до задачі {number}",
+    "linkLabel": "Посилання {link} до задачі {number}",
     "addItem": "Додати задачу",
     "removeItem": "Прибрати задачу {number}",
     "addLink": "Додати посилання до задачі {number}",
     "removeLink": "Прибрати посилання із задачі {number}",
+    "linkAction": "Посилання",
+    "addAnotherLink": "Додати посилання",
+    "linkNumber": "Посилання {number}",
+    "removeSpecificLink": "Прибрати посилання {number}",
     "itemPlaceholder": "Коротко опиши, що зроблено",
     "linkPlaceholder": "https://...",
     "toggleDone": "Позначити задачу {number} виконаною"

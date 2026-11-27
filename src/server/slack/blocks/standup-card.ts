@@ -1,4 +1,4 @@
-import { parseChecklist } from "@/contracts";
+import { checklistItemLinks, parseChecklist } from "@/contracts";
 import { formatHours } from "../dates";
 import type { SlackBlock } from "../types";
 import { context, escapeMrkdwn, linkifyMrkdwn } from "./common";
@@ -25,12 +25,12 @@ function formatTaskForSlack(raw: string): string {
   const items = parseChecklist(raw);
   if (!items) return linkifyMrkdwn(raw.trim());
   return items
-    .filter((i) => i.text.trim() || i.link?.trim())
+    .filter((i) => i.text.trim() || checklistItemLinks(i).some((link) => link.trim()))
     .map((i) => {
       const box = i.done ? "☑" : "☐";
       const text = i.text.trim() ? linkifyMrkdwn(i.text.trim()) : "";
-      const link = i.link?.trim() ? ` ${linkifyMrkdwn(i.link.trim())}` : "";
-      return `  ${box} ${text}${link}`.trimEnd();
+      const links = checklistItemLinks(i).filter((link) => link.trim()).map((link) => ` ${linkifyMrkdwn(link.trim())}`).join("");
+      return `  ${box} ${text}${links}`.trimEnd();
     })
     .join("\n");
 }

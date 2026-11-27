@@ -8,6 +8,7 @@ import { STICKY_PROJECT_COLUMN } from "./week-grid-styles";
 
 interface Props {
   options: ProjectOption[];
+  dayCount: number;
   onAdd: (project: ProjectRef) => void;
 }
 
@@ -15,7 +16,7 @@ interface Props {
  * Last grid row: pick another active project to add an empty row for it. A15: every project is
  * listed; ones the person is not a member of are disabled with the reason underneath.
  */
-export function AddProjectRow({ options, onAdd }: Props) {
+export function AddProjectRow({ options, dayCount, onAdd }: Props) {
   const t = useTranslations("myTime");
   if (options.length === 0) return null;
   const sorted = [...options].sort((a, b) => Number(a.disabledReason !== null) - Number(b.disabledReason !== null));
@@ -48,6 +49,10 @@ export function AddProjectRow({ options, onAdd }: Props) {
           </SelectContent>
         </Select>
       </td>
+      {Array.from({ length: dayCount }, (_, index) => (
+        <td key={index} aria-hidden="true" className="border-b border-l border-border" />
+      ))}
+      <td aria-hidden="true" className="border-b border-l-2 border-border" />
     </tr>
   );
 }

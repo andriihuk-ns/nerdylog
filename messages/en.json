@@ -503,11 +503,15 @@
   },
   "checklist": {
     "itemLabel": "Task {number}",
-    "linkLabel": "Link for task {number}",
+    "linkLabel": "Link {link} for task {number}",
     "addItem": "Add task",
     "removeItem": "Remove task {number}",
     "addLink": "Add link to task {number}",
     "removeLink": "Remove link from task {number}",
+    "linkAction": "Link",
+    "addAnotherLink": "Add link",
+    "linkNumber": "Link {number}",
+    "removeSpecificLink": "Remove link {number}",
     "itemPlaceholder": "What did you work on?",
     "linkPlaceholder": "https://...",
     "toggleDone": "Mark task {number} done"

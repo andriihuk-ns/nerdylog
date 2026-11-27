@@ -157,7 +157,7 @@ export function WeekGrid({ matrix, display, addable, pendingKeys, failedKey, onS
               </tr>
             );
           })}
-          <AddProjectRow options={addable} onAdd={onAddProject} />
+          <AddProjectRow options={addable} dayCount={days.length} onAdd={onAddProject} />
         </tbody>
         <tfoot>
           <tr className="font-semibold">
