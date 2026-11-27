@@ -23,6 +23,26 @@
     animation: login-rise 520ms var(--ease-spring) 500ms both;
   }
 
+  .login-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .login-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      105deg,
+      transparent 30%,
+      color-mix(in srgb, var(--primary-foreground) 28%, transparent) 50%,
+      transparent 70%
+    );
+    transform: translateX(-100%);
+    animation: login-shimmer 2.8s var(--ease-standard) 1.2s infinite;
+  }
+
   .login-fade {
     animation: login-fade 600ms var(--ease-standard) 500ms both;
   }
@@ -34,6 +54,17 @@
   }
   to {
     transform: scaleX(1);
+  }
+}
+
+/* One quick sweep, then a rest until the next cycle. */
+@keyframes login-shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  45%,
+  to {
+    transform: translateX(100%);
   }
 }
 
