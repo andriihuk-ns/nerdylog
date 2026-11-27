@@ -15,6 +15,7 @@ import { useFormat } from "@/hooks/use-format";
 import { displayDayStatus, type DayDisplay } from "./day-status";
 import { cellKey, WeekGrid } from "./week-grid";
 import { applyOptimisticEntry, buildWeekMatrix, type MatrixRow, type ProjectOption, type ProjectRef } from "./week-matrix";
+import { usePinnedProjects } from "./use-pinned-projects";
 
 interface Props {
   weekStart: IsoDate;
@@ -24,6 +25,8 @@ interface Props {
   projects: ProjectOption[];
   /** People page: edit this person's week (manager/admin); omitted → the signed-in user. */
   userId?: string;
+  /** Stable storage identity when the signed-in user's ID is not otherwise supplied. */
+  storageUserId?: string;
   /** Page path for week links (`/my-time` or `/people/{id}`). */
   basePath?: string;
   preserveParams?: Record<string, string>;
@@ -36,7 +39,7 @@ interface Props {
 }
 
 /** Weekly matrix client island (My Time and the people page): optimistic state, toasts, confirms, week shortcuts. */
-export function WeekView({ weekStart, today, entries, projects, userId, basePath = "/my-time", preserveParams, title, showTitle = true, actions }: Props) {
+export function WeekView({ weekStart, today, entries, projects, userId, storageUserId, basePath = "/my-time", preserveParams, title, showTitle = true, actions }: Props) {
   const weekHref = (d: IsoDate) => `${basePath}?week=${d}`;
   const router = useRouter();
   const t = useTranslations("myTime");
@@ -47,7 +50,8 @@ export function WeekView({ weekStart, today, entries, projects, userId, basePath
   const [optimisticEntries, applyOptimistic] = useOptimistic(entries, applyOptimisticEntry);
   const [pendingKeys, addPending] = useOptimistic<string[], string>([], (s, k) => [...s, k]);
   const [, startTransition] = useTransition();
-  const [pinned, setPinned] = useState<ProjectRef[]>([]);
+  const pinnedStorageKey = `nerdylog:week-projects:${storageUserId ?? userId ?? "self"}:${weekStart}`;
+  const { pinned, pin, unpin } = usePinnedProjects(pinnedStorageKey, projects);
   const [workWeekends, setWorkWeekends] = useState<IsoDate[]>([]); // A16: Sat/Sun switched to Work
   const [failedKey, setFailedKey] = useState<string | null>(null);
   const { toast, show, dismiss } = useToast();
@@ -68,9 +72,6 @@ export function WeekView({ weekStart, today, entries, projects, userId, basePath
     "]": () => router.push(weekHref(next), { scroll: false }),
     t: () => router.push(weekHref(thisWeek), { scroll: false }),
   });
-
-  const pin = (project: ProjectRef) =>
-    setPinned((cur) => (cur.some((p) => p.id === project.id) ? cur : [...cur, project]));
 
   function saveCell(project: ProjectRef, date: IsoDate, hours: number, note?: string) {
     const key = cellKey(project.id, date);
@@ -136,7 +137,7 @@ export function WeekView({ weekStart, today, entries, projects, userId, basePath
       if (!ok) return;
       row.cells.forEach((cell, c) => cell.hours > 0 && saveCell(project, days[c], 0));
     }
-    setPinned((cur) => cur.filter((p) => p.id !== row.projectId));
+    unpin(row.projectId);
   }
 
   const Heading = userId ? "h2" : "h1";

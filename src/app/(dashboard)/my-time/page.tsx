@@ -46,6 +46,7 @@ export default async function MyTimePage({ searchParams }: { searchParams: Searc
         today={today}
         entries={entries}
         projects={options}
+        storageUserId={actor.userId}
         actions={<ExportMenus groups={rangeExports({ from: weekStart, to: weekEnd }, month)} />}
       />
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
