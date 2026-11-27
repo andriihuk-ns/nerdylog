@@ -59,44 +59,17 @@ export function ChecklistEditor({ items, onChange, maxItems = 20 }: Props) {
             <legend className="px-1 text-xs font-medium text-muted-foreground">
               {t("itemLabel", { number: index + 1 })}
             </legend>
-            <div className="flex min-w-0 items-start gap-2">
-              <Textarea
-                value={item.text}
-                onChange={(event) => update(index, { text: event.target.value })}
-                onPaste={(event) => paste(index, event)}
-                rows={2}
-                placeholder={t("itemPlaceholder")}
-                maxLength={500}
-                aria-label={t("itemLabel", { number: index + 1 })}
-                // The fieldset is the card, so the description has no border or focus ring of its own.
-                className="min-h-16 min-w-0 flex-1 resize-y rounded-none border-0 bg-transparent px-1 py-2 text-sm hover:border-0 focus-visible:ring-0 focus-visible:outline-none dark:bg-transparent"
-              />
-              {links.length < MAX_CHECKLIST_LINKS ? (
-                <Button
-                  type="button"
-                  variant={links.length ? "ghost" : "outline"}
-                  className="hit-target h-11 shrink-0 gap-1.5 px-3 text-sm"
-                  onClick={() => updateLinks(index, [...links, ""])}
-                  aria-label={t("addLink", { number: index + 1 })}
-                >
-                  <LinkIcon className="size-4" aria-hidden />
-                  {t(links.length ? "addAnotherLink" : "linkAction")}
-                </Button>
-              ) : null}
-              {items.length > 1 ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="hit-target size-11 shrink-0 text-muted-foreground hover:text-destructive"
-                  onClick={() => remove(index)}
-                  title={t("removeItem", { number: index + 1 })}
-                  aria-label={t("removeItem", { number: index + 1 })}
-                >
-                  <Trash2 className="size-4" aria-hidden />
-                </Button>
-              ) : null}
-            </div>
+            <Textarea
+              value={item.text}
+              onChange={(event) => update(index, { text: event.target.value })}
+              onPaste={(event) => paste(index, event)}
+              rows={2}
+              placeholder={t("itemPlaceholder")}
+              maxLength={500}
+              aria-label={t("itemLabel", { number: index + 1 })}
+              // The fieldset is the card, so the description has no border or focus ring of its own.
+              className="min-h-16 w-full resize-y rounded-none border-0 bg-transparent px-1 py-2 text-sm hover:border-0 focus-visible:ring-0 focus-visible:outline-none dark:bg-transparent"
+            />
             {links.map((link, linkIndex) => (
               <div key={linkIndex} className="flex min-w-0 items-center gap-2">
                 <LinkIcon aria-hidden className="ml-1 size-4 shrink-0 text-muted-foreground" />
@@ -121,6 +94,33 @@ export function ChecklistEditor({ items, onChange, maxItems = 20 }: Props) {
                 </Button>
               </div>
             ))}
+            <div className="flex items-center gap-2">
+              {links.length < MAX_CHECKLIST_LINKS ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="hit-target h-11 gap-1.5 px-2 text-sm"
+                  onClick={() => updateLinks(index, [...links, ""])}
+                  aria-label={t("addLink", { number: index + 1 })}
+                >
+                  <LinkIcon className="size-4" aria-hidden />
+                  {t("linkAction")}
+                </Button>
+              ) : null}
+              {items.length > 1 ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="hit-target ml-auto size-11 text-muted-foreground hover:text-destructive"
+                  onClick={() => remove(index)}
+                  title={t("removeItem", { number: index + 1 })}
+                  aria-label={t("removeItem", { number: index + 1 })}
+                >
+                  <Trash2 className="size-4" aria-hidden />
+                </Button>
+              ) : null}
+            </div>
           </fieldset>
         );
       })}

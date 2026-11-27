@@ -6,6 +6,7 @@ import type { DirectoryUser, OfficeView, ProjectView } from "@/contracts";
 import { cn } from "@/lib/utils";
 import { syncPeopleFromSlackAction } from "@/app/(dashboard)/admin/actions";
 import { useToast } from "@/hooks/use-toast";
+import { useStickyHead } from "@/hooks/use-sticky-head";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Button } from "@/components/ui/button";
 import { Toast } from "@/components/ui/toast";
@@ -41,6 +42,7 @@ const COLUMNS = [
 export function DirectoryPanel({ users, projects, offices }: Props) {
   const t = useTranslations("admin.directory");
   const { toast, show, dismiss } = useToast();
+  const stickyHead = useStickyHead();
   const [syncing, startSync] = useTransition();
   const [query, setQuery] = useState("");
   const [projectId, setProjectId] = useState(ALL);
@@ -137,7 +139,7 @@ export function DirectoryPanel({ users, projects, offices }: Props) {
           </Button>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border bg-card">
+        <div ref={stickyHead} data-sticky-head className="overflow-x-auto rounded-lg border bg-card">
           {hasFilters(filters) ? (
             <p
               className="border-b px-4 py-2 text-xs text-muted-foreground"

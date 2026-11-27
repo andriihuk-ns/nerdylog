@@ -274,6 +274,39 @@
   }
 }
 
+/*
+ * Table headers pinned under the app header (hooks/use-sticky-head). `isolate` keeps the table's own
+ * z-indexes below that header. Cells move, so their hairlines are redrawn while stuck.
+ */
+@layer base {
+  [data-sticky-head] thead tr > * {
+    background-color: var(--card);
+  }
+}
+[data-sticky-head] {
+  isolation: isolate;
+}
+[data-sticky-head] thead tr > * {
+  translate: 0 var(--head-offset, 0px);
+}
+[data-sticky-head] thead tr > *:not(.sticky) {
+  position: relative;
+  z-index: 21; /* above the pinned body columns (10–20) */
+}
+[data-sticky-head] thead tr > .sticky {
+  z-index: 22;
+}
+[data-sticky-head][data-stuck] {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+[data-sticky-head][data-stuck] thead tr > * {
+  box-shadow: inset 0 -1px var(--border);
+}
+[data-sticky-head][data-stuck] thead tr > .border-l {
+  box-shadow: inset 0 -1px var(--border), inset 1px 0 var(--border);
+}
+
 /* Reduced motion: keep state changes, drop movement */
 @media (prefers-reduced-motion: reduce) {
   :root {

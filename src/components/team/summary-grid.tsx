@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import type { IsoDate, MonthWeek, UserMonthRollup } from "@/contracts";
 import { cn } from "@/lib/utils";
 import { useGridNavigation } from "@/hooks/use-grid-navigation";
+import { useStickyHead } from "@/hooks/use-sticky-head";
 import { useFormat } from "@/hooks/use-format";
 import { initials } from "@/components/lib/format";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -34,9 +35,10 @@ export function SummaryGrid({ rows, weeks, today, avatars, selfId }: Props) {
   const t = useTranslations("team.grid");
   const tTeam = useTranslations("team");
   const f = useFormat();
+  const stickyHead = useStickyHead();
 
   return (
-    <div className="overflow-x-auto rounded-lg border bg-card">
+    <div ref={stickyHead} data-sticky-head className="overflow-x-auto rounded-lg border bg-card">
       <table
         ref={gridRef}
         role="grid"
