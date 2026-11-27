@@ -1,7 +1,6 @@
 import { isoDateSchema, MAX_LINK_LENGTH, MAX_TASK_SUMMARY_LENGTH, serializeChecklist, type ChecklistItem, type Locale, type SlackSubmissionInput, type TimeEntryInput } from "@/contracts";
 import { formatNumber } from "../dates";
 import { t } from "../i18n";
-import { PLAN_MAX_LENGTH } from "../blocks/time-modal";
 import { BLOCK, rowBlock } from "../ids";
 import { getRowTaskMeta, type ModalMetadata } from "../metadata";
 import { dateValue, optionValue, textValue, type FieldErrors, type ParseResult, type ViewStateValues } from "./state";
@@ -35,9 +34,8 @@ export function parseHours(raw: string, locale: Locale): number | string {
 
 /**
  * Parses a time / standup `view_submission` into SlackSubmissionInput (FR-SLACK-02).
- * A16: every rendered row (1..meta.rows) needs a project, valid hours and a task summary; the
- * standup also needs a plan and blockers ("None" when nothing blocks). Each empty field gets its
- * own localized error. Stream B text goes only into `checkin`, never into `entries`.
+ * A16: every rendered row (1..meta.rows) needs a project, valid hours and a task summary. A29: the
+ * modal no longer collects plan or blockers, so `checkin` is always null.
  */
 export function parseTimeSubmission({ viewId, meta, values, locale }: TimeSubmissionArgs): ParseResult<SlackSubmissionInput> {
   const errors: FieldErrors = {};
@@ -107,20 +105,9 @@ export function parseTimeSubmission({ viewId, meta, values, locale }: TimeSubmis
   }
 
   if (lastHoursBlock && total > 24) errors[lastHoursBlock] = t(locale, "err.totalOver");
-  // rows === 0: the user has no projects, so no rows were rendered; a log has nothing to save.
-  if (meta.kind === "log" && meta.rows === 0) errors[BLOCK.workDate] = t(locale, "err.atLeastOne");
-
-  let checkin: SlackSubmissionInput["checkin"] = null;
-  if (meta.kind === "standup") {
-    const plannedToday = textValue(values, BLOCK.plan);
-    const blockers = textValue(values, BLOCK.blockers);
-    if (!plannedToday) errors[BLOCK.plan] = t(locale, "err.planRequired");
-    if (plannedToday.length > PLAN_MAX_LENGTH) errors[BLOCK.plan] = t(locale, "err.tooLong", { max: PLAN_MAX_LENGTH });
-    if (!blockers) errors[BLOCK.blockers] = t(locale, "err.blockersRequired");
-    if (blockers.length > PLAN_MAX_LENGTH) errors[BLOCK.blockers] = t(locale, "err.tooLong", { max: PLAN_MAX_LENGTH });
-    checkin = { userId: meta.userId, checkinDate: meta.today, plannedToday, blockers };
-  }
+  // rows === 0: the user has no projects, so no rows were rendered and there is nothing to save.
+  if (meta.rows === 0) errors[BLOCK.workDate] = t(locale, "err.atLeastOne");
 
   if (Object.keys(errors).length > 0) return { ok: false, errors };
-  return { ok: true, value: { viewId, userId: meta.userId, kind: meta.kind, entries, checkin } };
+  return { ok: true, value: { viewId, userId: meta.userId, kind: meta.kind, entries, checkin: null } };
 }

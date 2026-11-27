@@ -17,10 +17,10 @@ const MON_10_KYIV = new Date("2026-11-30T08:00:00Z"); // 09:00 Warsaw
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(prompts.listPromptProjectRows).mockResolvedValue([
-    { projectId: "a", projectName: "A", slackChannelId: "CA", statusPromptTime: "10:00", officeId: "ua" },
-    { projectId: "b", projectName: "B", slackChannelId: "CB", statusPromptTime: "10:00", officeId: null },
-    { projectId: "c", projectName: "C", slackChannelId: "CC", statusPromptTime: "09:00", officeId: "pl" },
-    { projectId: "d", projectName: "D", slackChannelId: "CD", statusPromptTime: "10:00", officeId: "pl" }, // 09:00 local
+    { projectId: "a", projectName: "A", slackChannelId: "CA", statusPromptTime: "10:00", officeId: "ua", timezone: null },
+    { projectId: "b", projectName: "B", slackChannelId: "CB", statusPromptTime: "10:00", officeId: null, timezone: null },
+    { projectId: "c", projectName: "C", slackChannelId: "CC", statusPromptTime: "09:00", officeId: "pl", timezone: null },
+    { projectId: "d", projectName: "D", slackChannelId: "CD", statusPromptTime: "10:00", officeId: "pl", timezone: null }, // 09:00 local
   ]);
   vi.mocked(prompts.listOfficeZones).mockResolvedValue([
     { id: "ua", code: "UA", timezone: "Europe/Kyiv" },

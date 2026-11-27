@@ -57,10 +57,6 @@ export const uk: Messages = {
   "time.addRow": "+ Додати проєкт",
   "time.removeRow": "Прибрати останній",
   "time.offYesterday": "Вчора був вихідний? Тоді обери швидку відпустку / лікарняний.",
-  "time.todayHeader": "Сьогодні (лише контекст, години не рахуються)",
-  "time.planLabel": "Що плануєш сьогодні?",
-  "time.blockersLabel": "Є блокери?",
-  "time.blockersHint": "Напиши «Немає», якщо нічого не блокує",
 
   // PTO modal
   "pto.vacation": "Відпустка",
@@ -85,8 +81,6 @@ export const uk: Messages = {
   "err.tooLong": "Не більше {max} символів",
   "err.totalOver": "За один день не можна записати більше 24 годин",
   "err.atLeastOne": "Додай хоча б один проєкт із годинами",
-  "err.planRequired": "Напиши хоча б рядок про плани на сьогодні",
-  "err.blockersRequired": "Напиши «Немає», якщо нічого не блокує",
   "err.ptoType": "Обери: відпустка чи лікарняний",
   "err.ptoStart": "Обери дату",
   "err.ptoEnd": "Обери останній день (ту саму дату, якщо це один день)",

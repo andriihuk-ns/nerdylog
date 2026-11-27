@@ -7,8 +7,7 @@ import { upsertOfficeAction } from "@/app/(dashboard)/admin/office-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { timezoneOptions } from "./timezones";
+import { TimezonePicker } from "./timezone-picker";
 
 interface Props {
   office?: OfficeView; // omitted → create
@@ -66,20 +65,9 @@ export function OfficeForm({ office, onDone, onCancel }: Props) {
         <Label htmlFor={`${id}-name`}>{t("name")}</Label>
         <Input id={`${id}-name`} value={name} onChange={(e) => setName(e.target.value)} required maxLength={120} placeholder={t("namePlaceholder")} className="h-11" />
       </div>
-      <div className="flex w-full flex-col gap-1.5 sm:w-56">
+      <div className="flex w-full flex-col gap-1.5 sm:w-64">
         <Label htmlFor={`${id}-tz`}>{t("timezone")}</Label>
-        <Select value={timezone} onValueChange={setTimezone}>
-          <SelectTrigger id={`${id}-tz`} className="h-11 w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {timezoneOptions(office?.timezone).map((tz) => (
-              <SelectItem key={tz} value={tz}>
-                {tz}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <TimezonePicker id={`${id}-tz`} value={timezone} onChange={setTimezone} />
       </div>
       <Button type="button" variant="ghost" className="hit-target" onClick={onCancel}>
         {tc("cancel")}

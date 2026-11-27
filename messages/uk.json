@@ -263,6 +263,17 @@
     "tickets": "Тікети"
   },
   "admin": {
+    "timePicker": {
+      "open": "Обрати час",
+      "hours": "Години",
+      "minutes": "Хвилини",
+      "rounded": "Змінено {typed} на {value}: нагадування надсилаються кожні {step} хвилин."
+    },
+    "timezone": {
+      "search": "Пошук міста або зсуву UTC",
+      "list": "Часові пояси",
+      "noMatch": "Часовий пояс не знайдено"
+    },
     "tabsLabel": "Розділи",
     "tabs": {
       "directory": "Люди",
@@ -344,7 +355,7 @@
       "allocationHours": "{name}, {project}: виділені години на місяць",
       "allocationHoursUnit": "год/міс",
       "allocationSaved": "Зайнятість у проєкті оновлено.",
-      "asksAt": "Запит о {time} ({office})",
+      "asksAt": "Запит о {time} ({zone})",
       "delete": "Видалити {name}",
       "deleteBlocked": "Є години — краще архівуй",
       "confirmDelete": "Видалити проєкт «{name}»?",
@@ -366,8 +377,8 @@
       "channelRequiredLabel": "Slack-канал (обов'язково)",
       "channelHelper": "Учасники каналу зможуть логувати час.",
       "promptTime": "Час запиту статусу",
-      "promptOffice": "Офіс",
-      "promptHelper": "Бот питає статус у каналі в цей час за часовим поясом офісу. У свята не питає.",
+      "promptTimezone": "Часовий пояс",
+      "promptHelper": "Бот питає статус у каналі в цей час у вибраному часовому поясі. Не питає у свята офісу з цим поясом (якщо такого немає — UA).",
       "promptTimeInvalid": "Формат ГГ:ХХ, наприклад 10:00."
     },
     "holidays": {

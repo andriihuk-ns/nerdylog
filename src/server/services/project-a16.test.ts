@@ -49,6 +49,7 @@ const row = {
   createdBy: null,
   statusPromptTime: "09:15",
   statusPromptOfficeId: OFFICE,
+  statusPromptTimezone: null,
   hasTimeEntries: true,
 };
 const fkErr = (constraint: string) =>

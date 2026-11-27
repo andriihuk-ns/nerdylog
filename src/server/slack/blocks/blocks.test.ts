@@ -23,7 +23,7 @@ const meta = (over: Partial<ModalMetadata> = {}): ModalMetadata => ({
 });
 
 describe("buildTimeModal", () => {
-  it("standup: date, one row, add button, plan and blockers — all required (A16)", () => {
+  it("standup: date, one row, add button, all required (A16), no plan or blockers (A29)", () => {
     const view = buildTimeModal({ meta: meta(), projects: [project], locale: "en" });
     expect(view.callback_id).toBe(CALLBACK.time);
     expect(view.title.text).toBe("Daily status");
@@ -35,8 +35,6 @@ describe("buildTimeModal", () => {
       rowBlock.taskItemActions(1, 1),
       rowBlock.taskActions(1),
       BLOCK.rowActions,
-      BLOCK.plan,
-      BLOCK.blockers,
     ]);
     const blocks = json(view.blocks);
     const date = blocks.find((b) => b.block_id === BLOCK.workDate)!;
@@ -44,7 +42,7 @@ describe("buildTimeModal", () => {
     const hours = blocks.find((b) => b.block_id === rowBlock.hours(1))!;
     expect(hours.element).toMatchObject({ type: "plain_text_input" }); // A14: accepts "2.5" and "2,5"
     expect(blocks.filter((b) => b.type === "input" && b.optional !== undefined)).toEqual([]);
-    expect((blocks.find((b) => b.block_id === BLOCK.blockers)!.hint as Json).text).toBe("Type “None” if nothing blocks you");
+    expect(JSON.stringify(view)).not.toMatch(/plan_today|blockers|planning today/i);
     expect(JSON.stringify(view)).not.toMatch(/optional/i);
     expect(decodeMetadata(view.private_metadata)).toEqual(meta());
   });
@@ -52,7 +50,6 @@ describe("buildTimeModal", () => {
   it("log: no standup fields, kind log in metadata", () => {
     const view = buildTimeModal({ meta: meta({ kind: "log" }), projects: [project], locale: "en" });
     expect(view.title.text).toBe("Log time");
-    expect(ids(view.blocks)).not.toContain(BLOCK.plan);
     expect(decodeMetadata(view.private_metadata)?.kind).toBe("log");
   });
 
@@ -80,7 +77,7 @@ describe("buildTimeModal", () => {
     expect(ids(view.blocks)).not.toContain(rowBlock.project(1));
     expect(JSON.stringify(view.blocks)).toContain("You're not in any project channel yet. Ask an admin to add you.");
     expect(decodeMetadata(view.private_metadata)?.rows).toBe(0);
-    expect(view.submit).toBeDefined(); // standup can still share plan + blockers
+    expect(view.submit).toBeUndefined(); // A29: nothing left to send without a project
     expect(buildTimeModal({ meta: meta({ kind: "log" }), projects: [], locale: "en" }).submit).toBeUndefined();
   });
 });

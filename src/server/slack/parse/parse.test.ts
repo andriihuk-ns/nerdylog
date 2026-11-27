@@ -26,12 +26,10 @@ describe("parseTimeSubmission", () => {
       [rowBlock.project(1)]: { selected_option: { value: PROJECT_ID } },
       [rowBlock.hours(1)]: { value: "2.5" },
       [rowBlock.task(1)]: { value: "Map modal DOG-1364" },
-      [BLOCK.plan]: { value: "Handler mobile flow" },
-      [BLOCK.blockers]: { value: "None" },
       ...extra,
     });
 
-  it("splits Stream A rows and Stream B check-in", () => {
+  it("returns Stream A rows and no check-in (A29)", () => {
     const res = parseTimeSubmission({ viewId: "V1", locale: "en", meta: meta(), values: values() });
     expect(res.ok).toBe(true);
     if (!res.ok) return;
@@ -48,13 +46,7 @@ describe("parseTimeSubmission", () => {
         slackViewId: "V1",
       },
     ]);
-    expect(res.value.checkin).toEqual({
-      userId: USER_ID,
-      checkinDate: "2026-11-26",
-      plannedToday: "Handler mobile flow",
-      blockers: "None",
-    });
-    expect(JSON.stringify(res.value.entries)).not.toContain("Handler mobile flow");
+    expect(res.value.checkin).toBeNull();
   });
 
   it("A27: keeps every link typed in the links field", () => {
@@ -103,18 +95,6 @@ describe("parseTimeSubmission", () => {
     });
   });
 
-  it("A16: plan and blockers are required on the standup (localized)", () => {
-    const empty = { [BLOCK.plan]: { value: "  " }, [BLOCK.blockers]: { value: "" } };
-    expect(parseTimeSubmission({ viewId: "V", locale: "en", meta: meta(), values: values(empty) })).toEqual({
-      ok: false,
-      errors: { [BLOCK.plan]: "Share at least one line about today", [BLOCK.blockers]: "Type “None” if nothing blocks you" },
-    });
-    expect(parseTimeSubmission({ viewId: "V", locale: "uk", meta: meta(), values: values(empty) })).toEqual({
-      ok: false,
-      errors: { [BLOCK.plan]: "Напиши хоча б рядок про плани на сьогодні", [BLOCK.blockers]: "Напиши «Немає», якщо нічого не блокує" },
-    });
-  });
-
   it("rejects out-of-range, non-quarter and >24 total hours, and future dates", () => {
     const bad = (hours: string) =>
       parseTimeSubmission({ viewId: "V", locale: "en", meta: meta(), values: values({ [rowBlock.hours(1)]: { value: hours } }) });
@@ -156,14 +136,9 @@ describe("parseTimeSubmission", () => {
     expect(none).toEqual({ ok: false, errors: { [BLOCK.workDate]: "Add at least one project with hours" } });
   });
 
-  it("standup without rendered rows (user has no projects) saves plan and blockers only", () => {
-    const res = parseTimeSubmission({
-      viewId: "V",
-      locale: "en",
-      meta: meta({ rows: 0 }),
-      values: state({ [BLOCK.workDate]: { selected_date: "2026-11-25" }, [BLOCK.plan]: { value: "Plan" }, [BLOCK.blockers]: { value: "None" } }),
-    });
-    expect(res.ok && res.value.entries).toEqual([]);
+  it("standup without rendered rows (user has no projects) has nothing to save", () => {
+    const res = parseTimeSubmission({ viewId: "V", locale: "en", meta: meta({ rows: 0 }), values: state({ [BLOCK.workDate]: { selected_date: "2026-11-25" } }) });
+    expect(res).toEqual({ ok: false, errors: { [BLOCK.workDate]: "Add at least one project with hours" } });
   });
 });
 

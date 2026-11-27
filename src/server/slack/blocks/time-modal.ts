@@ -11,7 +11,6 @@ const SLACK_INPUT_MAX_LENGTH = 3000;
 
 /** Slack allows at most 100 options in a static_select. */
 const MAX_OPTIONS = 100;
-export const PLAN_MAX_LENGTH = SLACK_INPUT_MAX_LENGTH;
 
 export interface TimeModalInput {
   meta: ModalMetadata; // kind "standup" or "log"
@@ -173,40 +172,19 @@ function workSection(
   return blocks;
 }
 
-function standupSection(locale: Locale): SlackBlock[] {
-  return [
-    context(t(locale, "time.offYesterday")),
-    divider(),
-    header(t(locale, "time.todayHeader")),
-    {
-      type: "input",
-      block_id: BLOCK.plan,
-      label: plain(t(locale, "time.planLabel")),
-      element: { type: "plain_text_input", action_id: INPUT_ACTION, multiline: true, max_length: PLAN_MAX_LENGTH },
-    },
-    {
-      type: "input",
-      block_id: BLOCK.blockers,
-      label: plain(t(locale, "time.blockersLabel")),
-      hint: plain(t(locale, "time.blockersHint")),
-      element: { type: "plain_text_input", action_id: INPUT_ACTION, multiline: true, max_length: PLAN_MAX_LENGTH },
-    },
-  ];
-}
-
 /**
- * Design system 7.2. kind "standup" = status modal (Stream A rows + Stream B plan/blockers);
- * kind "log" = /log, time rows only. A16: every rendered row is required. Without projects no
- * rows are rendered (`rows: 0` in the metadata); the log modal then has nothing to submit.
+ * Design system 7.2. kind "standup" = status modal, kind "log" = /log. Both hold time rows only
+ * (A29 removed plan and blockers). A16: every rendered row is required. Without projects no rows
+ * are rendered (`rows: 0` in the metadata) and there is nothing to submit.
  */
 export function buildTimeModal({ meta: input, projects, locale, initialHours, initialTask }: TimeModalInput): ModalView {
   const standup = input.kind === "standup";
   const meta: ModalMetadata = projects.length === 0 ? { ...input, rows: 0 } : { ...input, rows: Math.max(1, input.rows) };
   const blocks = [
     ...workSection(meta, projects, locale, initialHours, initialTask),
-    ...(standup ? standupSection(locale) : []),
+    ...(standup ? [context(t(locale, "time.offYesterday"))] : []),
   ];
-  const canSubmit = standup || meta.rows > 0;
+  const canSubmit = meta.rows > 0;
   return {
     type: "modal",
     callback_id: CALLBACK.time,

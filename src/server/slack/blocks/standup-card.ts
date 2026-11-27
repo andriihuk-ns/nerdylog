@@ -8,8 +8,8 @@ export interface StandupCardInput {
   fullName: string;
   avatarUrl: string | null;
   yesterday: Array<{ hours: number; projectName: string; taskSummary: string }>;
-  plannedToday: string;
-  blockers: string;
+  plannedToday?: string; // omitted (A29: no check-in from Slack) → no Today column
+  blockers?: string; // omitted → no blocker line
 }
 
 /** Slack section fields are capped at 2000 characters. Never cuts a `<url|label>` link in half. */
@@ -53,8 +53,8 @@ function yesterdayText(rows: StandupCardInput["yesterday"]): string {
  */
 export function buildStandupCard(input: StandupCardInput): SlackMessage {
   const name = escapeMrkdwn(input.fullName || "Someone");
-  const plan = input.plannedToday.trim();
-  const blockers = input.blockers.trim();
+  const plan = input.plannedToday?.trim();
+  const blockers = input.blockers?.trim();
   const nameSection: SlackBlock = {
     type: "section",
     text: { type: "mrkdwn", text: `*${name}*` },
@@ -71,10 +71,10 @@ export function buildStandupCard(input: StandupCardInput): SlackMessage {
         type: "section",
         fields: [
           { type: "mrkdwn", text: clip(`*Yesterday*\n${yesterday}`) },
-          { type: "mrkdwn", text: clip(`*Today*\n${plan ? linkifyMrkdwn(plan) : "—"}`) },
+          ...(plan === undefined ? [] : [{ type: "mrkdwn" as const, text: clip(`*Today*\n${plan ? linkifyMrkdwn(plan) : "—"}`) }]),
         ],
       },
-      context(blockers ? clip(`:warning: Blocker: ${linkifyMrkdwn(blockers)}`) : "No blockers"),
+      ...(blockers === undefined ? [] : [context(blockers ? clip(`:warning: Blocker: ${linkifyMrkdwn(blockers)}`) : "No blockers")]),
     ],
   };
 }

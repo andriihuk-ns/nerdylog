@@ -56,10 +56,6 @@ export const en = {
   "time.addRow": "+ Add project",
   "time.removeRow": "Remove last",
   "time.offYesterday": "Off yesterday? Use Quick PTO instead.",
-  "time.todayHeader": "Today (shared as context, not tracked)",
-  "time.planLabel": "What are you planning today?",
-  "time.blockersLabel": "Any blockers?",
-  "time.blockersHint": "Type “None” if nothing blocks you",
 
   // PTO modal
   "pto.vacation": "Vacation",
@@ -84,8 +80,6 @@ export const en = {
   "err.tooLong": "Keep it under {max} characters",
   "err.totalOver": "Total hours for one day cannot exceed 24",
   "err.atLeastOne": "Add at least one project with hours",
-  "err.planRequired": "Share at least one line about today",
-  "err.blockersRequired": "Type “None” if nothing blocks you",
   "err.ptoType": "Pick vacation or sick day",
   "err.ptoStart": "Pick a date",
   "err.ptoEnd": "Pick the last day (the same date for a single day)",

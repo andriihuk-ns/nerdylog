@@ -55,10 +55,10 @@ describe("A16 project status prompt (cron)", () => {
     expect(tempo.resolveUser).not.toHaveBeenCalled(); // shared channel, no per-user lookup
 
     const [, text, blocks] = slack.postMessage.mock.calls[0] as unknown as [string, string, Json[]];
-    expect(text).toBe("Daily status · DogTeamPro: Log yesterday's hours and today's plan.");
+    expect(text).toBe("Daily status · DogTeamPro: Log yesterday's hours.");
     expect(blocks.map((b) => b.type)).toEqual(["header", "section", "actions"]);
     expect((blocks[0].text as Json).text).toBe("Daily status · DogTeamPro");
-    expect((blocks[1].text as Json).text).toBe("Log yesterday's hours and today's plan.");
+    expect((blocks[1].text as Json).text).toBe("Log yesterday's hours.");
     const [button] = (blocks[2] as { elements: Json[] }).elements;
     expect(button).toMatchObject({ type: "button", action_id: ACTION.projectStatusOpen, style: "primary", text: { text: "Log time & status" } });
     expect(JSON.parse(button.value as string)).toEqual({ projectId: PROJECT_ID, logDate: "2026-11-25" });
@@ -194,8 +194,6 @@ describe("A16 required inputs (view_submission)", () => {
         [rowBlock.project(1)]: "Pick a project for this row",
         [rowBlock.hours(1)]: "Enter hours for this project",
         [rowBlock.task(1)]: "Describe what you did",
-        [BLOCK.plan]: "Share at least one line about today",
-        [BLOCK.blockers]: "Type “None” if nothing blocks you",
       },
     });
     expect(tasks).toHaveLength(0);

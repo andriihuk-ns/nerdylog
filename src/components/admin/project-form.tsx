@@ -2,26 +2,27 @@
 
 import { useId, useState, useTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
-import type { OfficeView, ProjectView, SlackChannelOption } from "@/contracts";
+import { parseTimeOfDay, roundToQuarter, type OfficeView, type ProjectView, type SlackChannelOption } from "@/contracts";
 import { upsertProjectAction, type ProjectSaveResult } from "@/app/(dashboard)/admin/project-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FilterSelect } from "@/components/shell/filter-select";
 import { ChannelField } from "./channel-field";
 import { findChannel } from "./channel-options";
+import { TimePicker } from "./time-picker";
+import { TimezonePicker } from "./timezone-picker";
 import { useChannelErrorText } from "./use-channel-error-text";
 
 interface Props {
   project?: ProjectView; // omitted → create
   channels: SlackChannelOption[] | null; // null → Slack not configured
-  offices: OfficeView[]; // A16 prompt office (timezone + holidays)
+  offices: OfficeView[]; // A29: supplies the default time zone
   taken: Map<string, string>; // channels linked to other projects
   onDone: (result: ProjectSaveResult, created: boolean) => void;
   onCancel: () => void;
 }
 
-/** Project form: name, Slack channel (required on create), active; A16 status prompt time + office. */
+/** Project form: name, Slack channel (required on create), active; A29 status prompt time + time zone. */
 export function ProjectForm({ project, channels, offices, taken, onDone, onCancel }: Props) {
   const id = useId();
   const t = useTranslations("admin.projectForm");
@@ -30,9 +31,9 @@ export function ProjectForm({ project, channels, offices, taken, onDone, onCance
   const [name, setName] = useState(project?.name ?? "");
   const [channelId, setChannelId] = useState<string | null>(project?.slackChannelId ?? null);
   const [channelError, setChannelError] = useState<string | null>(null);
-  const defaultOffice = offices.find((o) => o.code === "UA")?.id ?? offices[0]?.id ?? null;
+  const office = offices.find((o) => o.id === project?.statusPromptOfficeId) ?? offices.find((o) => o.code === "UA");
   const [promptTime, setPromptTime] = useState(project?.statusPromptTime ?? "10:00");
-  const [promptOffice, setPromptOffice] = useState<string | null>(project?.statusPromptOfficeId ?? defaultOffice);
+  const [timezone, setTimezone] = useState(project?.statusPromptTimezone ?? office?.timezone ?? "Europe/Kyiv");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -40,7 +41,8 @@ export function ProjectForm({ project, channels, offices, taken, onDone, onCance
     e.preventDefault();
     if (!name.trim()) return setError(t("nameRequired"));
     if (!project && !channelId) return setChannelError(t("channelRequired"));
-    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(promptTime)) return setError(t("promptTimeInvalid"));
+    const time = parseTimeOfDay(promptTime);
+    if (!time) return setError(t("promptTimeInvalid"));
     setError(null);
     setChannelError(null);
     startTransition(async () => {
@@ -49,8 +51,8 @@ export function ProjectForm({ project, channels, offices, taken, onDone, onCance
         name,
         isActive: project?.isActive ?? true,
         slackChannelId: channelId,
-        statusPromptTime: promptTime,
-        statusPromptOfficeId: promptOffice,
+        statusPromptTime: roundToQuarter(time),
+        statusPromptTimezone: timezone,
       });
       if (res.ok) return onDone(res.data, !project);
       if ("field" in res) setChannelError(channelErrorText(res, findChannel(channels, channelId)?.name));
@@ -83,33 +85,15 @@ export function ProjectForm({ project, channels, offices, taken, onDone, onCance
           setChannelError(null);
         }}
       />
-      <div className="flex flex-wrap items-end gap-3 sm:col-span-2">
+      <div className="flex flex-wrap items-start gap-3 sm:col-span-2">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={`${id}-time`}>{t("promptTime")}</Label>
-          <Input
-            id={`${id}-time`}
-            type="time"
-            step={60}
-            value={promptTime}
-            onChange={(e) => setPromptTime(e.target.value)}
-            required
-            className="tabular h-11 w-32"
-          />
+          <TimePicker id={`${id}-time`} value={promptTime} onChange={setPromptTime} />
         </div>
-        {offices.length > 0 ? (
-          <div className="flex flex-col gap-1.5">
-            <span aria-hidden className="text-sm font-medium">
-              {t("promptOffice")}
-            </span>
-            <FilterSelect
-              label={t("promptOffice")}
-              value={promptOffice ?? ""}
-              onChange={setPromptOffice}
-              options={offices.map((o) => ({ value: o.id, label: `${o.code} · ${o.name}` }))}
-              className="h-11 w-48"
-            />
-          </div>
-        ) : null}
+        <div className="flex w-full flex-col gap-1.5 sm:w-64">
+          <Label htmlFor={`${id}-tz`}>{t("promptTimezone")}</Label>
+          <TimezonePicker id={`${id}-tz`} value={timezone} onChange={setTimezone} />
+        </div>
         <p className="w-full text-xs text-muted-foreground">{t("promptHelper")}</p>
       </div>
       {error ? (

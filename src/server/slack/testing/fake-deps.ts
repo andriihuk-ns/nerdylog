@@ -27,6 +27,7 @@ export const project: ProjectView = {
   isMember: true,
   statusPromptTime: "10:00",
   statusPromptOfficeId: null,
+  statusPromptTimezone: null,
   hasTimeEntries: true,
 };
 
@@ -42,6 +43,7 @@ export const otherProject: ProjectView = {
   isMember: true,
   statusPromptTime: "10:00",
   statusPromptOfficeId: null,
+  statusPromptTimezone: null,
   hasTimeEntries: true,
 };
 
@@ -58,6 +60,7 @@ export const foreignProject: ProjectView = {
   isMember: false,
   statusPromptTime: "10:00",
   statusPromptOfficeId: null,
+  statusPromptTimezone: null,
   hasTimeEntries: false,
 };
 

@@ -84,6 +84,11 @@ After deploy: the cron sends personal time reminders and posts one status prompt
 
 After deploy, existing projects have **no members** until an admin opens `/admin` → Projects and runs **Refresh members** (or **Sync from Slack**); until then nobody can log time to them. Each year, add the next year's holidays per office in `/admin` → Holidays (**Copy from {previous year}**, then move Easter-based dates by hand).
 
+### A29 rollout (migration `0018`)
+
+Apply **before** deploying the A29 code, with `npm run db:migrate` or in the SQL editor:
+`ALTER TABLE "projects" ADD COLUMN IF NOT EXISTS "status_prompt_timezone" text;`
+
 ## 5. Vercel
 
 1. Import the repo; framework Next.js; Node ≥ 24. Add every variable from section 1 for Production (and Preview if used).

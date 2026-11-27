@@ -31,6 +31,7 @@ const projectSchema = z.object({
   isActive: z.boolean(),
   statusPromptTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).optional(), // A16 "HH:MM"
   statusPromptOfficeId: z.uuid().nullable().optional(), // A16 (null → UA)
+  statusPromptTimezone: z.string().max(64).nullable().optional(), // A29 IANA (null → office zone)
 });
 
 const projectStatusSchema = z.object({ projectId: z.uuid(), isActive: z.boolean() });
@@ -99,6 +100,7 @@ export async function setProjectActiveAction(projectId: string, isActive: boolea
       isActive: parsed.data.isActive,
       statusPromptTime: project.statusPromptTime,
       statusPromptOfficeId: project.statusPromptOfficeId,
+      statusPromptTimezone: project.statusPromptTimezone,
     });
     refresh();
     return ok();

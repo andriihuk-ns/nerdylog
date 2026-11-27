@@ -70,7 +70,7 @@ const admin = { userId: ADMIN, role: "admin" as const };
 const manager = { userId: ADMIN, role: "manager" as const };
 const member = { userId: ADMIN, role: "member" as const };
 const KYIV = "Europe/Kyiv";
-const PROMPT = { statusPromptTime: "10:00", statusPromptOfficeId: null, hasTimeEntries: false };
+const PROMPT = { statusPromptTime: "10:00", statusPromptOfficeId: null, statusPromptTimezone: null, hasTimeEntries: false };
 const uniqueErr = (constraint: string) => Object.assign(new Error("dup"), { code: "23505", constraint_name: constraint });
 
 beforeEach(() => {
@@ -91,6 +91,7 @@ beforeEach(() => {
     createdBy: { userId: ADMIN, fullName: "Admin" },
     statusPromptTime: "10:00",
     statusPromptOfficeId: null,
+    statusPromptTimezone: null,
     hasTimeEntries: false,
   });
   vi.mocked(proj.listProjectMemberRows).mockResolvedValue([]);

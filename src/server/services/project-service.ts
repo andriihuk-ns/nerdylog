@@ -8,7 +8,7 @@ import type {
   UpdateProjectMemberAllocation,
   UpsertProject,
 } from "@/contracts";
-import { MAX_MONTH_ALLOCATION_HOURS } from "@/contracts";
+import { MAX_MONTH_ALLOCATION_HOURS, roundToQuarter } from "@/contracts";
 import { getDb } from "@/server/db/client";
 import { findProjectRow, insertProject, listProjectRows, updateProject, type ProjectRow } from "@/server/db/queries/catalog";
 import { officeExists } from "@/server/db/queries/offices";
@@ -25,7 +25,7 @@ import {
 import { InvalidInputError, NotFoundError } from "./errors";
 import { isForeignKeyViolation, isUniqueViolation } from "./pg-errors";
 import { assertAdmin } from "./rbac";
-import { assertRowId, isRowId, parseInput, slackChannelIdSchema } from "./validation";
+import { assertRowId, isRowId, isValidTimeZone, parseInput, slackChannelIdSchema } from "./validation";
 
 /** Postgres name of the projects.slack_channel_id unique constraint (drizzle/0003_project_channels.sql). */
 export const PROJECTS_SLACK_CHANNEL_UNIQUE = "projects_slack_channel_id_unique";
@@ -51,7 +51,9 @@ export const projectInputSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(200),
   slackChannelId: slackChannelIdSchema, // A11: one channel = one project
   isActive: z.boolean().optional(),
-  statusPromptTime: z.string().trim().regex(STATUS_PROMPT_TIME_RE, "Use HH:MM (00:00–23:59)").optional(), // A16
+  // A16 "HH:MM"; A29 stores the nearest quarter hour, which is when the scheduler runs.
+  statusPromptTime: z.string().trim().regex(STATUS_PROMPT_TIME_RE, "Use HH:MM (00:00–23:59)").transform(roundToQuarter).optional(),
+  statusPromptTimezone: z.string().max(64).refine(isValidTimeZone, "Unknown time zone").nullable().optional(), // A29
   statusPromptOfficeId: z.uuid("Unknown office").nullable().optional(), // A16: null → UA office
 });
 

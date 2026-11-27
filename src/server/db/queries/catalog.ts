@@ -12,6 +12,7 @@ export interface ProjectRow {
   createdBy: { userId: string; fullName: string } | null;
   statusPromptTime: string; // A16
   statusPromptOfficeId: string | null; // A16
+  statusPromptTimezone: string | null; // A29
   hasTimeEntries: boolean; // A16
 }
 
@@ -26,6 +27,7 @@ const projectRowColumns = {
   slackChannelId: projects.slackChannelId,
   statusPromptTime: projects.statusPromptTime,
   statusPromptOfficeId: projects.statusPromptOfficeId,
+  statusPromptTimezone: projects.statusPromptTimezone,
   hasTimeEntries,
   creatorId: users.id,
   creatorName: users.fullName,
@@ -65,6 +67,7 @@ export interface ProjectValues {
   isActive?: boolean;
   statusPromptTime?: string; // A16
   statusPromptOfficeId?: string | null; // A16
+  statusPromptTimezone?: string | null; // A29
 }
 
 /** Returns the new id. */

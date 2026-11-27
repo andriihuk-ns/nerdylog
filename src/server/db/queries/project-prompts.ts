@@ -9,6 +9,7 @@ export interface PromptProjectRow {
   slackChannelId: string;
   statusPromptTime: string;
   officeId: string | null; // null → the UA office (resolved in project-prompt-decision)
+  timezone: string | null; // A29: overrides the office zone
 }
 
 /** A16: active projects that have a Slack channel, with their prompt time and prompt office. */
@@ -20,6 +21,7 @@ export async function listPromptProjectRows(db: DbOrTx): Promise<PromptProjectRo
       slackChannelId: projects.slackChannelId,
       statusPromptTime: projects.statusPromptTime,
       officeId: projects.statusPromptOfficeId,
+      timezone: projects.statusPromptTimezone,
     })
     .from(projects)
     .where(and(eq(projects.isActive, true), isNotNull(projects.slackChannelId)))

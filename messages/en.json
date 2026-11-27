@@ -263,6 +263,17 @@
     "tickets": "Tickets"
   },
   "admin": {
+    "timePicker": {
+      "open": "Pick a time",
+      "hours": "Hours",
+      "minutes": "Minutes",
+      "rounded": "Changed {typed} to {value}: reminders are sent every {step} minutes."
+    },
+    "timezone": {
+      "search": "Search a city or UTC offset",
+      "list": "Time zones",
+      "noMatch": "No time zone found"
+    },
     "tabsLabel": "Admin sections",
     "tabs": {
       "directory": "Directory",
@@ -344,7 +355,7 @@
       "allocationHours": "{name}, {project}: monthly allocated hours",
       "allocationHoursUnit": "h/mo",
       "allocationSaved": "Project allocation updated.",
-      "asksAt": "Asks at {time} ({office})",
+      "asksAt": "Asks at {time} ({zone})",
       "delete": "Delete {name}",
       "deleteBlocked": "Has logged hours — archive instead",
       "confirmDelete": "Delete project “{name}”?",
@@ -366,8 +377,8 @@
       "channelRequiredLabel": "Slack channel (required)",
       "channelHelper": "Channel members can log time here.",
       "promptTime": "Status prompt time",
-      "promptOffice": "Office",
-      "promptHelper": "The bot asks for status in the channel at this time, in the office's timezone. Skips its holidays.",
+      "promptTimezone": "Time zone",
+      "promptHelper": "The bot asks for status in the channel at this time in the chosen time zone. Skips holidays of the office in that zone (UA if none).",
       "promptTimeInvalid": "Use HH:MM, like 10:00."
     },
     "holidays": {

@@ -15,6 +15,7 @@ import { channelLabel } from "./channel-options";
 import { ProjectMemberAllocationControl } from "./project-member-allocation";
 import { useMemberRefreshText } from "./use-member-refresh-text";
 import { TABLE_EDGE_PADDING } from "@/components/shell/table-styles";
+import { cityName } from "./timezones";
 
 interface Props {
   project: ProjectView;
@@ -33,7 +34,7 @@ export function ProjectDetailPanel({ project, offices, channels }: Props) {
   const channelDisplay = channel.startsWith("#") ? channel.slice(1) : channel;
 
   const office = offices.find((o) => o.id === project.statusPromptOfficeId) ?? offices.find((o) => o.code === "UA");
-  const asksAt = t("asksAt", { time: project.statusPromptTime, office: office?.code ?? "UA" });
+  const asksAt = t("asksAt", { time: project.statusPromptTime, zone: cityName(project.statusPromptTimezone ?? office?.timezone ?? "Europe/Kyiv") });
 
   function refreshMembers() {
     startRefresh(async () => {

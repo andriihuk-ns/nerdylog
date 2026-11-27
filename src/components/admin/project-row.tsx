@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { channelLabel, findChannel } from "./channel-options";
 import { useMemberRefreshText } from "./use-member-refresh-text";
+import { cityName } from "./timezones";
 
 interface Props {
   project: ProjectView;
@@ -77,7 +78,7 @@ export function ProjectRow({ project: p, channels, offices, onEdit, onDelete, on
         <ChannelCell channels={channels} channelId={p.slackChannelId} />
       </td>
       <td className="tabular px-3 text-sm whitespace-nowrap text-muted-foreground">
-        {t("asksAt", { time: p.statusPromptTime, office: office?.code ?? "UA" })}
+        {t("asksAt", { time: p.statusPromptTime, zone: cityName(p.statusPromptTimezone ?? office?.timezone ?? "Europe/Kyiv") })}
       </td>
       <td className="px-2">
         <span data-row-action className="flex justify-end gap-1">

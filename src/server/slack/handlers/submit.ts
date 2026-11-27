@@ -52,7 +52,9 @@ export async function broadcastStandup(
   profile: SlackActorProfile,
   input: SlackSubmissionInput,
 ): Promise<string | null> {
-  if (input.kind !== "standup" || !input.checkin) return null;
+  const { checkin } = input;
+  if (input.kind !== "standup") return null;
+  if (!checkin && !input.entries.some((e) => e.entryType === "work")) return null;
   const channel = await deps.tempo.getStandupChannelId();
   if (!channel) return null;
   const projects = await deps.tempo.listProjects(profile);
@@ -67,8 +69,8 @@ export async function broadcastStandup(
         projectName: (e.projectId && names.get(e.projectId)) || "Project",
         taskSummary: e.taskSummary,
       })),
-    plannedToday: input.checkin.plannedToday,
-    blockers: input.checkin.blockers,
+    plannedToday: checkin?.plannedToday,
+    blockers: checkin?.blockers,
   });
   let ts: string | null;
   try {
@@ -77,7 +79,7 @@ export async function broadcastStandup(
     console.error("slack: standup post failed", channel, errorMessage(error));
     return null;
   }
-  if (ts) await deps.tempo.setCheckinChannelTs(input.checkin.userId, input.checkin.checkinDate, ts);
+  if (ts && checkin) await deps.tempo.setCheckinChannelTs(checkin.userId, checkin.checkinDate, ts);
   return ts;
 }
 

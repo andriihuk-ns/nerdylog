@@ -167,3 +167,19 @@ describe("promptWindowCandidates + selectPromptTargets", () => {
     expect(promptWindowCandidates(at("2026-11-28T08:00:00Z"), projects, offices)).toEqual([]);
   });
 });
+
+describe("resolvePromptOffice with a project time zone (A29)", () => {
+  const offices = [
+    { id: "pl", code: "PL", timezone: "Europe/Warsaw" },
+    { id: "ua", code: "UA", timezone: "Europe/Kyiv" },
+  ];
+
+  it("takes holidays from the office in that zone, else UA", () => {
+    expect(resolvePromptOffice("ua", offices, "Europe/Warsaw")).toEqual({ officeId: "pl", timezone: "Europe/Warsaw" });
+    expect(resolvePromptOffice("pl", offices, "Asia/Tokyo")).toEqual({ officeId: "ua", timezone: "Asia/Tokyo" });
+  });
+
+  it("keeps the A16 office behaviour without one", () => {
+    expect(resolvePromptOffice("pl", offices, null)).toEqual({ officeId: "pl", timezone: "Europe/Warsaw" });
+  });
+});

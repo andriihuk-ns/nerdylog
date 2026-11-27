@@ -37,7 +37,7 @@ const HEADER_MAX = 150;
  */
 export function buildProjectPrompt({ projectId, projectName, logDate }: ProjectPromptInput): SlackMessage {
   const title = `Daily status · ${projectName}`.slice(0, HEADER_MAX);
-  const line = "Log yesterday's hours and today's plan.";
+  const line = "Log yesterday's hours.";
   return {
     text: `${title}: ${line}`,
     blocks: [

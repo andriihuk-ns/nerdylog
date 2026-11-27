@@ -31,8 +31,6 @@ export const MAX_PTO_BUSINESS_DAYS = 10;
 
 export const BLOCK = {
   workDate: "work_date",
-  plan: "plan_today",
-  blockers: "blockers",
   rowActions: "row_actions",
   ptoType: "pto_type",
   ptoStart: "pto_start",

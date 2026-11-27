@@ -29,8 +29,6 @@ const goodValues = {
   [rowBlock.project(1)]: field({ selected_option: { value: PROJECT_ID } }),
   [rowBlock.hours(1)]: field({ value: "4" }),
   [rowBlock.task(1)]: field({ value: "Map modal DOG-1364" }),
-  [BLOCK.plan]: field({ value: "Handler mobile flow" }),
-  [BLOCK.blockers]: field({ value: "None" }),
 };
 
 describe("slash commands", () => {
@@ -109,7 +107,9 @@ describe("interactions", () => {
     expect(tempo.submit).toHaveBeenCalledWith(expect.objectContaining({ viewId: "V_SUB", kind: "standup", userId: USER_ID }));
     const card = slack.postMessage.mock.calls.find((c) => (c as unknown[])[0] === "C_STANDUP");
     expect(JSON.stringify(card)).toContain("4h DogTeamPro — Map modal DOG-1364");
-    expect(tempo.setCheckinChannelTs).toHaveBeenCalledWith(USER_ID, "2026-11-26", "1700000000.000100");
+    // A29: no plan or blockers are collected, so the card is yesterday only and there is no check-in.
+    expect(JSON.stringify(card)).not.toMatch(/Today|blocker/i);
+    expect(tempo.setCheckinChannelTs).not.toHaveBeenCalled();
   });
 
   it("returns field errors synchronously and writes nothing", async () => {

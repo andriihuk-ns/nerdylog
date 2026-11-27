@@ -1,5 +1,5 @@
 import { TZDate } from "@date-fns/tz";
-import type { IsoDate, ProjectPromptTarget } from "@/contracts";
+import { canonicalTimezone, type IsoDate, type ProjectPromptTarget } from "@/contracts";
 import { previousBusinessDay } from "./calendar";
 import { isValidTimeZone } from "./validation";
 
@@ -71,6 +71,7 @@ export interface PromptProject {
   slackChannelId: string;
   statusPromptTime: string;
   officeId: string | null;
+  timezone?: string | null; // A29
 }
 
 export interface PromptOffice {
@@ -80,16 +81,25 @@ export interface PromptOffice {
 }
 
 /**
- * The office whose timezone + holidays apply: the project's office, else the UA office. When
- * neither exists, Europe/Kyiv with no holidays (officeId null).
+ * Clock and holiday office of a prompt. A29: a project time zone sets the clock, and holidays come
+ * from the office in that zone (UA first when several share it), else the UA office. Without one,
+ * A16 applies: the project's office, else the UA office. No office at all → Europe/Kyiv zone or
+ * the project zone, without holidays.
  */
 export function resolvePromptOffice(
   officeId: string | null,
   offices: readonly PromptOffice[],
+  timezone?: string | null,
 ): { officeId: string | null; timezone: string } {
-  const office =
-    (officeId ? offices.find((o) => o.id === officeId) : undefined) ??
-    offices.find((o) => o.code === DEFAULT_PROMPT_OFFICE_CODE);
+  const fallback = offices.find((o) => o.code === DEFAULT_PROMPT_OFFICE_CODE);
+  if (timezone && isValidTimeZone(timezone)) {
+    const zone = canonicalTimezone(timezone);
+    const [match] = offices
+      .filter((o) => canonicalTimezone(o.timezone) === zone)
+      .sort((a, b) => Number(b === fallback) - Number(a === fallback) || a.code.localeCompare(b.code));
+    return { officeId: (match ?? fallback)?.id ?? null, timezone };
+  }
+  const office = (officeId ? offices.find((o) => o.id === officeId) : undefined) ?? fallback;
   return office ? { officeId: office.id, timezone: office.timezone } : { officeId: null, timezone: DEFAULT_TIMEZONE };
 }
 
@@ -108,7 +118,7 @@ export function promptWindowCandidates(
   const none = new Set<IsoDate>();
   return projects
     .map((project) => {
-      const { officeId, timezone } = resolvePromptOffice(project.officeId, offices);
+      const { officeId, timezone } = resolvePromptOffice(project.officeId, offices, project.timezone);
       return { project, officeId, clock: localClock(now, timezone) };
     })
     .filter((c) => promptDecision(c.clock, c.project.statusPromptTime, none) === "due");

@@ -112,6 +112,7 @@ export interface ProjectView {
   isMember: boolean; // A15: whether the calling actor is a member
   statusPromptTime: string; // A16: "HH:MM" in the prompt office's timezone, default "10:00"
   statusPromptOfficeId: string | null; // A16: office whose timezone + holidays apply (null → UA)
+  statusPromptTimezone: string | null; // A29: IANA zone of the prompt time; null → the office zone
   hasTimeEntries: boolean; // A16: delete allowed only when false
 }
 export interface ProjectMemberAllocation {
@@ -129,6 +130,7 @@ export interface UpsertProjectInput {
   isActive?: boolean;
   statusPromptTime?: string; // A16 "HH:MM" (00:00–23:59), default "10:00"
   statusPromptOfficeId?: string | null; // A16
+  statusPromptTimezone?: string | null; // A29
 }
 /** A16 admin: delete a project with no time entries; otherwise InvalidInputError { _: ["has_entries"] } (archive instead). */
 export type DeleteProject = (actor: Actor, id: string) => Promise<void>;

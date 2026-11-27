@@ -94,11 +94,9 @@ describe("hours parsing (A14)", () => {
       [rowBlock.project(1)]: { [INPUT_ACTION]: { selected_option: { value: PROJECT_ID } } },
       [rowBlock.hours(1)]: { [INPUT_ACTION]: { value: hours } },
       [rowBlock.task(1)]: { [INPUT_ACTION]: { value: "Map modal" } },
-      [BLOCK.plan]: { [INPUT_ACTION]: { value: "" } },
-      [BLOCK.blockers]: { [INPUT_ACTION]: { value: "Немає" } },
     });
     const bad = parseTimeSubmission({ viewId: "V", meta: meta(), values: values("2,5"), locale: "uk" });
-    expect(bad).toEqual({ ok: false, errors: { [BLOCK.plan]: "Напиши хоча б рядок про плани на сьогодні" } });
+    expect(bad.ok && bad.value.entries[0].hours).toBe(2.5);
     const log = parseTimeSubmission({ viewId: "V", meta: meta({ kind: "log" }), values: values("2,5"), locale: "uk" });
     expect(log.ok && log.value.entries[0].hours).toBe(2.5);
   });
@@ -111,7 +109,7 @@ describe("Ukrainian surfaces", () => {
     expect(view.title.text).toBe("Щоденний статус");
     expect(view.submit?.text).toBe("Надіслати");
     expect(view.close?.text).toBe("Скасувати");
-    for (const s of ["Робота · середа, 25 листопада", "Проєкт 1", "Час", "напр. 4 або 2,5", "Опис задачі", "Що плануєш сьогодні?", "Є блокери?", "Напиши «Немає», якщо нічого не блокує", "+ Додати проєкт"]) {
+    for (const s of ["Робота · середа, 25 листопада", "Проєкт 1", "Час", "напр. 4 або 2,5", "Опис задачі", "+ Додати проєкт"]) {
       expect(text).toContain(s);
     }
     expect(text).not.toMatch(/Hours|Project|Pick a|Submit|Cancel/);
