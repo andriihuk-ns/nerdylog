@@ -3,7 +3,9 @@ import type { OfficeView } from "@/contracts";
 import { companyHolidays, offices, users } from "../schema";
 import type { DbOrTx } from "./types";
 
-const memberCount = sql<number>`(select count(*)::int from ${users} where ${users.officeId} = ${offices.id})`;
+// Explicit table names: inside a correlated subquery Drizzle may render ${offices.id} unqualified ("id"),
+// which would then resolve to users.id and count 0.
+const memberCount = sql<number>`(select count(*)::int from "users" u where u."office_id" = "offices"."id")`;
 
 const officeColumns = { id: offices.id, code: offices.code, name: offices.name, memberCount };
 
