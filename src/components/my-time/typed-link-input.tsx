@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { inlineLinks, MAX_LINK_LENGTH } from "@/contracts";
-import { faviconUrl } from "@/components/shell/artifact-text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { LinkFavicon } from "./link-favicon";
 
 interface Props {
   url: string;
@@ -25,7 +25,6 @@ export function TypedLinkInput({ url, label, removeLabel, onChange, onRemove }: 
   const [draft, setDraft] = useState(url);
   const value = draft.trim();
   const invalid = value !== "" && !isOneLink(value);
-  const favicon = faviconUrl(url);
 
   function apply() {
     if (!value) onRemove();
@@ -34,10 +33,7 @@ export function TypedLinkInput({ url, label, removeLabel, onChange, onRemove }: 
 
   return (
     <div className="flex min-w-0 items-center gap-2">
-      <span aria-hidden className="flex size-4 shrink-0 items-center justify-center">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        {favicon ? <img src={favicon} alt="" className="size-4 rounded-[2px]" /> : null}
-      </span>
+      <LinkFavicon url={url} />
       <Input
         type="url"
         value={draft}

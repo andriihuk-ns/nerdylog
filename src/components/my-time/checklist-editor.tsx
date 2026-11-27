@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { LinkFavicon } from "./link-favicon";
 import { TaskTextField } from "./task-text-field";
 
 interface Props {
@@ -73,6 +74,7 @@ export function ChecklistEditor({ items, onChange, maxItems = 20 }: Props) {
             ) : null}
             {links.map((link, linkIndex) => (
               <div key={linkIndex} className="flex min-w-0 items-center gap-2">
+                <LinkFavicon url={link} />
                 <Input
                   type="url"
                   value={link}
