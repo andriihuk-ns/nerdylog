@@ -21,7 +21,7 @@ interface Props {
   selfId: string;
 }
 
-const STICKY = "sticky left-0 z-10 w-[150px] min-w-[150px] max-w-[150px] bg-card text-left sm:w-[220px] sm:min-w-[220px] sm:max-w-[220px]";
+const STICKY = "sticky left-0 z-10 w-[150px] min-w-[150px] max-w-[150px] bg-card text-left sticky-edge-right sm:w-[220px] sm:min-w-[220px] sm:max-w-[220px]";
 const SUBS = [0, 1, 2, 3] as const;
 
 /** FR-WEB-04 / A2 Summary matrix: month-weeks × (Hours, Days, Vac/Sick, Holidays) + Monthly total. */
@@ -54,7 +54,7 @@ export function SummaryGrid({ rows, weeks, today, avatars, selfId }: Props) {
                 </span>
               </th>
             ))}
-            <th scope="colgroup" colSpan={4} className="sticky right-0 z-30 w-96 min-w-96 border-b border-l border-l-foreground/20 bg-card px-3 text-left text-xs font-semibold">
+            <th scope="colgroup" colSpan={4} className="sticky sticky-edge-left right-0 z-30 w-96 min-w-96 border-b border-l border-l-foreground/20 bg-card px-3 text-left text-xs font-semibold">
               {t("monthlyTotal")}
             </th>
           </tr>
@@ -69,6 +69,7 @@ export function SummaryGrid({ rows, weeks, today, avatars, selfId }: Props) {
                     s === 0 && "border-l",
                     s === 0 && w === null && "border-l-foreground/20",
                     w === null && "sticky z-20 w-24 min-w-24 max-w-24 bg-card",
+                    w === null && s === 0 && "sticky-edge-left",
                   )}
                   style={w === null ? { right: `${(SUB_COLUMNS.length - s - 1) * 6}rem` } : undefined}
                 >

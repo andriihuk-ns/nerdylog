@@ -124,7 +124,7 @@ export const en = {
   "home.sickUsed": "Sick used",
   "home.nextHoliday": "Next holiday",
   "home.noHoliday": "None planned",
-  "home.footer": "Updated {time} · Hours are tracked from your standups and /log.",
+  "home.footer": "Updated {time} · /log.",
 
   // Plurals (picked by Intl.PluralRules; English uses only one/other)
   "plural.days.one": "{n} day",

@@ -124,7 +124,7 @@ export const uk: Messages = {
   "home.sickUsed": "Лікарняні",
   "home.nextHoliday": "Найближче свято",
   "home.noHoliday": "Поки не заплановано",
-  "home.footer": "Оновлено о {time} · Години беруться зі стендапів і /log.",
+  "home.footer": "Оновлено о {time} · /log.",
 
   // Plurals: 1 день, 2–4 дні, 5+ днів, дробові — дня
   "plural.days.one": "{n} день",

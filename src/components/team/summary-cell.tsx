@@ -33,6 +33,7 @@ export function SummaryCell({ value, sub, context, groupStart, total, stickyOffs
       className={cn(
         "tabular h-11 min-w-16 border-b px-3 text-right outline-none",
         stickyOffset !== undefined && "sticky z-20 w-24 min-w-24 max-w-24 bg-card",
+        stickyOffset !== undefined && groupStart && "sticky-edge-left",
         "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
         groupStart && "border-l",
         total && groupStart && "border-l-foreground/20",

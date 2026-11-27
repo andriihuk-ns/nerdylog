@@ -94,6 +94,10 @@
   --duration-base: 200ms; /* pills, popovers, optimistic flash */
   --duration-slow: 320ms; /* drawers, modals */
 
+  /* Low-contrast directional shadows separate pinned table columns from scrolled cells. */
+  --sticky-edge-shadow-left: 4px 0 8px -5px rgb(17 17 19 / 0.2);
+  --sticky-edge-shadow-right: -4px 0 8px -5px rgb(17 17 19 / 0.2);
+
   /* Layout */
   --radius: 0.625rem;
   --hairline: 1px;
@@ -198,6 +202,9 @@
   --sidebar-accent-foreground: #f4f4f5;
   --sidebar-border: #2a2a2e;
   --sidebar-ring: #a1a1aa;
+
+  --sticky-edge-shadow-left: 4px 0 8px -5px rgb(0 0 0 / 0.48);
+  --sticky-edge-shadow-right: -4px 0 8px -5px rgb(0 0 0 / 0.48);
 }
 
 /*
@@ -214,6 +221,15 @@
 @utility hairline {
   border-width: var(--hairline);
   border-color: var(--border);
+}
+
+/* One-sided depth cue for pinned table columns, without a card-like grid shadow. */
+@utility sticky-edge-left {
+  box-shadow: var(--sticky-edge-shadow-left);
+}
+
+@utility sticky-edge-right {
+  box-shadow: var(--sticky-edge-shadow-right);
 }
 
 /* Spring transition for drawers, sheets, modals */
