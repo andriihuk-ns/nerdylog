@@ -20,10 +20,11 @@ interface Props {
   taken: Map<string, string>; // channels linked to other projects
   onDone: (result: ProjectSaveResult, created: boolean) => void;
   onCancel: () => void;
+  onNotice: (message: string) => void; // A29: a typed time was rounded
 }
 
 /** Project form: name, Slack channel (required on create), active; A29 status prompt time + time zone. */
-export function ProjectForm({ project, channels, offices, taken, onDone, onCancel }: Props) {
+export function ProjectForm({ project, channels, offices, taken, onDone, onCancel, onNotice }: Props) {
   const id = useId();
   const t = useTranslations("admin.projectForm");
   const tc = useTranslations("common");
@@ -32,7 +33,7 @@ export function ProjectForm({ project, channels, offices, taken, onDone, onCance
   const [channelId, setChannelId] = useState<string | null>(project?.slackChannelId ?? null);
   const [channelError, setChannelError] = useState<string | null>(null);
   const office = offices.find((o) => o.id === project?.statusPromptOfficeId) ?? offices.find((o) => o.code === "UA");
-  const [promptTime, setPromptTime] = useState(project?.statusPromptTime ?? "10:00");
+  const [promptTime, setPromptTime] = useState(() => roundToQuarter(project?.statusPromptTime ?? "10:00"));
   const [timezone, setTimezone] = useState(project?.statusPromptTimezone ?? office?.timezone ?? "Europe/Kyiv");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -88,7 +89,7 @@ export function ProjectForm({ project, channels, offices, taken, onDone, onCance
       <div className="flex flex-wrap items-start gap-3 sm:col-span-2">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={`${id}-time`}>{t("promptTime")}</Label>
-          <TimePicker id={`${id}-time`} value={promptTime} onChange={setPromptTime} />
+          <TimePicker id={`${id}-time`} value={promptTime} onChange={setPromptTime} onRounded={onNotice} />
         </div>
         <div className="flex w-full flex-col gap-1.5 sm:w-64">
           <Label htmlFor={`${id}-tz`}>{t("promptTimezone")}</Label>

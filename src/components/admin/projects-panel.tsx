@@ -13,6 +13,7 @@ import { Toast } from "@/components/ui/toast";
 import { SearchInput } from "@/components/shell/search-input";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { BottomNotice } from "./bottom-notice";
 import { ProjectForm } from "./project-form";
 import { ProjectRow } from "./project-row";
 import { channelLabel, takenChannelMap } from "./channel-options";
@@ -32,6 +33,7 @@ export function ProjectsPanel({ projects, channels, offices }: Props) {
   const [editing, setEditing] = useState<string | "new" | null>(null);
   const [query, setQuery] = useState("");
   const { toast, show, dismiss } = useToast();
+  const rounding = useToast(); // A29: kept apart so the "saved" toast does not replace it
   const t = useTranslations("admin.projects");
   const tf = useTranslations("admin.projectForm");
   const tc = useTranslations("common");
@@ -84,6 +86,7 @@ export function ProjectsPanel({ projects, channels, offices }: Props) {
       taken={takenChannelMap(projects, project?.id)}
       onDone={done}
       onCancel={() => setEditing(null)}
+      onNotice={rounding.show}
     />
   );
 
@@ -156,6 +159,7 @@ export function ProjectsPanel({ projects, channels, offices }: Props) {
         </DialogContent>
       </Dialog>
       <Toast toast={toast} onDismiss={dismiss} />
+      <BottomNotice notice={rounding.toast} />
       {dialog}
     </section>
   );

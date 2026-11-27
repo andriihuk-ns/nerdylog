@@ -267,7 +267,7 @@
       "open": "Pick a time",
       "hours": "Hours",
       "minutes": "Minutes",
-      "rounded": "Changed {typed} to {value}: reminders are sent every {step} minutes."
+      "rounded": "Rounded {typed} to {value}. The scheduler runs every {step} minutes, so times are set in {step}-minute steps."
     },
     "timezone": {
       "search": "Search a city or UTC offset",
