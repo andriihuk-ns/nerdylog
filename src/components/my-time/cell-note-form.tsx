@@ -140,7 +140,7 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
                     key={option.label}
                     type="button"
                     size="sm"
-                    variant={hours === String(option.value) ? "secondary" : "outline"}
+                    variant={hours === String(option.value) ? "default" : "outline"}
                     className="min-h-11 w-[4.5rem] px-2"
                     aria-pressed={hours === String(option.value)}
                     onClick={() => {

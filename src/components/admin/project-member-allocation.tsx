@@ -64,7 +64,7 @@ export function ProjectMemberAllocationControl({ projectId, projectName, member,
                   size="sm"
                   variant="ghost"
                   className={percent === value
-                    ? "min-h-11 w-[4.5rem] shrink-0 gap-1 border border-input bg-muted px-2 text-foreground hover:bg-muted"
+                    ? "min-h-11 w-[4.5rem] shrink-0 gap-1 border border-primary bg-primary px-2 text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground"
                     : "min-h-11 w-[4.5rem] shrink-0 gap-1 border border-input bg-background px-2 text-foreground hover:bg-muted"}
                   aria-pressed={percent === value}
                   aria-label={t("allocationPercent", { name: member.fullName, percent: value })}
