@@ -28,10 +28,9 @@ function parseYear(value: unknown, fallback: number): number {
   return n >= 2000 && n <= 2100 ? n : fallback;
 }
 
-/** `?office=` when it names a known office, else the first office by code (UA before PL). */
+/** `?office=` when it names a known office, else the first one in the admin's order (A30). */
 function pickOffice(offices: OfficeView[], value: unknown): string | null {
-  const byCode = [...offices].sort((a, b) => a.code.localeCompare(b.code));
-  return offices.find((o) => o.id === value)?.id ?? byCode[0]?.id ?? null;
+  return offices.find((o) => o.id === value)?.id ?? offices[0]?.id ?? null;
 }
 
 export default async function AdminPage({ searchParams }: { searchParams: SearchParams }) {

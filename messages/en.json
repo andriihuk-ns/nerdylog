@@ -466,7 +466,11 @@
       "confirmDelete": "Delete office “{name}”?",
       "deleted": "Deleted {name}.",
       "deleteFailed": "Couldn't delete {name}. {reason}",
+      "reorder": "Drag to reorder {name}, or use the up and down arrow keys",
+      "orderSaved": "Order saved.",
+      "orderFailed": "Couldn't save the order. {reason}",
       "columns": {
+        "order": "Order",
         "code": "Code",
         "name": "Name",
         "members": "People",

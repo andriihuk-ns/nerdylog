@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { DeleteOffice, ListOffices, UpsertOffice } from "@/contracts";
+import type { DeleteOffice, ListOffices, ReorderOffices, UpsertOffice } from "@/contracts";
 import { getDb } from "@/server/db/client";
 import {
   countOfficeUsage,
@@ -7,6 +7,7 @@ import {
   findOfficeView,
   insertOffice,
   listOfficeViews,
+  saveOfficeOrder,
   updateOffice,
 } from "@/server/db/queries/offices";
 import { InvalidInputError, NotFoundError } from "./errors";
@@ -27,6 +28,14 @@ export const officeInputSchema = z.object({
     .pipe(z.string().regex(/^[A-Z]{2,6}$/, "Use 2–6 letters")),
   name: z.string().trim().min(1, "Name is required").max(100),
   timezone: z.string().trim().refine(isValidTimeZone, "Unknown IANA timezone"), // A16
+});
+
+const officeOrderSchema = z.object({
+  ids: z
+    .array(z.uuid())
+    .min(1)
+    .max(100)
+    .refine((ids) => new Set(ids).size === ids.length, "An office is listed twice"),
 });
 
 /** Contract ListOffices: any signed-in user. */
@@ -64,4 +73,10 @@ export const deleteOffice: DeleteOffice = async (actor, id) => {
     throw new InvalidInputError(fieldErrors);
   }
   if (!(await deleteOfficeRow(db, id))) throw new NotFoundError("Office not found");
+};
+
+/** Contract ReorderOffices (admin, A30). */
+export const reorderOffices: ReorderOffices = async (actor, ids) => {
+  assertAdmin(actor);
+  await saveOfficeOrder(getDb(), parseInput(officeOrderSchema, { ids }).ids);
 };

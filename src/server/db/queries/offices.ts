@@ -1,6 +1,7 @@
 import { asc, count, eq, sql } from "drizzle-orm";
 import type { OfficeView } from "@/contracts";
 import { companyHolidays, offices, users } from "../schema";
+import { getSetting, SETTING_KEYS, upsertSetting } from "./settings";
 import type { DbOrTx } from "./types";
 
 // Explicit table names: inside a correlated subquery Drizzle may render ${offices.id} unqualified ("id"),
@@ -16,9 +17,34 @@ export interface OfficeValues {
   timezone: string;
 }
 
-/** A15: offices by code, with how many users (active or archived) belong to each. */
+/** A30: offices in the saved order; ones not in it (new offices) follow, keeping their input order. */
+export function applyOfficeOrder<T extends { id: string }>(rows: T[], order: readonly string[]): T[] {
+  const rank = new Map(order.map((id, i) => [id, i]));
+  return [...rows].sort((a, b) => (rank.get(a.id) ?? order.length) - (rank.get(b.id) ?? order.length));
+}
+
+/** Stored as a JSON array of office ids; anything unreadable means "no saved order". */
+export function parseOfficeOrder(value: string | null): string[] {
+  try {
+    const parsed: unknown = JSON.parse(value ?? "[]");
+    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+/** A15: offices with how many users (active or archived) belong to each. A30: in the admin's order, else by code. */
 export async function listOfficeViews(db: DbOrTx): Promise<OfficeView[]> {
-  return db.select(officeColumns).from(offices).orderBy(asc(offices.code));
+  const [rows, order] = await Promise.all([
+    db.select(officeColumns).from(offices).orderBy(asc(offices.code)),
+    getSetting(db, SETTING_KEYS.officeOrder),
+  ]);
+  return applyOfficeOrder(rows, parseOfficeOrder(order));
+}
+
+/** A30: replaces the saved office order. */
+export async function saveOfficeOrder(db: DbOrTx, ids: string[]): Promise<void> {
+  await upsertSetting(db, SETTING_KEYS.officeOrder, JSON.stringify(ids));
 }
 
 export async function findOfficeView(db: DbOrTx, id: string): Promise<OfficeView | undefined> {

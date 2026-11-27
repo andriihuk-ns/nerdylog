@@ -466,7 +466,11 @@
       "confirmDelete": "Видалити офіс «{name}»?",
       "deleted": "Видалено {name}.",
       "deleteFailed": "Не вдалося видалити {name}. {reason}",
+      "reorder": "Перетягни {name}, щоб змінити порядок, або натискай стрілки вгору й вниз",
+      "orderSaved": "Порядок збережено.",
+      "orderFailed": "Не вдалося зберегти порядок. {reason}",
       "columns": {
+        "order": "Порядок",
         "code": "Код",
         "name": "Назва",
         "members": "Люди",

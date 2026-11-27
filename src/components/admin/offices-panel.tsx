@@ -1,10 +1,10 @@
 "use client";
 
 import { useOptimistic, useState, useTransition } from "react";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { OfficeView } from "@/contracts";
-import { deleteOfficeAction } from "@/app/(dashboard)/admin/office-actions";
+import { deleteOfficeAction, reorderOfficesAction } from "@/app/(dashboard)/admin/office-actions";
 import { useToast } from "@/hooks/use-toast";
 import { useFormat } from "@/hooks/use-format";
 import { useConfirm } from "@/hooks/use-confirm";
@@ -13,18 +13,33 @@ import { Toast } from "@/components/ui/toast";
 import { CARD_FRAME, CARD_ROW, CARD_TABLE, TABLE_EDGE_PADDING } from "@/components/shell/table-styles";
 import { cn } from "@/lib/utils";
 import { OfficeForm } from "./office-form";
+import { useDragOrder } from "./use-drag-order";
 
-/** Offices: code, name, timezone (A16), member count; create, rename, delete (only when empty, confirmed). */
+/** Offices (draggable into display order, A30): code, name, timezone (A16), member count; create, rename, delete (only when empty, confirmed). */
 export function OfficesPanel({ offices }: { offices: OfficeView[] }) {
-  const [list, removeOptimistic] = useOptimistic(offices, (cur: OfficeView[], id: string) => cur.filter((o) => o.id !== id));
+  const [list, change] = useOptimistic(offices, (cur: OfficeView[], next: { remove: string } | { order: string[] }) =>
+    "remove" in next ? cur.filter((o) => o.id !== next.remove) : sortByIds(cur, next.order),
+  );
   const [editing, setEditing] = useState<string | "new" | null>(null);
   const [, startRemove] = useTransition();
+  const [, startReorder] = useTransition();
   const { toast, show, dismiss } = useToast();
   const t = useTranslations("admin.offices");
   const tc = useTranslations("common");
   const f = useFormat();
   const { confirm, dialog } = useConfirm();
-  const sorted = [...list].sort((a, b) => a.code.localeCompare(b.code));
+  const { bodyRef, ids, dragging, start, key } = useDragOrder(list.map((o) => o.id), saveOrder);
+  const sorted = sortByIds(list, ids);
+  const draggable = sorted.length > 1 && editing === null;
+
+  function saveOrder(ids: string[]) {
+    startReorder(async () => {
+      change({ order: ids });
+      const res = await reorderOfficesAction(ids);
+      if (res.ok) show(t("orderSaved"));
+      else show(t("orderFailed", { reason: res.message }), { tone: "error" });
+    });
+  }
 
   function done(office: OfficeView, created: boolean) {
     setEditing(null);
@@ -35,7 +50,7 @@ export function OfficesPanel({ offices }: { offices: OfficeView[] }) {
     const ok = await confirm({ title: t("confirmDelete", { name: o.name }), description: t("confirmDeleteBody"), confirmLabel: tc("delete") });
     if (!ok) return;
     startRemove(async () => {
-      removeOptimistic(o.id);
+      change({ remove: o.id });
       const res = await deleteOfficeAction(o.id);
       if (res.ok) show(t("deleted", { name: o.name }));
       else show(t("deleteFailed", { name: o.name, reason: res.message }), { tone: "error" });
@@ -62,6 +77,9 @@ export function OfficesPanel({ offices }: { offices: OfficeView[] }) {
           <table className={cn("w-full border-collapse", CARD_TABLE, TABLE_EDGE_PADDING)}>
             <thead>
               <tr className="border-b text-xs font-medium text-muted-foreground">
+                <th scope="col" className="w-px">
+                  <span className="sr-only">{t("columns.order")}</span>
+                </th>
                 <th scope="col" className="h-10 w-px pr-2 pl-4 text-left font-medium whitespace-nowrap">{t("columns.code")}</th>
                 <th scope="col" className="px-4 text-left font-medium">{t("columns.name")}</th>
                 <th scope="col" className="px-3 text-left font-medium">{t("columns.timezone")}</th>
@@ -71,24 +89,37 @@ export function OfficesPanel({ offices }: { offices: OfficeView[] }) {
                 </th>
               </tr>
             </thead>
-            <tbody>
+            <tbody ref={bodyRef}>
               {sorted.map((o) =>
                 editing === o.id ? (
                   <tr key={o.id} className="border-b max-md:block max-md:rounded-lg max-md:border max-md:bg-card md:last:border-b-0">
-                    <td colSpan={5} className="max-md:block">
+                    <td colSpan={6} className="max-md:block">
                       <OfficeForm office={o} onDone={done} onCancel={() => setEditing(null)} />
                     </td>
                   </tr>
                 ) : (
-                  <tr key={o.id} className={cn("h-11 border-b max-md:grid max-md:grid-cols-[auto_minmax(0,1fr)_auto] max-md:items-center max-md:gap-x-3 max-md:gap-y-1 md:last:border-b-0", CARD_ROW)}>
+                  <tr key={o.id} data-drag-id={o.id} className={cn(dragging === o.id && "bg-accent", "h-11 border-b max-md:grid max-md:grid-cols-[auto_auto_minmax(0,1fr)_auto] max-md:items-center max-md:gap-x-3 max-md:gap-y-1 md:last:border-b-0", CARD_ROW)}>
+                    <td className="md:w-px">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="hit-target cursor-grab touch-none text-muted-foreground active:cursor-grabbing"
+                        disabled={!draggable}
+                        aria-label={t("reorder", { name: o.name })}
+                        onPointerDown={(e) => start(o.id, e)}
+                        onKeyDown={(e) => key(o.id, e)}
+                      >
+                        <GripVertical aria-hidden />
+                      </Button>
+                    </td>
                     <td className="font-mono text-xs font-medium md:pr-2 md:pl-4">{o.code}</td>
                     <th scope="row" className="min-w-0 text-left font-medium md:px-4">{o.name}</th>
-                    <td className="text-sm text-muted-foreground max-md:col-span-3 md:px-3 md:whitespace-nowrap">{o.timezone}</td>
-                    <td className="tabular font-medium max-md:col-span-3 md:px-3 md:text-right">
+                    <td className="text-sm text-muted-foreground max-md:col-span-4 md:px-3 md:whitespace-nowrap">{o.timezone}</td>
+                    <td className="tabular font-medium max-md:col-span-4 md:px-3 md:text-right">
                       <span aria-hidden className="mr-2 text-xs font-normal text-muted-foreground md:hidden">{t("columns.members")}</span>
                       {f.count(o.memberCount)}
                     </td>
-                    <td className="max-md:col-start-3 max-md:row-start-1 md:px-2">
+                    <td className="max-md:col-start-4 max-md:row-start-1 md:px-2">
                       <span className="flex justify-end gap-1">
                         <Button variant="ghost" size="icon" className="hit-target" onClick={() => setEditing(o.id)} aria-label={t("edit", { name: o.name })}>
                           <Pencil aria-hidden />
@@ -107,6 +138,11 @@ export function OfficesPanel({ offices }: { offices: OfficeView[] }) {
       {dialog}
     </section>
   );
+}
+
+/** Items in the order of `ids`; ids always come from the same list. */
+function sortByIds<T extends { id: string }>(items: T[], ids: readonly string[]): T[] {
+  return [...items].sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id));
 }
 
 /** Disabled with the reason (title + sr text) while people are assigned. */

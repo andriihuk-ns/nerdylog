@@ -4,7 +4,7 @@ import { refresh } from "next/cache";
 import { z } from "zod";
 import type { OfficeView } from "@/contracts";
 import { requireActor } from "@/server/auth/session";
-import { deleteOffice, upsertOffice } from "@/server/services/office-service";
+import { deleteOffice, reorderOffices, upsertOffice } from "@/server/services/office-service";
 import { actionError, fail, ok, type ActionResult } from "../action-result";
 import { serverCopy } from "./channel-guard";
 
@@ -56,6 +56,18 @@ export async function deleteOfficeAction(id: string): Promise<ActionResult> {
     const actor = await requireActor(ADMIN);
     if (!z.uuid().safeParse(id).success) return fail((await serverCopy())("unknownOffice"));
     await deleteOffice(actor, id);
+    refresh();
+    return ok();
+  } catch (err) {
+    return actionError(err);
+  }
+}
+
+/** A30 admin: save the drag-and-drop order; the service validates the ids. */
+export async function reorderOfficesAction(ids: string[]): Promise<ActionResult> {
+  try {
+    const actor = await requireActor(ADMIN);
+    await reorderOffices(actor, ids);
     refresh();
     return ok();
   } catch (err) {

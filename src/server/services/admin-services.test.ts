@@ -43,6 +43,7 @@ vi.mock("@/server/db/queries/offices", () => ({
   updateOffice: vi.fn(),
   countOfficeUsage: vi.fn(),
   deleteOfficeRow: vi.fn(),
+  saveOfficeOrder: vi.fn(),
 }));
 
 import * as cat from "@/server/db/queries/catalog";
@@ -59,7 +60,7 @@ import {
   removeHoliday,
   shiftHolidaysToYear,
 } from "./holiday-service";
-import { deleteOffice, listOffices, upsertOffice } from "./office-service";
+import { deleteOffice, listOffices, upsertOffice, reorderOffices } from "./office-service";
 import { assertProjectMember, listProjects, replaceProjectMembers, upsertProject } from "./project-service";
 
 const ADMIN = "11111111-1111-4111-8111-111111111111";
@@ -255,6 +256,16 @@ describe("offices (A15)", () => {
     expect(dup.fieldErrors).toEqual({ code: ["Another office already uses this code"] });
     vi.mocked(off.updateOffice).mockResolvedValue(false);
     await expect(upsertOffice(admin, { id: OFFICE, code: "UA", name: "Ukraine", timezone: KYIV })).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  it("reorder is admin only and rejects bad or repeated ids (A30)", async () => {
+    await expect(reorderOffices(manager, [OFFICE])).rejects.toBeInstanceOf(ForbiddenError);
+    for (const ids of [[], ["nope"], [OFFICE, OFFICE]]) {
+      await expect(reorderOffices(admin, ids)).rejects.toBeInstanceOf(InvalidInputError);
+    }
+    expect(off.saveOfficeOrder).not.toHaveBeenCalled();
+    await reorderOffices(admin, [OFFICE]);
+    expect(off.saveOfficeOrder).toHaveBeenCalledWith(expect.anything(), [OFFICE]);
   });
 
   it("delete only when the office has no members and no holidays", async () => {

@@ -178,6 +178,8 @@ export type ListOffices = (actor: Actor) => Promise<OfficeView[]>; // any signed
 export type UpsertOffice = (actor: Actor, input: { id?: string; code: string; name: string; timezone: string }) => Promise<OfficeView>; // admin
 /** admin. Only when the office has no members and no holidays; otherwise InvalidInputError. */
 export type DeleteOffice = (actor: Actor, id: string) => Promise<void>;
+/** A30 admin: office ids in display order (offices tab, holiday tabs, office selects). */
+export type ReorderOffices = (actor: Actor, ids: string[]) => Promise<void>;
 
 
 // ── A16: per-project status prompt in the project channel ───────────────────

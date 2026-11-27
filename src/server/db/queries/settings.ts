@@ -3,7 +3,7 @@ import { appSettings } from "../schema";
 import type { DbOrTx } from "./types";
 
 /** A11 keys stored in `app_settings`. */
-export const SETTING_KEYS = { standupChannelId: "standup_channel_id" } as const;
+export const SETTING_KEYS = { standupChannelId: "standup_channel_id", officeOrder: "office_order" } as const;
 export type SettingKey = (typeof SETTING_KEYS)[keyof typeof SETTING_KEYS];
 
 /** Value for `key`, or null when the row is absent. */
