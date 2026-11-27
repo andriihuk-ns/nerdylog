@@ -30,7 +30,7 @@ export function Toast({ toast, onDismiss }: { toast: ToastState | null; onDismis
           className={cn(
             "pointer-events-auto flex max-w-md items-center gap-3 rounded-lg border bg-popover py-1 pr-1 pl-4 text-popover-foreground shadow-[0_8px_24px_rgb(0_0_0/0.08)] dark:shadow-[0_8px_24px_rgb(0_0_0/0.4)]",
             "animate-in fade-in slide-in-from-bottom-2 duration-[var(--duration-base)]",
-            toast.tone === "error" && "bg-destructive/10",
+            toast.tone === "error" && "bg-card",
           )}
         >
           {toast.tone === "loading" ? (

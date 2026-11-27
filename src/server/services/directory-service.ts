@@ -72,8 +72,9 @@ export const updateDirectoryUser: UpdateDirectoryUser = async (actor, userId, pa
   }
   const row = await db.transaction(async (tx) => {
     const updated = await updateDirectoryRow(tx, userId, parsed);
-    // Office change (or re-activation): bring the user's auto-filled office holidays in line for this & next year.
-    if (updated && (parsed.officeId !== undefined || parsed.isActive === true)) {
+    // Keep reactivation independent from holiday backfills so an optional calendar sync cannot
+    // roll back the status change. Office changes for active users still refresh this/next year.
+    if (updated?.isActive && parsed.officeId !== undefined) {
       const thisYear = new Date().getUTCFullYear();
       await syncUserHolidayEntries(tx, userId, updated.officeId, thisYear);
       await syncUserHolidayEntries(tx, userId, updated.officeId, thisYear + 1);
