@@ -1,5 +1,5 @@
 import type { SlackSubmissionKind } from "./enums";
-import type { UserMonthRollup, ProjectCapUsage } from "./rollup";
+import type { UserMonthRollup, ProjectHours } from "./rollup";
 import type { DailyCheckinInput, IsoDate, TimeEntryInput } from "./time";
 import type { Actor, MyProfile, SlackActorProfile, SlackIdentity } from "./users";
 
@@ -38,7 +38,8 @@ export type PreviousBusinessDay = (date: IsoDate, holidays: ReadonlySet<IsoDate>
 
 /** src/server/services/rollup-service.ts — wraps the pure math in time-aggregator.ts. */
 export type GetTeamMonthRollup = (actor: Actor, month: string) => Promise<UserMonthRollup[]>;
-export type GetProjectCapUsage = (actor: Actor, month: string) => Promise<ProjectCapUsage[]>;
+/** A15: hours per project in the month for `userId` (default: the actor). Members may only read their own. */
+export type GetProjectHours = (actor: Actor, month: string, userId?: string) => Promise<ProjectHours[]>;
 
 /**
  * src/server/services/pto-service.ts — amendment A9. Members may only read their own balance.

@@ -25,24 +25,10 @@ export interface UserMonthRollup {
   total: RollupTotals;
 }
 
-export type CapStatus = "neutral" | "warning" | "over";
-
-export const CAP_WARNING_RATIO = 0.85;
-
-/** Client cap state (PRD FR-WEB-03): neutral < 85%, warning 85–99%, over ≥ 100%. */
-export function capStatus(usedHours: number, capHours: number | null): CapStatus {
-  if (capHours === null || capHours <= 0) return "neutral";
-  const ratio = usedHours / capHours;
-  if (ratio >= 1) return "over";
-  if (ratio >= CAP_WARNING_RATIO) return "warning";
-  return "neutral";
-}
-
-export interface ProjectCapUsage {
+/** A15: hours per project for one month (caps were removed). */
+export interface ProjectHours {
   projectId: string;
   projectName: string;
   month: string; // "YYYY-MM"
-  usedHours: number;
-  capHours: number | null;
-  status: CapStatus;
+  hours: number;
 }

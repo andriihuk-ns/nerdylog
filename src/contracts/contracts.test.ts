@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { capStatus, extractTicketRefs, timeEntryInputSchema } from "./index";
+import { extractTicketRefs, timeEntryInputSchema } from "./index";
 
 describe("contracts", () => {
   it("extracts unique ticket refs", () => {
@@ -7,12 +7,6 @@ describe("contracts", () => {
     expect(extractTicketRefs("no tickets here, e-mail dog-12")).toEqual([]);
   });
 
-  it("maps cap ratios to states", () => {
-    expect(capStatus(32, 40)).toBe("neutral");
-    expect(capStatus(34, 40)).toBe("warning");
-    expect(capStatus(40, 40)).toBe("over");
-    expect(capStatus(10, null)).toBe("neutral");
-  });
 
   it("rejects work entries without a project and PTO with hours", () => {
     const base = {
