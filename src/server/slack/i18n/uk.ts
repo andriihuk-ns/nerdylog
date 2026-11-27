@@ -102,14 +102,6 @@ export const uk: Messages = {
   "logged.openWeb": "Відкрити «Мій час»",
   "timeOff.title": "🌴 Відсутність збережено",
 
-  // A19 personal morning reminder
-  "morning.title": "Доброго ранку ☀️ {date}",
-  "morning.noEntries": "За {date} ще нічого не записано. Додай години, поки пам’ятаєш.",
-  "morning.summary": "За {date} записано {hours} (записів: {count}).",
-  "morning.timeOffOnly": "{date} у тебе була відсутність.",
-  "morning.noTask": "Опис задачі не додано",
-  "morning.logYesterday": "Записати години",
-  "morning.logMore": "Додати ще",
 
   // App Home
   "home.yourWeek": "Твій тиждень",

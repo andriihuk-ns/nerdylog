@@ -34,7 +34,7 @@ A29: `projects.status_prompt_timezone` (text, null) overrides the prompt office 
 
 **`slack_submissions`** (A1) — `view_id text PK`, `user_id → users` (restrict), `kind slack_submission_kind not null`, `created_at`.
 
-**`daily_pings`** (A4/A19) — PK `(user_id, ping_date)`, `user_id → users` (cascade), `ping_date date` (user-local date), `sent_at`. The morning-reminder service claims each user's local date with `ON CONFLICT DO NOTHING` before the cron sends a DM.
+**`daily_pings`** (A4/A19, unused since A34) — PK `(user_id, ping_date)`, `user_id → users` (cascade), `ping_date date`, `sent_at`. Kept as history; nothing writes it.
 
 **`project_prompts`** (A16) — PK `project_prompts_pk (project_id, prompt_date)`, `project_id → projects` (cascade), `prompt_date date` (prompt-office local date), `posted_at timestamptz not null default now()`. One status prompt per project per local day. Migration `0014`, RLS in `0015`.
 

@@ -102,14 +102,6 @@ export const en = {
   "logged.openWeb": "Open My Time",
   "timeOff.title": "🌴 Time off saved",
 
-  // A19 personal morning reminder
-  "morning.title": "Good morning ☀️ {date}",
-  "morning.noEntries": "Nothing is logged for {date} yet. Add your hours while it's fresh.",
-  "morning.summary": "You logged {hours} on {date} (entries: {count}).",
-  "morning.timeOffOnly": "You had time off on {date}.",
-  "morning.noTask": "Task details not added",
-  "morning.logYesterday": "Log hours",
-  "morning.logMore": "Add more",
 
   // App Home
   "home.yourWeek": "Your week",

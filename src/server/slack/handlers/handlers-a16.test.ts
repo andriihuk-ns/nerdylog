@@ -110,9 +110,8 @@ describe("A16 project status prompt (cron)", () => {
     expect(decodePromptValue(JSON.stringify({ projectId: PROJECT_ID, logDate: "soon" }))).toBeNull();
   });
 
-  it("keeps personal reminders separate from project-channel prompts", () => {
-    expect("claimMorningPings" in fakeDeps().tempo).toBe(false);
-    expect("claimMorningReminders" in fakeDeps().tempo).toBe(true);
+  it("A34: there is no personal morning reminder", () => {
+    expect("claimMorningReminders" in fakeDeps().tempo).toBe(false);
   });
 });
 

@@ -97,7 +97,6 @@ export function fakeDeps(over: Partial<SlackDeps> = {}) {
     listWeekEntries: vi.fn(async () => []),
     getProjectHours: vi.fn(async () => [] as ProjectHours[]),
     getPtoBalance: vi.fn(async () => ptoBalance),
-    claimMorningReminders: vi.fn(async () => []),
     claimProjectPrompts: vi.fn<(now: Date) => Promise<ProjectPromptTarget[]>>(async () => []),
     getStandupChannelId: vi.fn<() => Promise<string | null>>(async () => "C_STANDUP"),
     listProjectChannels: vi.fn(async () =>

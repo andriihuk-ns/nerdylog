@@ -1,9 +1,8 @@
--- Tempo: personal reminders + status-prompt scheduler (PRD amendments A10, A16, A19).
+-- Tempo: status-prompt scheduler (PRD amendments A10, A16, A34).
 --
 -- Supabase pg_cron + pg_net call GET {APP_BASE_URL}/api/cron/morning-ping every 15 minutes.
--- A19 personal DMs use [09:30, 11:00) in the user's timezone. A16 project prompts use each
--- configured [status_prompt_time, +90 min) office-local window. Both skip weekends/holidays and
--- deduplicate by local date, so late, repeated and weekend cron runs are safe.
+-- Each project prompt is due in its [status_prompt_time, +90 min) office-local window. Weekends and
+-- holidays are skipped and prompts deduplicate by local date, so late or repeated runs are safe.
 --
 -- Run once per environment in the Supabase SQL editor. Safe to re-run (idempotent).
 -- This is not a Drizzle migration because it depends on per-environment Vault values.

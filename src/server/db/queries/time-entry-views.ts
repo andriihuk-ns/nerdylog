@@ -32,21 +32,6 @@ export async function listEntryViews(
     .orderBy(asc(timeEntries.workDate), asc(projects.name), asc(timeEntries.id));
 }
 
-/** All entries for the reminder candidates and dates, ordered for concise personal summaries. */
-export async function listReminderEntryViews(
-  db: DbOrTx,
-  userIds: readonly string[],
-  dates: readonly IsoDate[],
-): Promise<TimeEntryView[]> {
-  if (userIds.length === 0 || dates.length === 0) return [];
-  return db
-    .select(viewColumns)
-    .from(timeEntries)
-    .leftJoin(projects, eq(projects.id, timeEntries.projectId))
-    .where(and(inArray(timeEntries.userId, [...userIds]), inArray(timeEntries.workDate, [...dates])))
-    .orderBy(asc(timeEntries.workDate), asc(projects.name), asc(timeEntries.id));
-}
-
 export async function findEntryView(db: DbOrTx, id: string): Promise<TimeEntryView | undefined> {
   const [row] = await db
     .select(viewColumns)
