@@ -77,7 +77,9 @@ function projectRow(
       element: {
         type: "plain_text_input",
         action_id: INPUT_ACTION,
-        max_length: 500,
+        multiline: true,
+        // A35: links do not count toward the 500-character task limit, so the parser enforces it.
+        max_length: SLACK_INPUT_MAX_LENGTH,
         placeholder: plain(t(locale, "time.taskPlaceholder")),
         ...(n === 1 && i === 1 && initialTask ? { initial_value: initialTask } : {}),
       },

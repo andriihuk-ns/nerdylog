@@ -1,4 +1,4 @@
-import { isoDateSchema, MAX_LINK_LENGTH, MAX_TASK_SUMMARY_LENGTH, serializeChecklist, type ChecklistItem, type Locale, type SlackSubmissionInput, type TimeEntryInput } from "@/contracts";
+import { isoDateSchema, MAX_LINK_LENGTH, MAX_TASK_TEXT_LENGTH, taskTextLength, MAX_TASK_SUMMARY_LENGTH, serializeChecklist, type ChecklistItem, type Locale, type SlackSubmissionInput, type TimeEntryInput } from "@/contracts";
 import { formatNumber } from "../dates";
 import { t } from "../i18n";
 import { BLOCK, rowBlock } from "../ids";
@@ -60,6 +60,9 @@ export function parseTimeSubmission({ viewId, meta, values, locale }: TimeSubmis
       const text = textValue(values, rowBlock.taskItem(n, i));
       if (!text) {
         errors[rowBlock.taskItem(n, i)] = t(locale, "err.enterTask");
+        taskInvalid = true;
+      } else if (taskTextLength(text) > MAX_TASK_TEXT_LENGTH) {
+        errors[rowBlock.taskItem(n, i)] = t(locale, "err.tooLong", { max: MAX_TASK_TEXT_LENGTH });
         taskInvalid = true;
       }
       const hasLink = taskMeta.links.includes(i);

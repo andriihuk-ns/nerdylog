@@ -112,6 +112,15 @@ describe("interactions", () => {
     expect(tempo.setCheckinChannelTs).not.toHaveBeenCalled();
   });
 
+  it("A35: task text over 500 characters is rejected, but links do not count", async () => {
+    const withTask = (value: string) => payload(standupSubmission({ ...goodValues, [rowBlock.task(1)]: field({ value }) }));
+    const { deps } = fakeDeps();
+    const long = await handleInteraction(withTask("a".repeat(501)), deps);
+    expect(await long.json()).toEqual({ response_action: "errors", errors: { [rowBlock.task(1)]: expect.stringContaining("500") } });
+    const linked = await handleInteraction(withTask(`Done\nhttps://www.figma.com/design/${"x".repeat(600)}`), deps);
+    expect(await linked.text()).toBe("");
+  });
+
   it("returns field errors synchronously and writes nothing", async () => {
     const { deps, tempo, tasks } = fakeDeps();
     const res = await handleInteraction(
