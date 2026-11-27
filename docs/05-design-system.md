@@ -81,6 +81,7 @@ Rules: body never under 14 px (caption only for labels). Use the `tabular` utili
 
 - 4 px base grid. Scale: 4, 8, 12, 16, 24, 32, 48.
 - Interactive targets ≥ 44 × 44 px (`hit-target` utility). Grid cells are 44 px tall; the hit area is the whole cell.
+- Select triggers are 44 px high by default; option rows have a 44 px minimum height. Menus align below the trigger, start-aligned, at the trigger's width.
 - Page: max width 1280 px, gutters 24 px (16 px under 640 px). Section gap 32 px.
 - Radius: `--radius` 10 px for cards and popovers; 6 px for cells' focus outline and pills (`rounded-sm`); full for dots.
 - Borders: 1 px `border` hairlines. No shadows on grids; popovers and drawers use one shadow `0 8px 24px rgb(0 0 0 / 0.08)` (dark: 0.4).
