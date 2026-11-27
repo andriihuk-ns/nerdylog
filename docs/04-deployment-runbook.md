@@ -54,7 +54,7 @@ URL-encode special characters in the database password inside connection strings
 ## 4. Slack app (from `docs/03-slack-app-manifest.yaml`)
 
 1. api.slack.com/apps → **Create New App → From a manifest** → pick the workspace → paste the manifest after replacing `APP_BASE_URL` (no scheme, no trailing slash) and `<project>`.
-2. Check **OAuth & Permissions → Redirect URLs** lists the Supabase callback (hosted and/or `http://127.0.0.1:54321/auth/v1/callback`).
+2. Check **OAuth & Permissions → Redirect URLs** lists the Supabase callback (hosted; Slack rejects the local `http://` one).
 3. **Install to Workspace**; copy the Bot User OAuth Token → `SLACK_BOT_TOKEN`.
 4. **Basic Information**: copy Signing Secret, Client ID, Client Secret → env vars above and the Supabase Slack OIDC provider.
 5. Confirm the request URLs verify: Event Subscriptions (`/api/slack/events`), Interactivity (`/api/slack/interactions`), slash commands `/log` and `/pto` (`/api/slack/commands`).

@@ -57,7 +57,7 @@ export function ChecklistEditor({ items, onChange, maxItems = 20 }: Props) {
             key={index}
             className={cn("flex w-full min-w-0 flex-col gap-2 rounded-lg border p-3", tooLong && "border-destructive")}
           >
-            <legend className="px-1 text-xs font-medium text-muted-foreground">
+            <legend className="w-fit px-1 text-xs font-medium text-muted-foreground">
               {t("itemLabel", { number: index + 1 })}
             </legend>
             <TaskTextField

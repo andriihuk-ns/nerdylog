@@ -12,7 +12,7 @@ _metadata:
   minor_version: 1
 
 display_information:
-  name: nerdylog
+  name: NerdyLog
   description: Daily standups and time tracking, straight from Slack.
   background_color: "#1f2937"
 
@@ -22,7 +22,7 @@ features:
     messages_tab_enabled: true # DM thread with nerdylog: save-failure notices (A16: no morning DM ping)
     messages_tab_read_only_enabled: false # users may reply / trigger shortcuts in the DM
   bot_user:
-    display_name: nerdylog
+    display_name: NerdyLog
     always_online: true
   slash_commands:
     - command: /log
@@ -40,7 +40,7 @@ oauth_config:
   redirect_urls:
     # Sign in with Slack (OIDC) goes through Supabase Auth, which owns the OAuth callback.
     - https://<project>.supabase.co/auth/v1/callback # hosted Supabase
-    - http://127.0.0.1:54321/auth/v1/callback # local `supabase start`
+    # Slack rejects http redirect URLs, so local `supabase start` sign-in needs an https tunnel URL here.
   scopes:
     user:
       - openid # required for Sign in with Slack (OIDC id_token)
