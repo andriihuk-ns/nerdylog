@@ -20,11 +20,10 @@ Ratios are WCAG 2.1 relative-luminance contrast, computed from the hex values (s
 
 | Token | Light | Dark | Measured against | Light | Dark |
 | :--- | :--- | :--- | :--- | ---: | ---: |
-| `background` | `#FAFAFA` | `#111113` | — | | |
+| `background` | `#FFFFFF` | `#111113` | — | | |
 | `foreground` | `#111113` | `#F4F4F5` | background | 18.07 | 17.16 |
 | `card` / `popover` | `#FFFFFF` | `#18181B` / `#1C1C1F` | foreground on card | 18.86 | 16.12 |
-| `primary` / `-foreground` | `#FFA500` / `#111113` | `#FFA500` / `#111113` | fg on primary | 9.55 | 9.55 |
-| `primary-strong` (links) | `#A64B00` | `#FFB54A` | background | 5.55 | 10.74 |
+| `primary` / `-foreground` | `#18181B` / `#FAFAFA` | `#F4F4F5` / `#18181B` | fg on primary | 16.97 | 16.12 |
 | `muted` / `secondary` / `accent` | `#F4F4F5` | `#232326` | secondary-fg on muted | 16.12 | 14.26 |
 | `muted-foreground` | `#5F5F67` | `#A1A1AA` | background | 6.06 | 7.36 |
 | | | | muted | 5.76 | 6.12 |
@@ -32,7 +31,7 @@ Ratios are WCAG 2.1 relative-luminance contrast, computed from the hex values (s
 | `border` (hairline, decorative) | `#E4E4E7` | `#2A2A2E` | background | 1.22 | 1.32 |
 | `input` (control edge) | `#8A8A93` | `#6E6E76` | card | 3.42 | 3.51 |
 | | | | background | 3.28 | 3.73 |
-| `ring` (focus) | `#A64B00` | `#FFA500` | background | 5.55 | 9.55 |
+| `ring` (focus) | `#71717A` | `#A1A1AA` | background | 4.63 | 7.36 |
 | `destructive` | `#C81E1E` | `#F87171` | background | 5.50 | 6.82 |
 
 `border` is below 3:1 on purpose: it separates grid cells, it does not identify a control (WCAG 1.4.11 exempts it). Anything the user must find to operate (inputs, select triggers, editable cells on focus) uses `input` or `ring`.
@@ -84,7 +83,7 @@ Rules: body never under 14 px (caption only for labels). Use the `tabular` utili
 - Interactive targets ≥ 44 × 44 px (`hit-target` utility). Grid cells are 44 px tall; the hit area is the whole cell.
 - Select triggers are 44 px high by default; option rows have a 44 px minimum height. Menus align below the trigger, start-aligned, at the trigger's width.
 - Page: max width 1280 px, gutters 24 px (16 px under 640 px). Section gap 32 px.
-- Radius: `--radius` 10 px for cards and popovers; 6 px for cells' focus outline and pills (`rounded-sm`); full for dots.
+- Radius: `--radius` 10 px for cards and popovers; full for buttons, switches, and dots; 6 px for cells' focus outline and compact pills (`rounded-sm`).
 - Borders: 1 px `border` hairlines. Grids have no broad card shadows. Pinned table columns use only a directional edge cue (`sticky-edge-left` / `sticky-edge-right`), backed by low-contrast `--sticky-edge-shadow-left` / `--sticky-edge-shadow-right` tokens that adapt in dark mode. Popovers and drawers use one shadow `0 8px 24px rgb(0 0 0 / 0.08)` (dark: 0.4).
 
 ## 5. Motion

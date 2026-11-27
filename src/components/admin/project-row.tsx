@@ -1,14 +1,15 @@
 "use client";
 
-import { useTransition } from "react";
+import { useOptimistic, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Lock, Pencil, RefreshCw, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { OfficeView, ProjectView, SlackChannelOption } from "@/contracts";
 import { cn } from "@/lib/utils";
-import { refreshProjectMembersAction } from "@/app/(dashboard)/admin/project-actions";
+import { refreshProjectMembersAction, setProjectActiveAction } from "@/app/(dashboard)/admin/project-actions";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { channelLabel, findChannel } from "./channel-options";
 import { useMemberRefreshText } from "./use-member-refresh-text";
@@ -25,10 +26,11 @@ interface Props {
 /** Compact project summary; the team and allocations live on the project's detail page. */
 export function ProjectRow({ project: p, channels, offices, onEdit, onDelete, onToast }: Props) {
   const t = useTranslations("admin.projects");
-  const tc = useTranslations("common");
   const router = useRouter();
   const refreshText = useMemberRefreshText();
   const [refreshing, startRefresh] = useTransition();
+  const [active, setActiveOptimistic] = useOptimistic(p.isActive, (_current, next: boolean) => next);
+  const [savingStatus, startStatusUpdate] = useTransition();
   const label = p.slackChannelId ? channelLabel(channels, p.slackChannelId) : null;
   const href = `/admin/projects/${p.id}`;
   const office = offices.find((o) => o.id === p.statusPromptOfficeId) ?? offices.find((o) => o.code === "UA");
@@ -42,16 +44,24 @@ export function ProjectRow({ project: p, channels, offices, onEdit, onDelete, on
     });
   }
 
+  function setActive(next: boolean) {
+    startStatusUpdate(async () => {
+      setActiveOptimistic(next);
+      const result = await setProjectActiveAction(p.id, next);
+      if (!result.ok) onToast(result.message, "error", () => setActive(next));
+    });
+  }
+
   return (
     <tr
       onClick={(event) => {
         if (event.target instanceof Element && event.target.closest("a, button, input, [role='switch'], [data-row-action]")) return;
         router.push(href);
       }}
-      className={cn("group h-11 cursor-pointer border-b last:border-b-0 hover:bg-muted/50", !p.isActive && "text-muted-foreground")}
+      className={cn("group h-11 cursor-pointer border-b last:border-b-0 hover:bg-muted/50", !active && "text-muted-foreground")}
     >
       <th scope="row" className="sticky left-0 z-10 max-w-56 truncate bg-card px-4 text-left font-medium group-hover:bg-muted/50">
-        <Link href={href} className="rounded-sm underline-offset-4 hover:text-primary-strong hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <Link href={href} className="rounded-sm underline-offset-4 hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           {p.name}
         </Link>
       </th>
@@ -61,7 +71,14 @@ export function ProjectRow({ project: p, channels, offices, onEdit, onDelete, on
       <td className="tabular px-3 text-sm whitespace-nowrap text-muted-foreground">
         {t("asksAt", { time: p.statusPromptTime, office: office?.code ?? "UA" })}
       </td>
-      <td className="px-3">{p.isActive ? tc("active") : tc("archived")}</td>
+      <td className="px-3">
+        <Switch
+          checked={active}
+          onCheckedChange={setActive}
+          disabled={savingStatus}
+          aria-label={t("statusFor", { name: p.name })}
+        />
+      </td>
       <td className="px-2">
         <span data-row-action className="flex justify-end gap-1">
           <Button

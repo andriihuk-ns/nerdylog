@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Toast } from "@/components/ui/toast";
 import { SearchInput } from "@/components/shell/search-input";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ProjectForm } from "./project-form";
 import { ProjectRow } from "./project-row";
 import { channelLabel, takenChannelMap } from "./channel-options";
@@ -50,6 +51,7 @@ export function ProjectsPanel({ projects, channels, offices }: Props) {
     }),
     [channels, normalizedQuery, sorted],
   );
+  const editingProject = editing && editing !== "new" ? projects.find((project) => project.id === editing) : undefined;
 
   function done({ project, members }: ProjectSaveResult, created: boolean) {
     setEditing(null);
@@ -95,10 +97,9 @@ export function ProjectsPanel({ projects, channels, offices }: Props) {
         </Button>
       </div>
       <div className="overflow-x-auto rounded-lg border bg-card">
-        {editing === "new" ? <div className="border-b">{form()}</div> : null}
-        {sorted.length === 0 && editing !== "new" ? (
+        {sorted.length === 0 ? (
           <p className="p-6 text-muted-foreground">{t("empty")}</p>
-        ) : visible.length === 0 && editing !== "new" ? (
+        ) : visible.length === 0 ? (
           <div className="flex flex-wrap items-center justify-between gap-3 p-6 text-muted-foreground">
             <p>{t("noMatch")}</p>
             <Button variant="outline" className="hit-target" onClick={() => setQuery("")}>{t("clearSearch")}</Button>
@@ -118,27 +119,36 @@ export function ProjectsPanel({ projects, channels, offices }: Props) {
               </tr>
             </thead>
             <tbody>
-              {visible.map((p) =>
-                editing === p.id ? (
-                  <tr key={p.id} className="border-b last:border-b-0">
-                    <td colSpan={COLUMNS.length + 1}>{form(p)}</td>
-                  </tr>
-                ) : (
-                  <ProjectRow
-                    key={p.id}
-                    project={p}
-                    channels={channels}
-                    offices={offices}
-                    onEdit={() => setEditing(p.id)}
-                    onDelete={() => void remove(p)}
-                    onToast={(message, tone, retry) => show(message, { tone, onRetry: retry })}
-                  />
-                ),
-              )}
+              {visible.map((p) => (
+                <ProjectRow
+                  key={p.id}
+                  project={p}
+                  channels={channels}
+                  offices={offices}
+                  onEdit={() => setEditing(p.id)}
+                  onDelete={() => void remove(p)}
+                  onToast={(message, tone, retry) => show(message, { tone, onRetry: retry })}
+                />
+              ))}
             </tbody>
           </table>
         )}
       </div>
+      <Dialog
+        open={editing === "new" || Boolean(editingProject)}
+        onOpenChange={(open) => {
+          if (!open) setEditing(null);
+        }}
+      >
+        <DialogContent className="overflow-y-auto p-0">
+          <DialogHeader className="px-4 pt-5 sm:px-6">
+            <DialogTitle>
+              {editing === "new" ? tf("newLabel") : tf("editLabel", { name: editingProject?.name ?? "" })}
+            </DialogTitle>
+          </DialogHeader>
+          {editing === "new" ? form() : editingProject ? form(editingProject) : null}
+        </DialogContent>
+      </Dialog>
       <Toast toast={toast} onDismiss={dismiss} />
       {dialog}
     </section>

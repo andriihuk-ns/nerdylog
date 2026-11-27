@@ -79,9 +79,6 @@ export function DirectoryRow({
             onCheckedChange={(next) => void setActive(next)}
             aria-label={t("activeFor", { name: view.fullName })}
           />
-          <span className="text-xs whitespace-nowrap">
-            {view.isActive ? tc("active") : tc("archived")}
-          </span>
         </span>
         {dialog}
       </Cell>
@@ -91,7 +88,7 @@ export function DirectoryRow({
       >
         <Link
           href={`/people/${view.id}?from=directory`}
-          className="flex min-h-11 items-center gap-3 rounded-md px-2 hover:bg-muted/60 hover:text-primary-strong focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          className="flex min-h-11 items-center gap-3 rounded-md px-2 hover:bg-muted/60 hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           <Avatar size="sm">
             {view.avatarUrl ? (

@@ -7,7 +7,6 @@ import { upsertProjectAction, type ProjectSaveResult } from "@/app/(dashboard)/a
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { FilterSelect } from "@/components/shell/filter-select";
 import { ChannelField } from "./channel-field";
 import { findChannel } from "./channel-options";
@@ -29,7 +28,6 @@ export function ProjectForm({ project, channels, offices, taken, onDone, onCance
   const tc = useTranslations("common");
   const channelErrorText = useChannelErrorText();
   const [name, setName] = useState(project?.name ?? "");
-  const [isActive, setActive] = useState(project?.isActive ?? true);
   const [channelId, setChannelId] = useState<string | null>(project?.slackChannelId ?? null);
   const [channelError, setChannelError] = useState<string | null>(null);
   const defaultOffice = offices.find((o) => o.code === "UA")?.id ?? offices[0]?.id ?? null;
@@ -49,7 +47,7 @@ export function ProjectForm({ project, channels, offices, taken, onDone, onCance
       const res = await upsertProjectAction({
         id: project?.id,
         name,
-        isActive,
+        isActive: project?.isActive ?? true,
         slackChannelId: channelId,
         statusPromptTime: promptTime,
         statusPromptOfficeId: promptOffice,
@@ -65,7 +63,7 @@ export function ProjectForm({ project, channels, offices, taken, onDone, onCance
       onSubmit={submit}
       onKeyDown={(e) => e.key === "Escape" && onCancel()}
       aria-label={project ? t("editLabel", { name: project.name }) : t("newLabel")}
-      className="grid gap-4 p-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-start"
+      className="grid gap-4 p-4 sm:grid-cols-2 sm:items-start"
     >
       <div className="flex flex-col gap-1.5">
         <Label htmlFor={`${id}-name`}>{t("name")}</Label>
@@ -85,11 +83,7 @@ export function ProjectForm({ project, channels, offices, taken, onDone, onCance
           setChannelError(null);
         }}
       />
-      <label className="hit-target flex items-center gap-2 sm:mt-6">
-        <Switch checked={isActive} onCheckedChange={setActive} />
-        {t("active")}
-      </label>
-      <div className="flex flex-wrap items-end gap-3 sm:col-span-3">
+      <div className="flex flex-wrap items-end gap-3 sm:col-span-2">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={`${id}-time`}>{t("promptTime")}</Label>
           <Input
@@ -119,11 +113,11 @@ export function ProjectForm({ project, channels, offices, taken, onDone, onCance
         <p className="w-full text-xs text-muted-foreground">{t("promptHelper")}</p>
       </div>
       {error ? (
-        <p role="alert" className="text-destructive sm:col-span-3">
+        <p role="alert" className="text-destructive sm:col-span-2">
           {error}
         </p>
       ) : null}
-      <div className="flex flex-col-reverse gap-2 sm:col-span-3 sm:flex-row sm:justify-end">
+      <div className="flex flex-col-reverse gap-2 sm:col-span-2 sm:flex-row sm:justify-end">
         <Button type="button" variant="ghost" className="hit-target" onClick={onCancel}>
           {tc("cancel")}
         </Button>

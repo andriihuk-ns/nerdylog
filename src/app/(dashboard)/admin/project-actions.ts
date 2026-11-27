@@ -33,6 +33,8 @@ const projectSchema = z.object({
   statusPromptOfficeId: z.uuid().nullable().optional(), // A16 (null → UA)
 });
 
+const projectStatusSchema = z.object({ projectId: z.uuid(), isActive: z.boolean() });
+
 export type ProjectInput = z.input<typeof projectSchema>;
 
 /** Saved project + member refresh outcome (null → refresh failed or no channel; the save still stands). */
@@ -78,6 +80,30 @@ export async function upsertProjectAction(input: ProjectInput): Promise<ChannelA
     return ok({ project, members });
   } catch (err) {
     return channelFieldError(err) ?? actionError(err);
+  }
+}
+
+/** A16: update project active status from its table row without refreshing Slack membership. */
+export async function setProjectActiveAction(projectId: string, isActive: boolean): Promise<ActionResult> {
+  try {
+    const actor = await requireActor(ADMIN);
+    const parsed = projectStatusSchema.safeParse({ projectId, isActive });
+    if (!parsed.success) return fail((await serverCopy())("projectInvalid"));
+    const projects: ProjectView[] = await listProjects(actor, { includeArchived: true });
+    const project = projects.find((item) => item.id === parsed.data.projectId);
+    if (!project) return fail((await serverCopy())("unknownProject"));
+    await upsertProject(actor, {
+      id: project.id,
+      name: project.name,
+      slackChannelId: project.slackChannelId,
+      isActive: parsed.data.isActive,
+      statusPromptTime: project.statusPromptTime,
+      statusPromptOfficeId: project.statusPromptOfficeId,
+    });
+    refresh();
+    return ok();
+  } catch (err) {
+    return actionError(err);
   }
 }
 

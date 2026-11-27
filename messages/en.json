@@ -322,6 +322,7 @@
       "noMatch": "No projects match your search.",
       "clearSearch": "Clear search",
       "edit": "Edit {name}",
+      "statusFor": "Active status for {name}",
       "botNotIn": "Bot not in channel",
       "noChannel": "No channel",
       "refresh": "Refresh members",
