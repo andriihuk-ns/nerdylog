@@ -21,6 +21,15 @@ import { parseHoursInput } from "@/components/lib/format";
 import { ArtifactChip } from "@/components/shell/artifact-text";
 import { ChecklistEditor } from "./checklist-editor";
 
+const QUICK_HOURS = [
+  { label: "15m", value: 0.25 },
+  { label: "30m", value: 0.5 },
+  { label: "1h", value: 1 },
+  { label: "2h", value: 2 },
+  { label: "4h", value: 4 },
+  { label: "8h", value: 8 },
+] as const;
+
 interface Props {
   title: string; // "DogTeamPro · Tue, Nov 24"
   hoursDraft: string;
@@ -44,12 +53,18 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
   const links = extractArtifactLinks(searchText);
   const t = useTranslations("myTime");
   const tc = useTranslations("common");
+  const isNewEntry = entryCount === 0;
+  const parsedHours = parseHoursInput(hours);
+  const canSave = parsedHours.ok && (!isNewEntry || parsedHours.value > 0);
 
   function submit(e: FormEvent) {
     e.preventDefault();
-    const parsed = parseHoursInput(hours);
-    if (!parsed.ok) {
-      setHoursError(t(`input.${parsed.error}`));
+    if (!parsedHours.ok) {
+      setHoursError(t(`input.${parsedHours.error}`));
+      return;
+    }
+    if (isNewEntry && parsedHours.value === 0) {
+      setHoursError(t("note.hoursRequired"));
       return;
     }
     setHoursError(null);
@@ -74,7 +89,7 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
       setFormError(t("note.tooLong", { max: MAX_TASK_SUMMARY_LENGTH }));
       return;
     }
-    onSave(parsed.value, summary);
+    onSave(parsedHours.value, summary);
   }
 
   return (
@@ -90,13 +105,19 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
       </DialogHeader>
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">
         <div className="flex flex-col gap-6">
-          <div className="flex max-w-40 flex-col gap-1.5">
-            <Label htmlFor="cell-hours">{t("note.hours")}</Label>
+          <div className="flex max-w-sm flex-col gap-1.5">
+            <Label htmlFor="cell-hours">
+              {t("note.hours")}
+              {isNewEntry ? <span aria-hidden="true"> *</span> : null}
+            </Label>
             <Input
               id="cell-hours"
               inputMode="decimal"
               autoComplete="off"
+              autoFocus
+              required={isNewEntry}
               value={hours}
+              aria-required={isNewEntry || undefined}
               aria-invalid={hoursError ? true : undefined}
               onChange={(event) => {
                 const raw = event.target.value;
@@ -104,8 +125,25 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
                 setHours(cleaned);
                 setHoursError(cleaned !== raw ? t("input.numbersOnly") : null);
               }}
-              className="tabular h-11 text-left"
+              className="tabular h-11 w-40 text-left"
             />
+            <div role="group" aria-label={t("note.quickDurations")} className="flex max-w-sm flex-wrap gap-1.5">
+              {QUICK_HOURS.map((option) => (
+                <Button
+                  key={option.label}
+                  type="button"
+                  size="sm"
+                  variant={hours === String(option.value) ? "secondary" : "outline"}
+                  aria-pressed={hours === String(option.value)}
+                  onClick={() => {
+                    setHours(String(option.value));
+                    setHoursError(null);
+                  }}
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </div>
             {hoursError ? (
               <p role="alert" className="text-xs text-destructive">
                 {hoursError}
@@ -155,7 +193,7 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
         <Button type="button" variant="ghost" className="hit-target w-full sm:w-auto" onClick={onCancel}>
           {tc("cancel")}
         </Button>
-        <Button type="submit" className="hit-target w-full sm:w-auto">
+        <Button type="submit" className="hit-target w-full sm:w-auto" disabled={!canSave}>
           {tc("save")}
         </Button>
       </div>

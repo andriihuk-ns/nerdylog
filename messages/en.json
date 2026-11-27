@@ -132,6 +132,8 @@
     "addProjectRow": "Add a project row",
     "note": {
       "hours": "Hours",
+      "hoursRequired": "Enter time spent to save this log.",
+      "quickDurations": "Quick time amounts",
       "taskNote": "Task details",
       "modalDescription": "Adjust hours and manage task descriptions with optional links.",
       "taskNoteFirst": "Note (first entry)",

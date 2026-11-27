@@ -104,7 +104,7 @@ export function WeekGrid({ matrix, display, addable, pendingKeys, failedKey, onS
             const project = { id: row.projectId, name };
             return (
               <tr key={row.projectId}>
-                <th scope="row" className={cn(STICKY_PROJECT_COLUMN, "group h-11 border-b pr-1 pl-3 font-medium sm:pl-4")}>
+                <th scope="row" className={cn(STICKY_PROJECT_COLUMN, "group h-11 border-b pr-1 pl-3 align-top font-medium sm:pl-4")}>
                   <span className="flex items-center gap-1">
                     <span className="min-w-0 flex-1 truncate" title={name}>
                       {name}
@@ -152,7 +152,7 @@ export function WeekGrid({ matrix, display, addable, pendingKeys, failedKey, onS
                     />
                   );
                 })}
-                <td className="tabular h-11 border-b px-4 text-right font-semibold">{f.hours(row.total)}</td>
+                <td className="tabular h-11 border-b px-4 text-right align-top font-semibold">{f.hours(row.total)}</td>
               </tr>
             );
           })}

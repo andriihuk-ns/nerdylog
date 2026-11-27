@@ -80,7 +80,7 @@ export function HoursCell(p: HoursCellProps) {
         }
       }}
       className={cn(
-        "relative min-w-[112px] border-b p-0 text-right outline-none transition-colors duration-[var(--duration-base)] ease-standard",
+        "relative min-w-[112px] border-b p-0 text-right align-top outline-none transition-colors duration-[var(--duration-base)] ease-standard",
         "focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset focus-visible:outline-none",
         p.weekend && !p.columnTint && "bg-muted/50",
         p.columnTint,
@@ -100,7 +100,7 @@ export function HoursCell(p: HoursCellProps) {
             onOpenNote={p.onOpenNote}
           />
         ) : (
-          <div className="flex min-h-11 flex-col items-end justify-center gap-1 px-2 py-2 sm:px-3">
+          <div className="flex min-h-11 flex-col items-end justify-start gap-1 px-2 py-2 sm:px-3">
             <span className={cn("tabular font-medium", p.cell.hours === 0 && "text-muted-foreground")}>
               {p.weekendLocked ? "" : p.readOnly ? "—" : p.cell.hours > 0 ? hours : "·"}
             </span>
