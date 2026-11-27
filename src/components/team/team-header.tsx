@@ -50,6 +50,12 @@ export function TeamHeader({ month, today, drawerDate, filters, exportScopeHint,
           nextHref={next}
           todayHref={month === current ? undefined : teamHref(current, drawerDate, filters)}
           todayLabel={tp("thisMonth")}
+          action="/team"
+          pickerValue={month}
+          preserveParams={{
+            ...(filters.q ? { q: filters.q } : {}),
+            ...(filters.project ? { project: filters.project } : {}),
+          }}
         />
         <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:items-center">
           <ExportMenus groups={exports} />

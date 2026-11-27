@@ -11,12 +11,13 @@ interface Props {
   context: string; // "Jane Doe, week 2"
   groupStart: boolean;
   total: boolean;
+  stickyOffset?: number;
   navProps?: { "data-row": number; "data-col": number; tabIndex: number; onFocus: () => void };
   onKeyDown?: KeyboardEventHandler;
 }
 
 /** One numeric cell of the Summary matrix: tabular, right-aligned, zero as a muted dot. */
-export function SummaryCell({ value, sub, context, groupStart, total, navProps, onKeyDown }: Props) {
+export function SummaryCell({ value, sub, context, groupStart, total, stickyOffset, navProps, onKeyDown }: Props) {
   const t = useTranslations("team.grid.spoken");
   const f = useFormat();
   const format = [f.hours, f.days, f.count, f.count][sub];
@@ -27,9 +28,11 @@ export function SummaryCell({ value, sub, context, groupStart, total, navProps, 
       role="gridcell"
       {...navProps}
       onKeyDown={onKeyDown}
+      style={stickyOffset === undefined ? undefined : { right: `${stickyOffset}rem` }}
       aria-label={t(SUB_COLUMNS[sub], { context, value: format(value) })}
       className={cn(
         "tabular h-11 min-w-16 border-b px-3 text-right outline-none",
+        stickyOffset !== undefined && "sticky z-20 w-24 min-w-24 max-w-24 bg-card",
         "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
         groupStart && "border-l",
         total && groupStart && "border-l-foreground/20",

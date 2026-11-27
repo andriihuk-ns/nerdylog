@@ -51,6 +51,9 @@ export function HolidayToolbar({ offices, officeId, year, currentYear, onToast }
         nextHref={href(year + 1)}
         todayHref={year === currentYear ? undefined : href(currentYear)}
         todayLabel={tp("thisYear")}
+        action="/admin"
+        pickerValue={String(year)}
+        preserveParams={{ tab: "holidays", ...(officeId ? { office: officeId } : {}) }}
       />
       <Button variant="outline" className="hit-target" onClick={copy} disabled={copying}>
         <Copy aria-hidden />

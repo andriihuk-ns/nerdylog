@@ -72,6 +72,7 @@ export default async function PersonPage({ params, searchParams }: { params: Par
         projects={options}
         userId={user.id}
         basePath={`/people/${user.id}`}
+        preserveParams={query.from === "team" || query.from === "directory" ? { from: query.from } : undefined}
         title={t("week", { name: user.fullName })}
         showTitle={false}
         actions={<ExportMenus groups={rangeExports({ from: weekStart, to: weekEnd }, month, { userIds: user.id })} />}

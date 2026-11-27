@@ -26,6 +26,7 @@ interface Props {
   userId?: string;
   /** Page path for week links (`/my-time` or `/people/{id}`). */
   basePath?: string;
+  preserveParams?: Record<string, string>;
   /** Optional visible heading; an accessible heading remains when hidden. */
   title?: string;
   /** Keep the profile heading for assistive technology while omitting it visually. */
@@ -35,7 +36,7 @@ interface Props {
 }
 
 /** Weekly matrix client island (My Time and the people page): optimistic state, toasts, confirms, week shortcuts. */
-export function WeekView({ weekStart, today, entries, projects, userId, basePath = "/my-time", title, showTitle = true, actions }: Props) {
+export function WeekView({ weekStart, today, entries, projects, userId, basePath = "/my-time", preserveParams, title, showTitle = true, actions }: Props) {
   const weekHref = (d: IsoDate) => `${basePath}?week=${d}`;
   const router = useRouter();
   const t = useTranslations("myTime");
@@ -152,6 +153,9 @@ export function WeekView({ weekStart, today, entries, projects, userId, basePath
             prevHref={weekHref(prev)}
             nextHref={weekHref(next)}
             todayHref={weekStart === thisWeek ? undefined : weekHref(thisWeek)}
+            action={basePath}
+            pickerValue={weekStart}
+            preserveParams={preserveParams}
           />
           <p className="flex items-baseline gap-2">
             <span className="text-xs font-medium text-muted-foreground">{t("weeklyTotal")}</span>

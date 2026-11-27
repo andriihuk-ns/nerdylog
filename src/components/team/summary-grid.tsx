@@ -54,7 +54,7 @@ export function SummaryGrid({ rows, weeks, today, avatars, selfId }: Props) {
                 </span>
               </th>
             ))}
-            <th scope="colgroup" colSpan={4} className="border-b border-l border-l-foreground/20 px-3 text-left text-xs font-semibold">
+            <th scope="colgroup" colSpan={4} className="sticky right-0 z-30 w-96 min-w-96 border-b border-l border-l-foreground/20 bg-card px-3 text-left text-xs font-semibold">
               {t("monthlyTotal")}
             </th>
           </tr>
@@ -68,7 +68,9 @@ export function SummaryGrid({ rows, weeks, today, avatars, selfId }: Props) {
                     "h-8 border-b px-3 text-right font-medium whitespace-nowrap",
                     s === 0 && "border-l",
                     s === 0 && w === null && "border-l-foreground/20",
+                    w === null && "sticky z-20 w-24 min-w-24 max-w-24 bg-card",
                   )}
+                  style={w === null ? { right: `${(SUB_COLUMNS.length - s - 1) * 6}rem` } : undefined}
                 >
                   {t(`sub.${sub}`)}
                 </th>
@@ -103,6 +105,7 @@ export function SummaryGrid({ rows, weeks, today, avatars, selfId }: Props) {
                     context={isTotal ? t("contextMonth", { name: row.fullName }) : t("contextWeek", { name: row.fullName, n: g + 1 })}
                     groupStart={s === 0}
                     total={isTotal}
+                    stickyOffset={isTotal ? (SUB_COLUMNS.length - s - 1) * 6 : undefined}
                     navProps={cellProps(r, g * 4 + s)}
                     onKeyDown={handleNavKey}
                   />
@@ -126,6 +129,7 @@ export function SummaryGrid({ rows, weeks, today, avatars, selfId }: Props) {
                   context={g === weeks.length ? t("contextMonth", { name: t("team") }) : t("contextWeek", { name: t("team"), n: g + 1 })}
                   groupStart={s === 0}
                   total
+                  stickyOffset={(SUB_COLUMNS.length - s - 1) * 6}
                 />
               ));
             })}

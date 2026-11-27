@@ -131,8 +131,10 @@ Keyboard (grid uses `role="grid"`, roving tabindex):
 - Enter or typing a digit starts editing; Enter commits and moves down; Tab commits and moves right; Esc cancels.
 - `.` or `,` accepted as decimal; values snap to 0.25 h; > 24 → inline error "Max 24h a day".
 - Shift+Enter opens the centered task editor dialog; it fills the screen under 640 px. Cancel/save actions stay pinned below the scrollable form.
+- Clicking an editable project/day cell opens the task editor dialog; Enter, F2, and typing a digit still start direct hours entry.
 - Each work cell shows up to two lines of its task/link groups below the hours, with a card-colored fade and chevron to expand longer details. “Add tasks” / “Edit tasks” opens a group editor with up to 10 tasks, one optional link per task, and a save that preserves the hours. When several time entries share a project/day cell, their groups are combined for editing and saved together.
 - `[` / `]` previous / next week. `T` today.
+- Use the date field to jump directly to any date's week; exports allow a custom inclusive date range up to 366 days.
 - Day pill: Space cycles Work → Vac → Sick → Hol; changing to PTO with logged hours asks once "Clear 6.0h on Wed?".
 
 States: loading = skeleton grid 5 rows; empty week = grid with the user's active projects and a muted line "No hours yet. Type a number in any cell, or log from Slack with /log."; optimistic and error as shared.
@@ -146,6 +148,7 @@ Layout:
 - Values: Hours 1 decimal, Days 1–2 decimals (`hours ÷ dailyNormHours`), counts as integers or `.5`. Zero shows as `·` in `muted-foreground` to cut noise.
 - `Vac/Sick > 0`: cell `pto-subtle`, text `pto`. Holidays > 0: text `holiday`. Monthly total group has a 1 px `foreground` at 20 % left rule and Body-strong numbers.
 - Under 1024 px: month-week groups collapse to Hours only, with a toggle "Show all columns"; horizontal scroll with sticky name column.
+- The four monthly-total columns stay pinned to the right edge while weeks scroll. The month field jumps directly to any month, and exports allow a custom inclusive date range up to 366 days.
 
 Keyboard: grid navigation as 6.2 (read-only; Enter on a row opens that person's `/my-time` for the week, for managers). `[` / `]` previous / next month. `S` toggles the Standup drawer.
 

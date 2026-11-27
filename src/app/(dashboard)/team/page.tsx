@@ -65,6 +65,7 @@ export default async function TeamPage({ searchParams }: { searchParams: SearchP
             { kind: "csv", label: t("exports.ledgerCsv"), href: exportHref("/api/export/ledger.csv", { ...range, ...exportScope }) },
             { kind: "pdf", href: exportHref("/api/export/report.pdf", { ...range, ...exportScope }) },
           ],
+          customRange: { ...range, extra: exportScope },
         }}
       />
       {rows.length === 0 ? (
