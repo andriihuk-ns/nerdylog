@@ -32,8 +32,8 @@ const COLUMNS = [
   "title",
   "office",
   "role",
-  "dailyNorm",
   "allowance",
+  "sickAllowance",
 ] as const;
 
 /** FR-WEB-06 directory: refresh Slack people on entry, with search and project/office filters. */
@@ -155,7 +155,7 @@ export function DirectoryPanel({ users, projects, offices }: Props) {
                     className={cn(
                       "h-10 px-2 text-left font-medium whitespace-nowrap",
                       c === "name" && "sticky left-0 z-10 bg-card px-4",
-                      (c === "dailyNorm" || c === "allowance") && "text-right",
+                      (c === "allowance" || c === "sickAllowance") && "text-right",
                     )}
                   >
                     {t(`columns.${c}`)}

@@ -20,25 +20,29 @@ function round1(value: number): number {
 
 /**
  * Pure A9 math. Counts DISTINCT vacation and sick dates (a date logged twice counts once).
- * Only vacation reduces the allowance; remaining is null when the allowance is null and
- * may go negative when vacation exceeds it. Rows are assumed to be inside `year` already.
+ * Each allowance is reduced by its own distinct used days; remaining is null when its allowance
+ * is unset and may go negative. Rows are assumed to be inside `year` already.
  */
 export function computePtoBalance(
   userId: string,
   year: number,
   allowanceDays: number | null,
   rows: readonly PtoUsageRow[],
+  sickAllowanceDays: number | null = null,
 ): PtoBalance {
   const vacation = new Set<string>();
   const sick = new Set<string>();
   for (const row of rows) (row.entryType === "vacation" ? vacation : sick).add(row.workDate);
   const vacationUsedDays = vacation.size;
+  const sickUsedDays = sick.size;
   return {
     userId,
     year,
     allowanceDays,
+    sickAllowanceDays,
     vacationUsedDays,
-    sickUsedDays: sick.size,
+    sickUsedDays,
     remainingDays: allowanceDays === null ? null : round1(allowanceDays - vacationUsedDays),
+    sickRemainingDays: sickAllowanceDays === null ? null : round1(sickAllowanceDays - sickUsedDays),
   };
 }

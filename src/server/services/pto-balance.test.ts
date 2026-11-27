@@ -11,9 +11,11 @@ describe("computePtoBalance (A9)", () => {
       userId: "u1",
       year: 2026,
       allowanceDays: null,
+      sickAllowanceDays: null,
       vacationUsedDays: 1,
       sickUsedDays: 1,
       remainingDays: null,
+      sickRemainingDays: null,
     });
   });
 
@@ -33,6 +35,12 @@ describe("computePtoBalance (A9)", () => {
     expect(b.sickUsedDays).toBe(2);
     expect(b.vacationUsedDays).toBe(1);
     expect(b.remainingDays).toBe(9);
+  });
+
+  it("subtracts distinct sick days from the sick allowance", () => {
+    const b = computePtoBalance("u1", 2026, 10, [sick("2026-01-05"), sick("2026-01-05"), sick("2026-01-06")], 5);
+    expect(b.sickUsedDays).toBe(2);
+    expect(b.sickRemainingDays).toBe(3);
   });
 
   it("counts a date logged twice only once", () => {

@@ -31,7 +31,7 @@ export function AddProjectRow({ colSpan, options, onAdd }: Props) {
         >
           <SelectTrigger
             aria-label={t("addProjectRow")}
-            className="hit-target w-[200px] border-transparent text-muted-foreground shadow-none hover:text-foreground [&>svg:last-child]:hidden"
+            className="hit-target w-fit justify-start gap-2 border-transparent px-2 text-muted-foreground shadow-none hover:text-foreground [&>svg:last-child]:hidden"
           >
             <Plus aria-hidden />
             <SelectValue placeholder={t("addProject")} />

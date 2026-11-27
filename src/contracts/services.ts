@@ -50,8 +50,10 @@ export interface PtoBalance {
   userId: string;
   year: number;
   allowanceDays: number | null; // null → allowance not set
+  sickAllowanceDays: number | null; // null → sick allowance not set
   vacationUsedDays: number; // distinct vacation dates in the calendar year
-  sickUsedDays: number; // informational; never reduces the allowance
+  sickUsedDays: number; // distinct sick dates in the calendar year
   remainingDays: number | null; // null when allowance is null; may be negative
+  sickRemainingDays: number | null; // null when sick allowance is not set; may be negative
 }
 export type GetPtoBalance = (actor: Actor, userId: string, year: number) => Promise<PtoBalance>;

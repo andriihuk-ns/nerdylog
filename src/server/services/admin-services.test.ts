@@ -130,7 +130,7 @@ describe("updateDirectoryUser", () => {
   });
 
   it("officeId: null or an existing office; attaches projectIds", async () => {
-    vi.mocked(proj.listProjectMemberRows).mockResolvedValue([{ projectId: PROJECT, userId: OTHER }]);
+    vi.mocked(proj.listProjectMemberRows).mockResolvedValue([{ projectId: PROJECT, userId: OTHER, fullName: "Other", allocationHoursPerMonth: 160 }]);
     const user = await updateDirectoryUser(admin, OTHER, { officeId: null });
     expect(dir.updateDirectoryRow).toHaveBeenLastCalledWith(expect.anything(), OTHER, { officeId: null });
     expect(user.projectIds).toEqual([PROJECT]);
@@ -205,7 +205,7 @@ describe("projects (A15)", () => {
       { id: PROJECT, name: "A", isActive: true, slackChannelId: "C0123ABCD", createdBy: null, ...PROMPT },
       { id: OTHER, name: "B", isActive: true, slackChannelId: null, createdBy: null, ...PROMPT },
     ]);
-    vi.mocked(proj.listProjectMemberRows).mockResolvedValue([{ projectId: PROJECT, userId: ADMIN }]);
+    vi.mocked(proj.listProjectMemberRows).mockResolvedValue([{ projectId: PROJECT, userId: ADMIN, fullName: "Admin", allocationHoursPerMonth: 160 }]);
     const views = await listProjects(member);
     expect(views.map((v) => [v.id, v.memberIds, v.isMember])).toEqual([
       [PROJECT, [ADMIN], true],

@@ -2,9 +2,9 @@
 
 import { refresh } from "next/cache";
 import { z } from "zod";
-import type { ProjectView } from "@/contracts";
+import { MAX_MONTH_ALLOCATION_HOURS, type ProjectMemberAllocation, type ProjectView } from "@/contracts";
 import { requireActor } from "@/server/auth/session";
-import { deleteProject, listProjects, upsertProject } from "@/server/services/project-service";
+import { deleteProject, listProjects, updateProjectMemberAllocation, upsertProject } from "@/server/services/project-service";
 import { actionError, fail, fieldErrorCode, ok, type ActionResult } from "../action-result";
 import { channelFailure, channelFieldError, type ChannelActionResult } from "./channel-result";
 import { channelIdSchema, ensureBotInChannel, serverCopy } from "./channel-guard";
@@ -102,6 +102,29 @@ export async function refreshProjectMembersAction(projectId: string): Promise<Ac
     const outcome = await refreshMembers(project.id, project.slackChannelId);
     if (outcome.status === "ok") refresh();
     return ok(outcome);
+  } catch (err) {
+    return actionError(err);
+  }
+}
+
+const allocationSchema = z.object({
+  projectId: z.uuid(),
+  userId: z.uuid(),
+  hoursPerMonth: z.number().min(0.5).max(MAX_MONTH_ALLOCATION_HOURS).multipleOf(0.5),
+});
+
+/** A26: save one member's monthly allocation in the project. */
+export async function updateProjectMemberAllocationAction(
+  projectId: string,
+  userId: string,
+  hoursPerMonth: number,
+): Promise<ActionResult<ProjectMemberAllocation>> {
+  try {
+    const actor = await requireActor(ADMIN);
+    const parsed = allocationSchema.parse({ projectId, userId, hoursPerMonth });
+    const member = await updateProjectMemberAllocation(actor, parsed.projectId, parsed.userId, parsed.hoursPerMonth);
+    refresh();
+    return ok(member);
   } catch (err) {
     return actionError(err);
   }

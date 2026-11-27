@@ -1,10 +1,10 @@
-import { index, pgTable, primaryKey, uuid } from "drizzle-orm/pg-core";
+import { check, index, numeric, pgTable, primaryKey, uuid } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { projects } from "./projects";
 import { users } from "./users";
 
 /**
- * A15: cached members of a project's Slack channel (Tempo users only). Refreshed when a project
- * is saved, on "Sync from Slack" and via "Refresh members". Only members may log work to it.
+ * A15: cached Slack channel members (Tempo users only). A26 adds a monthly allocation for each.
  */
 export const projectMembers = pgTable(
   "project_members",
@@ -15,10 +15,17 @@ export const projectMembers = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    allocationHoursPerMonth: numeric("allocation_hours_per_month", { precision: 5, scale: 1, mode: "number" })
+      .notNull()
+      .default(160),
   },
   (t) => [
     primaryKey({ name: "project_members_pk", columns: [t.projectId, t.userId] }),
     index("project_members_user_id_idx").on(t.userId),
+    check(
+      "project_members_allocation_hours_range",
+      sql`${t.allocationHoursPerMonth} between 0.5 and 744 and mod(${t.allocationHoursPerMonth} * 10, 5) = 0`,
+    ),
   ],
 );
 

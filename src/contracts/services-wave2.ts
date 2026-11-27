@@ -72,6 +72,7 @@ export interface DirectoryUser {
   timezone: string;
   dailyNormHours: number;
   ptoAllowanceDays: number | null;
+  sickAllowanceDays: number | null;
   isActive: boolean;
   officeId: string | null; // A15
   projectIds: string[]; // A15: projects whose Slack channel the person is in
@@ -80,7 +81,7 @@ export type ListDirectory = (actor: Actor) => Promise<DirectoryUser[]>; // manag
 export type UpdateDirectoryUser = (
   actor: Actor, // admin only
   userId: string,
-  patch: Partial<Pick<DirectoryUser, "role" | "dailyNormHours" | "ptoAllowanceDays" | "isActive" | "timezone" | "officeId">>,
+  patch: Partial<Pick<DirectoryUser, "role" | "dailyNormHours" | "ptoAllowanceDays" | "sickAllowanceDays" | "isActive" | "timezone" | "officeId">>,
 ) => Promise<DirectoryUser>;
 /** One member of Slack users.list, already filtered (no bots, no deleted, no Slackbot) by the Slack layer. */
 export interface SlackDirectoryMember {
@@ -93,7 +94,7 @@ export interface SlackDirectoryMember {
 }
 /** src/server/slack/directory.ts — paginated users.list, no arguments. */
 export type FetchSlackDirectory = () => Promise<SlackDirectoryMember[]>;
-/** admin only. Upserts by slack_user_id; never changes role/norm/allowance; new rows → member, active. */
+/** admin only. Upserts by slack_user_id; never changes role, norms, allowances, or active state; new rows → member, active. */
 export type SyncDirectoryFromSlack = (
   actor: Actor,
   members: SlackDirectoryMember[],
@@ -107,10 +108,16 @@ export interface ProjectView {
   slackChannelId: string | null; // A11: one channel = one project; unique. Required for new projects (A15).
   createdBy: { userId: string; fullName: string } | null; // A15
   memberIds: string[]; // A15: Tempo users in the project's Slack channel (cached)
+  memberAllocations: ProjectMemberAllocation[]; // A26: monthly allocation for each current member
   isMember: boolean; // A15: whether the calling actor is a member
   statusPromptTime: string; // A16: "HH:MM" in the prompt office's timezone, default "10:00"
   statusPromptOfficeId: string | null; // A16: office whose timezone + holidays apply (null → UA)
   hasTimeEntries: boolean; // A16: delete allowed only when false
+}
+export interface ProjectMemberAllocation {
+  userId: string;
+  fullName: string;
+  allocationHoursPerMonth: number;
 }
 /** Everyone sees all projects (A15); isMember tells the UI whether to show "Ask {creator}". */
 export type ListProjects = (actor: Actor, opts?: { includeArchived?: boolean }) => Promise<ProjectView[]>;
@@ -131,6 +138,8 @@ export type UpsertProject = (actor: Actor, input: UpsertProjectInput) => Promise
  * the Tempo users whose slack_user_id is in `memberSlackIds` (unknown ids skipped and counted).
  */
 export type ReplaceProjectMembers = (projectId: string, memberSlackIds: string[]) => Promise<{ members: number; skipped: number }>;
+/** Admin only. Monthly allocation in hours for one current project member. */
+export type UpdateProjectMemberAllocation = (actor: Actor, projectId: string, userId: string, hoursPerMonth: number) => Promise<ProjectMemberAllocation>;
 /**
  * A15 access rule used by time-entry-service and standup-service: logging work to a project the user is
  * not a member of throws InvalidInputError with fieldErrors { projectId: ["not_member"] } (UI shows

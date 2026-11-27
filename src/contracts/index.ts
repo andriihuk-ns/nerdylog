@@ -7,3 +7,4 @@ export * from "./services";
 export * from "./services-wave2";
 export * from "./locale";
 export * from "./links";
+export * from "./project-allocation";

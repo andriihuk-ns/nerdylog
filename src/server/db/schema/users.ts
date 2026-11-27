@@ -27,6 +27,7 @@ export const users = pgTable(
       .notNull()
       .default(8.0),
     ptoAllowanceDays: numeric("pto_allowance_days", { precision: 4, scale: 1, mode: "number" }),
+    sickAllowanceDays: numeric("sick_allowance_days", { precision: 4, scale: 1, mode: "number" }),
     isActive: boolean("is_active").notNull().default(true),
     officeId: uuid("office_id").references(() => offices.id, { onDelete: "set null" }), // A15
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -35,6 +36,10 @@ export const users = pgTable(
     check(
       "users_pto_allowance_days_range",
       sql`${t.ptoAllowanceDays} is null or ${t.ptoAllowanceDays} between 0 and 365`,
+    ),
+    check(
+      "users_sick_allowance_days_range",
+      sql`${t.sickAllowanceDays} is null or ${t.sickAllowanceDays} between 0 and 365`,
     ),
   ],
 );

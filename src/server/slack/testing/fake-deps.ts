@@ -23,6 +23,7 @@ export const project: ProjectView = {
   slackChannelId: "C_DTP",
   createdBy: { userId: "0b4c6a52-8f1e-4c1b-9a35-3b1f8f0f6a09", fullName: "Andrii Admin" },
   memberIds: [USER_ID],
+  memberAllocations: [{ userId: USER_ID, fullName: profile.fullName, allocationHoursPerMonth: 160 }],
   isMember: true,
   statusPromptTime: "10:00",
   statusPromptOfficeId: null,
@@ -37,6 +38,7 @@ export const otherProject: ProjectView = {
   slackChannelId: "C_CNG",
   createdBy: null,
   memberIds: [USER_ID],
+  memberAllocations: [{ userId: USER_ID, fullName: profile.fullName, allocationHoursPerMonth: 160 }],
   isMember: true,
   statusPromptTime: "10:00",
   statusPromptOfficeId: null,
@@ -52,6 +54,7 @@ export const foreignProject: ProjectView = {
   slackChannelId: "C_SWZ",
   createdBy: { userId: "0b4c6a52-8f1e-4c1b-9a35-3b1f8f0f6a09", fullName: "Andrii Admin" },
   memberIds: [],
+  memberAllocations: [],
   isMember: false,
   statusPromptTime: "10:00",
   statusPromptOfficeId: null,
@@ -62,9 +65,11 @@ export const ptoBalance: PtoBalance = {
   userId: USER_ID,
   year: 2026,
   allowanceDays: 20,
+  sickAllowanceDays: 5,
   vacationUsedDays: 8,
   sickUsedDays: 2,
   remainingDays: 12,
+  sickRemainingDays: 3,
 };
 
 export function fakeDeps(over: Partial<SlackDeps> = {}) {

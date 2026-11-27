@@ -18,7 +18,7 @@ const manager = { userId: "u-manager", role: "manager" as const };
 const admin = { userId: "u-admin", role: "admin" as const };
 
 beforeEach(() => {
-  vi.mocked(findPtoAllowance).mockReset().mockResolvedValue({ allowanceDays: 20 });
+  vi.mocked(findPtoAllowance).mockReset().mockResolvedValue({ allowanceDays: 20, sickAllowanceDays: 10 });
   vi.mocked(listUserPtoDates)
     .mockReset()
     .mockResolvedValue([{ workDate: "2026-03-02", entryType: "vacation" }]);

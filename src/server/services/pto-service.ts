@@ -24,5 +24,5 @@ export const getPtoBalance: GetPtoBalance = async (actor, userId, year) => {
   const user = await findPtoAllowance(db, userId);
   if (!user) throw new NotFoundError("User not found");
   const rows = await listUserPtoDates(db, userId, start, end);
-  return computePtoBalance(userId, year, user.allowanceDays, rows);
+  return computePtoBalance(userId, year, user.allowanceDays, rows, user.sickAllowanceDays);
 };

@@ -107,13 +107,13 @@ export async function listActiveRollupUsers(db: DbOrTx, onlyUserId?: string): Pr
     .orderBy(asc(users.fullName), asc(users.id));
 }
 
-/** A9: the user's yearly vacation allowance (null = not set), or undefined if no such user. */
+/** Yearly vacation and sick allowances (null = not set), or undefined if no such user. */
 export async function findPtoAllowance(
   db: DbOrTx,
   userId: string,
-): Promise<{ allowanceDays: number | null } | undefined> {
+): Promise<{ allowanceDays: number | null; sickAllowanceDays: number | null } | undefined> {
   const [row] = await db
-    .select({ allowanceDays: users.ptoAllowanceDays })
+    .select({ allowanceDays: users.ptoAllowanceDays, sickAllowanceDays: users.sickAllowanceDays })
     .from(users)
     .where(eq(users.id, userId))
     .limit(1);

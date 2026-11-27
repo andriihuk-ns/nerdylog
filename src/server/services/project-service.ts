@@ -5,8 +5,10 @@ import type {
   ListProjects,
   ProjectView,
   ReplaceProjectMembers,
+  UpdateProjectMemberAllocation,
   UpsertProject,
 } from "@/contracts";
+import { MAX_MONTH_ALLOCATION_HOURS } from "@/contracts";
 import { getDb } from "@/server/db/client";
 import { findProjectRow, insertProject, listProjectRows, updateProject, type ProjectRow } from "@/server/db/queries/catalog";
 import { officeExists } from "@/server/db/queries/offices";
@@ -18,6 +20,7 @@ import {
   projectExists,
   projectHasTimeEntries,
   replaceProjectMemberRows,
+  updateProjectMemberAllocationRow,
 } from "@/server/db/queries/projects";
 import { InvalidInputError, NotFoundError } from "./errors";
 import { isForeignKeyViolation, isUniqueViolation } from "./pg-errors";
@@ -52,8 +55,25 @@ export const projectInputSchema = z.object({
   statusPromptOfficeId: z.uuid("Unknown office").nullable().optional(), // A16: null → UA office
 });
 
-function toView(row: ProjectRow, memberIds: string[], actorId: string): ProjectView {
-  return { ...row, memberIds, isMember: memberIds.includes(actorId) };
+const projectMemberAllocationSchema = z.object({
+  hoursPerMonth: z.number().min(0.5).max(MAX_MONTH_ALLOCATION_HOURS).multipleOf(0.5),
+});
+
+function toView(
+  row: ProjectRow,
+  members: Awaited<ReturnType<typeof listProjectMemberRows>>,
+  actorId: string,
+  includeMemberDetails: boolean,
+): ProjectView {
+  const memberIds = members.map((member) => member.userId);
+  return {
+    ...row,
+    memberIds,
+    memberAllocations: includeMemberDetails
+      ? members.map(({ userId, fullName, allocationHoursPerMonth }) => ({ userId, fullName, allocationHoursPerMonth }))
+      : [],
+    isMember: memberIds.includes(actorId),
+  };
 }
 
 /**
@@ -64,9 +84,13 @@ export const listProjects: ListProjects = async (actor, opts) => {
   const db = getDb();
   const rows = await listProjectRows(db, opts?.includeArchived ?? false);
   const members = await listProjectMemberRows(db, { projectIds: rows.map((r) => r.id) });
-  const byProject = new Map<string, string[]>();
-  for (const m of members) byProject.set(m.projectId, [...(byProject.get(m.projectId) ?? []), m.userId]);
-  return rows.map((r) => toView(r, byProject.get(r.id) ?? [], actor.userId));
+  const byProject = new Map<string, typeof members>();
+  for (const member of members) {
+    const projectMembers = byProject.get(member.projectId) ?? [];
+    projectMembers.push(member);
+    byProject.set(member.projectId, projectMembers);
+  }
+  return rows.map((row) => toView(row, byProject.get(row.id) ?? [], actor.userId, actor.role === "admin"));
 };
 
 /**
@@ -91,11 +115,7 @@ export const upsertProject: UpsertProject = async (actor, input) => {
     const row = await findProjectRow(db, projectId);
     if (!row) throw new NotFoundError("Project not found");
     const members = await listProjectMemberRows(db, { projectIds: [projectId] });
-    return toView(
-      row,
-      members.map((m) => m.userId),
-      actor.userId,
-    );
+    return toView(row, members, actor.userId, true);
   } catch (error) {
     if (isUniqueViolation(error, PROJECTS_SLACK_CHANNEL_UNIQUE)) {
       throw InvalidInputError.field("slackChannelId", "This channel is already linked to another project");
@@ -142,6 +162,17 @@ export const replaceProjectMembers: ReplaceProjectMembers = async (projectId, me
     await replaceProjectMemberRows(tx, projectId, userIds);
     return { members: userIds.length, skipped: slackIds.length - userIds.length };
   });
+};
+
+/** Admin can update a current member's monthly allocation; stale or nonmember ids are rejected. */
+export const updateProjectMemberAllocation: UpdateProjectMemberAllocation = async (actor, projectId, userId, hoursPerMonth) => {
+  assertAdmin(actor);
+  assertRowId(projectId, "Project");
+  assertRowId(userId, "User");
+  const input = parseInput(projectMemberAllocationSchema, { hoursPerMonth });
+  const member = await updateProjectMemberAllocationRow(getDb(), projectId, userId, input.hoursPerMonth);
+  if (!member) throw new NotFoundError("Project member not found");
+  return member;
 };
 
 /**

@@ -8,9 +8,9 @@ import { cn } from "@/lib/utils";
 import { refreshProjectMembersAction } from "@/app/(dashboard)/admin/project-actions";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useFormat } from "@/hooks/use-format";
 import { channelLabel, findChannel } from "./channel-options";
 import { useMemberRefreshText } from "./use-member-refresh-text";
+import { ProjectMemberAllocationControl } from "./project-member-allocation";
 
 interface Props {
   project: ProjectView;
@@ -25,7 +25,6 @@ interface Props {
 export function ProjectRow({ project: p, channels, offices, onEdit, onDelete, onToast }: Props) {
   const t = useTranslations("admin.projects");
   const tc = useTranslations("common");
-  const f = useFormat();
   const refreshText = useMemberRefreshText();
   const [refreshing, startRefresh] = useTransition();
   const label = p.slackChannelId ? channelLabel(channels, p.slackChannelId) : null;
@@ -52,7 +51,21 @@ export function ProjectRow({ project: p, channels, offices, onEdit, onDelete, on
         {t("asksAt", { time: p.statusPromptTime, office: office?.code ?? "UA" })}
       </td>
       <td className="px-3 whitespace-nowrap">{p.createdBy?.fullName ?? <span className="text-muted-foreground">—</span>}</td>
-      <td className="tabular px-3 text-right font-medium">{f.count(p.memberIds.length)}</td>
+      <td className="px-3 py-2 align-top">
+        {p.memberAllocations.length > 0 ? (
+          <ul className="flex flex-col gap-1.5">
+            {p.memberAllocations.map((member) => (
+              <ProjectMemberAllocationControl
+                key={member.userId}
+                projectId={p.id}
+                projectName={p.name}
+                member={member}
+                onToast={onToast}
+              />
+            ))}
+          </ul>
+        ) : <span className="text-sm text-muted-foreground">{t("noMembers")}</span>}
+      </td>
       <td className="px-3">{p.isActive ? tc("active") : tc("archived")}</td>
       <td className="px-2">
         <span className="flex justify-end gap-1">

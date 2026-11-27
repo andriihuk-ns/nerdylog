@@ -14,6 +14,7 @@ function user(id: string, patch: Partial<DirectoryUser> = {}): DirectoryUser {
     timezone: "Europe/Kyiv",
     dailyNormHours: 8,
     ptoAllowanceDays: null,
+    sickAllowanceDays: null,
     isActive: true,
     officeId: null,
     projectIds: [],

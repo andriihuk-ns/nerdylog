@@ -30,6 +30,7 @@ export const directoryPatchSchema = z
     role: roleSchema,
     dailyNormHours: z.number().gt(0).max(24).multipleOf(0.1),
     ptoAllowanceDays: z.number().min(0).max(365).multipleOf(0.1).nullable(),
+    sickAllowanceDays: z.number().min(0).max(365).multipleOf(0.1).nullable(),
     isActive: z.boolean(),
     timezone: z.string().refine(isValidTimeZone, "Unknown IANA timezone"),
     officeId: z.uuid("Unknown office").nullable(), // A15: null = no office (no holidays)

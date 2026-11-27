@@ -17,7 +17,8 @@ const directoryPatchSchema = z
   .object({
     role: roleSchema,
     dailyNormHours: z.number().min(0.25).max(24).multipleOf(0.25),
-    ptoAllowanceDays: z.number().min(0).max(366).multipleOf(0.5).nullable(),
+    ptoAllowanceDays: z.number().min(0).max(365).multipleOf(0.5).nullable(),
+    sickAllowanceDays: z.number().min(0).max(365).multipleOf(0.5).nullable(),
     isActive: z.boolean(),
     officeId: z.uuid().nullable(), // A15
   })

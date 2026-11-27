@@ -149,29 +149,28 @@ export function DirectoryRow({
       </Cell>
       <Cell align="right">
         <NumberCommitInput
-          key={view.dailyNormHours}
-          value={view.dailyNormHours}
-          label={t("normFor", { name: view.fullName })}
-          min={0.25}
-          max={24}
-          step={0.25}
-          format={f.hours}
-          onCommit={(n) =>
-            n !== null && update({ dailyNormHours: n })
-          }
-        />
-      </Cell>
-      <Cell align="right">
-        <NumberCommitInput
           key={view.ptoAllowanceDays ?? "none"}
           value={view.ptoAllowanceDays}
           label={t("allowanceFor", { name: view.fullName })}
           min={0}
-          max={366}
+          max={365}
           step={0.5}
           allowEmpty
           format={f.count}
           onCommit={(n) => update({ ptoAllowanceDays: n })}
+        />
+      </Cell>
+      <Cell align="right">
+        <NumberCommitInput
+          key={view.sickAllowanceDays ?? "sick-none"}
+          value={view.sickAllowanceDays}
+          label={t("sickAllowanceFor", { name: view.fullName })}
+          min={0}
+          max={365}
+          step={0.5}
+          allowEmpty
+          format={f.count}
+          onCommit={(n) => update({ sickAllowanceDays: n })}
         />
       </Cell>
     </tr>

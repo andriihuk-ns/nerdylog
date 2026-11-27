@@ -14,6 +14,7 @@ const directoryColumns = {
   timezone: users.timezone,
   dailyNormHours: users.dailyNormHours,
   ptoAllowanceDays: users.ptoAllowanceDays,
+  sickAllowanceDays: users.sickAllowanceDays,
   isActive: users.isActive,
   officeId: users.officeId, // A15
 };
@@ -35,7 +36,7 @@ export async function findDirectoryUser(db: DbOrTx, id: string): Promise<Directo
 }
 
 export type DirectoryPatch = Partial<
-  Pick<UserInsert, "role" | "dailyNormHours" | "ptoAllowanceDays" | "isActive" | "timezone" | "officeId">
+  Pick<UserInsert, "role" | "dailyNormHours" | "ptoAllowanceDays" | "sickAllowanceDays" | "isActive" | "timezone" | "officeId">
 >;
 
 /** Returns the updated row, or undefined when no such user. */

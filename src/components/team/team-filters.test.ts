@@ -14,6 +14,7 @@ const dir = (id: string, projectIds: string[], title: string | null = null): Dir
   timezone: "Europe/Kyiv",
   dailyNormHours: 8,
   ptoAllowanceDays: null,
+  sickAllowanceDays: null,
   isActive: true,
   officeId: null,
   projectIds,
