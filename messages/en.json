@@ -407,7 +407,7 @@
       "private": "Private",
       "privateInvite": "Private channel: run /invite @nerdylog in #{channel}, then pick it again",
       "privateInviteUnknown": "Private channel: run /invite @nerdylog in the channel, then pick it again",
-      "privateHint": "Private channels appear only after you run /invite @nerdylog in them. The list refreshes every 10 minutes.",
+      "privateHint": "Private channels appear after you run /invite @nerdylog in them. The list is checked when you open this menu.",
       "checking": "Checking for new channels…",
       "refreshFailed": "Couldn't check for new channels. The list may be out of date.",
       "notFound": "Channel not found"

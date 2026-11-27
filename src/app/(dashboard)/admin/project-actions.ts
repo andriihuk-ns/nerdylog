@@ -14,11 +14,11 @@ import type { MemberRefresh } from "./sync-result";
 
 const ADMIN = ["admin"] as const;
 
-/** Fetches the current public and bot-visible private channels when a project picker opens. */
+/** Refreshes public and bot-visible private channels when an admin opens a project picker. */
 export async function refreshSlackChannelsAction(): Promise<ActionResult<SlackChannelOption[]>> {
   try {
     await requireActor(ADMIN);
-    return ok(await listSlackChannelsCached());
+    return ok(await listSlackChannelsCached({ refresh: true }));
   } catch (err) {
     return actionError(err);
   }
