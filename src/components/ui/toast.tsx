@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { X } from "lucide-react";
+import { LoaderCircle, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -30,9 +30,12 @@ export function Toast({ toast, onDismiss }: { toast: ToastState | null; onDismis
           className={cn(
             "pointer-events-auto flex max-w-md items-center gap-3 rounded-lg border bg-popover py-1 pr-1 pl-4 text-popover-foreground shadow-[0_8px_24px_rgb(0_0_0/0.08)] dark:shadow-[0_8px_24px_rgb(0_0_0/0.4)]",
             "animate-in fade-in slide-in-from-bottom-2 duration-[var(--duration-base)]",
-            toast.tone === "error" && "border-destructive/40",
+            toast.tone === "error" && "bg-destructive/10",
           )}
         >
+          {toast.tone === "loading" ? (
+            <LoaderCircle aria-hidden className="size-4 shrink-0 animate-spin motion-reduce:animate-pulse" />
+          ) : null}
           <p className={cn("py-2", toast.tone === "error" && "text-destructive")}>{toast.message}</p>
           {toast.onRetry ? (
             <Button

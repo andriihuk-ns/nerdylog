@@ -443,7 +443,10 @@
     "week": "Export week",
     "month": "Export month",
     "csv": "CSV",
-    "pdf": "PDF"
+    "pdf": "PDF",
+    "preparing": "Preparing {format}…",
+    "started": "{format} is ready. Your download has started.",
+    "failed": "Couldn't prepare {format}. Please try again."
   },
   "projectHours": {
     "title": "Hours by project",
