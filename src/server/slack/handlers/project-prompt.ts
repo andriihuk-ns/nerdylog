@@ -1,5 +1,6 @@
 import type { IsoDate, ProjectView } from "@/contracts";
 import { buildProjectPrompt } from "../blocks/project-prompt";
+import { sendDm, showOnlyTo } from "../private-delivery";
 import type { SlackActorProfile, SlackDeps } from "../types";
 import { openModalFast } from "./modal-loader";
 import { promptDenial } from "./project-access";
@@ -15,26 +16,33 @@ function errorMessage(error: unknown): string {
 }
 
 /**
- * A16 cron: `claimProjectPrompts` returns only projects newly claimed for their office-local day
- * (project_prompts dedup), so a re-run in the same window posts nothing twice. One message per
- * project channel; one failed post never stops the others (a failed project is not retried today).
+ * A16/A31 cron: `claimProjectPrompts` returns only projects newly claimed for their office-local day
+ * (project_prompts dedup). Each member gets the prompt in the project channel visible only to them,
+ * plus a copy in the bot DM; nothing is posted publicly. A project counts as failed when it has no
+ * recipient or a DM could not be delivered (not retried until the schedule changes).
  */
 export async function runProjectPrompts(deps: Pick<SlackDeps, "slack" | "tempo" | "now">): Promise<ProjectPromptResult> {
   const targets = await deps.tempo.claimProjectPrompts(deps.now());
-  const results = await Promise.allSettled(
+  const delivered = await Promise.all(
     targets.map(async (target) => {
       const message = buildProjectPrompt(target);
-      await deps.slack.postMessage(target.slackChannelId, message.text, message.blocks);
+      const results = await Promise.allSettled(
+        target.memberSlackIds.map(async (slackUserId) => {
+          await showOnlyTo(deps, target.slackChannelId, slackUserId, message);
+          await sendDm(deps, slackUserId, message);
+        }),
+      );
+      for (const r of results) {
+        if (r.status === "rejected") {
+          console.error("cron/morning-ping: project prompt failed", target.slackChannelId, errorMessage(r.reason));
+        }
+      }
+      if (results.length === 0) console.error("cron/morning-ping: project prompt has no members", target.slackChannelId);
+      return results.length > 0 && results.every((r) => r.status === "fulfilled");
     }),
   );
-  let failed = 0;
-  results.forEach((r, i) => {
-    if (r.status === "rejected") {
-      failed += 1;
-      console.error("cron/morning-ping: project prompt failed", targets[i].slackChannelId, errorMessage(r.reason));
-    }
-  });
-  return { claimed: targets.length, posted: targets.length - failed, failed };
+  const posted = delivered.filter(Boolean).length;
+  return { claimed: targets.length, posted, failed: targets.length - posted };
 }
 
 /**

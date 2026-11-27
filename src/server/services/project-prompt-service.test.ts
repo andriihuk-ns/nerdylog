@@ -5,6 +5,7 @@ vi.mock("@/server/db/queries/project-prompts", () => ({
   listPromptProjectRows: vi.fn(),
   listOfficeZones: vi.fn(),
   claimProjectPromptRows: vi.fn(),
+  listPromptRecipientRows: vi.fn(),
 }));
 vi.mock("@/server/db/queries/catalog", () => ({ listOfficeHolidayDates: vi.fn() }));
 
@@ -27,6 +28,7 @@ beforeEach(() => {
     { id: "pl", code: "PL", timezone: "Europe/Warsaw" },
   ]);
   vi.mocked(catalog.listOfficeHolidayDates).mockResolvedValue([]);
+  vi.mocked(prompts.listPromptRecipientRows).mockResolvedValue([{ projectId: "a", slackUserId: "U_A" }]);
   vi.mocked(prompts.claimProjectPromptRows).mockImplementation(async (_db, rows) => rows.map((r) => r.projectId));
 });
 
@@ -40,9 +42,9 @@ describe("claimProjectPrompts", () => {
       { projectId: "c", promptDate: "2026-11-30" },
     ]);
     expect(targets).toEqual([
-      { projectId: "a", projectName: "A", slackChannelId: "CA", localDate: "2026-11-30", logDate: "2026-11-27" },
-      { projectId: "b", projectName: "B", slackChannelId: "CB", localDate: "2026-11-30", logDate: "2026-11-27" },
-      { projectId: "c", projectName: "C", slackChannelId: "CC", localDate: "2026-11-30", logDate: "2026-11-27" },
+      { projectId: "a", projectName: "A", slackChannelId: "CA", localDate: "2026-11-30", logDate: "2026-11-27", memberSlackIds: ["U_A"] },
+      { projectId: "b", projectName: "B", slackChannelId: "CB", localDate: "2026-11-30", logDate: "2026-11-27", memberSlackIds: [] },
+      { projectId: "c", projectName: "C", slackChannelId: "CC", localDate: "2026-11-30", logDate: "2026-11-27", memberSlackIds: [] },
     ]);
   });
 

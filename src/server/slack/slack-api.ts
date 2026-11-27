@@ -29,8 +29,8 @@ export function createSlackApi(client: WebClient = getSlackClient()): SlackApi {
       });
       return res.ts ?? null;
     },
-    async postEphemeral(channel, slackUserId, text) {
-      await client.chat.postEphemeral({ channel, user: slackUserId, text });
+    async postEphemeral(channel, slackUserId, text, blocks) {
+      await client.chat.postEphemeral({ channel, user: slackUserId, text, ...(blocks?.length ? { blocks } : {}) });
     },
     async openDm(slackUserId) {
       const res = await client.conversations.open({ users: slackUserId });

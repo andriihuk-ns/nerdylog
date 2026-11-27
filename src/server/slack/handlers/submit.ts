@@ -2,7 +2,9 @@ import type { SlackSubmissionInput } from "@/contracts";
 import { InvalidInputError } from "@/server/services/errors";
 import { buildProjectLinesMessage, groupProjectLines } from "../blocks/project-lines";
 import { buildStandupCard } from "../blocks/standup-card";
+import { formatHours } from "../dates";
 import { localeOf, t } from "../i18n";
+import { sendDm, showOnlyTo } from "../private-delivery";
 import type { SlackActorProfile, SlackDeps } from "../types";
 import { notMemberMessage } from "./project-access";
 
@@ -15,32 +17,39 @@ function isNotMemberError(error: unknown): boolean {
 }
 
 /**
- * A14: project-lines and standup-card posts go to SHARED channels and stay English on purpose.
- * A17: both are posted with unfurls on, so linked Jira / Figma / Asana / Drive items preview.
- * Only the personal failure DM below uses the recipient's locale.
- *
- * A11 project channels: each project that has a channel gets one message with only that
- * project's work lines. Posts run independently; one failure never blocks the others.
+ * A31: the submitter's own work lines are never posted publicly. Each project channel shows that
+ * project's lines only to the submitter, and the bot DM gets one "Logged Xh" copy of all of them.
+ * One failing delivery never blocks the others.
  */
-export async function postProjectLines(
+export async function sendLoggedLines(
   deps: SlackDeps,
   profile: SlackActorProfile,
   input: SlackSubmissionInput,
 ): Promise<void> {
-  const grouped = groupProjectLines(profile.fullName, input.entries);
-  if (grouped.size === 0) return;
-  const channels = await deps.tempo.listProjectChannels();
-  const posts = channels
-    .filter((c) => grouped.has(c.projectId))
-    .map(async (c) => {
-      const msg = buildProjectLinesMessage(grouped.get(c.projectId)!);
-      try {
-        await deps.slack.postMessage(c.slackChannelId, msg.text, msg.blocks, { unfurl: true });
-      } catch (error) {
-        console.error("slack: project post failed", c.slackChannelId, errorMessage(error));
-      }
-    });
-  await Promise.all(posts);
+  const work = input.entries.filter((e) => e.entryType === "work" && e.projectId);
+  if (work.length === 0) return;
+  const locale = localeOf(profile);
+  const projects = await deps.tempo.listProjects(profile);
+  const names = new Map(projects.map((p) => [p.id, p.name]));
+  const header = (entries: typeof work) =>
+    t(locale, "common.loggedHeader", { hours: formatHours(entries.reduce((sum, e) => sum + e.hours, 0), locale) });
+  const byProject = [...new Set(work.map((e) => e.projectId!))].map((projectId) => {
+    const entries = work.filter((e) => e.projectId === projectId);
+    const lines = groupProjectLines(names.get(projectId) ?? "Project", entries).get(projectId)!;
+    return { projectId, entries, lines };
+  });
+  const channels = new Map((await deps.tempo.listProjectChannels()).map((c) => [c.projectId, c.slackChannelId]));
+  const ephemerals = byProject.map(async ({ projectId, entries, lines }) => {
+    const channel = channels.get(projectId);
+    if (channel) await showOnlyTo(deps, channel, profile.slackUserId, buildProjectLinesMessage([header(entries), ...lines]));
+  });
+  const dm = buildProjectLinesMessage([header(work), ...byProject.flatMap((p) => p.lines)]);
+  await Promise.all([
+    ...ephemerals,
+    sendDm(deps, profile.slackUserId, dm, { unfurl: true }).catch((error) => {
+      console.error("slack: logged DM failed", errorMessage(error));
+    }),
+  ]);
 }
 
 /**
@@ -83,15 +92,15 @@ export async function broadcastStandup(
   return ts;
 }
 
-/** All channel posts for a saved submission; each branch fails on its own. */
+/** All messages for a saved submission; each branch fails on its own. */
 export async function routeSubmission(
   deps: SlackDeps,
   profile: SlackActorProfile,
   input: SlackSubmissionInput,
 ): Promise<void> {
   await Promise.all([
-    postProjectLines(deps, profile, input).catch((error) => {
-      console.error("slack: project routing failed", errorMessage(error));
+    sendLoggedLines(deps, profile, input).catch((error) => {
+      console.error("slack: logged lines failed", errorMessage(error));
     }),
     broadcastStandup(deps, profile, input).catch((error) => {
       console.error("slack: standup broadcast failed", errorMessage(error));
@@ -101,7 +110,7 @@ export async function routeSubmission(
 
 /**
  * Deferred half of a view_submission (runs inside `after()`): write through the standup
- * service in one transaction (A1), then route channel posts (A11). A duplicate view id (Slack retry) is a no-op.
+ * service in one transaction (A1), then send the messages (A11/A31). A duplicate view id (Slack retry) is a no-op.
  */
 export async function processSubmission(
   deps: SlackDeps,

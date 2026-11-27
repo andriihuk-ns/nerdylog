@@ -1,7 +1,7 @@
 import type { ClaimProjectPrompts, IsoDate } from "@/contracts";
 import { getDb } from "@/server/db/client";
 import { listOfficeHolidayDates } from "@/server/db/queries/catalog";
-import { claimProjectPromptRows, listOfficeZones, listPromptProjectRows } from "@/server/db/queries/project-prompts";
+import { claimProjectPromptRows, listOfficeZones, listPromptProjectRows, listPromptRecipientRows } from "@/server/db/queries/project-prompts";
 import { addDays } from "./calendar";
 import { promptWindowCandidates, selectPromptTargets } from "./project-prompt-decision";
 
@@ -39,5 +39,10 @@ export const claimProjectPrompts: ClaimProjectPrompts = async (now) => {
       targets.map((t) => ({ projectId: t.projectId, promptDate: t.localDate })),
     ),
   );
-  return targets.filter((t) => claimed.has(t.projectId));
+  const due = targets.filter((t) => claimed.has(t.projectId));
+  const recipients = await listPromptRecipientRows(db, due.map((t) => t.projectId));
+  return due.map((t) => ({
+    ...t,
+    memberSlackIds: recipients.filter((r) => r.projectId === t.projectId).map((r) => r.slackUserId),
+  }));
 };

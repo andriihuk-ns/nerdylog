@@ -47,7 +47,7 @@ oauth_config:
       - email # email claim → users.email
       - profile # name, picture, https://slack.com/user_id claims → users row
     bot:
-      - chat:write # A16 daily status prompt per project channel, ephemeral replies (chat.postEphemeral), project lines
+      - chat:write # A31 private status prompts and logged lines (chat.postEphemeral + DM)
       #   and the standup card (A17: posted with unfurl_links/unfurl_media), plus failure DMs, as nerdylog.
       #   Channels (general standup + one per project) are chosen in /admin (amendment A11). nerdylog
       #   joins public ones itself; private ones need `/invite @nerdylog`. No chat:write.public, so

@@ -32,7 +32,7 @@ export interface SlackApi {
   /** chat.postMessage; returns the message ts. `unfurl` (A17) sets unfurl_links + unfurl_media. */
   postMessage(channel: string, text: string, blocks: SlackBlock[], options?: PostOptions): Promise<string | null>;
   /** chat.postEphemeral: a message only `slackUserId` sees in `channel`. */
-  postEphemeral(channel: string, slackUserId: string, text: string): Promise<void>;
+  postEphemeral(channel: string, slackUserId: string, text: string, blocks?: SlackBlock[]): Promise<void>;
   /** conversations.open for a DM (failure notices); returns the channel id. */
   openDm(slackUserId: string): Promise<string>;
   /** conversations.info → channel name without "#"; null on any error or timeout. Never throws. */

@@ -1,6 +1,6 @@
-import { and, asc, eq, isNotNull } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, isNotNull } from "drizzle-orm";
 import type { IsoDate } from "@/contracts";
-import { offices, projectPrompts, projects } from "../schema";
+import { offices, projectMembers, projectPrompts, projects, users } from "../schema";
 import type { DbOrTx } from "./types";
 
 export interface PromptProjectRow {
@@ -46,4 +46,22 @@ export async function claimProjectPromptRows(
     .onConflictDoNothing()
     .returning({ projectId: projectPrompts.projectId });
   return inserted.map((r) => r.projectId);
+}
+
+/** A31: drops claims from `since` on, so a rescheduled prompt can be sent again the same day. */
+export async function deleteProjectPromptsSince(db: DbOrTx, projectId: string, since: IsoDate): Promise<void> {
+  await db.delete(projectPrompts).where(and(eq(projectPrompts.projectId, projectId), gte(projectPrompts.promptDate, since)));
+}
+
+/** A31: Slack ids of the active members of each project; the prompt goes to them privately. */
+export async function listPromptRecipientRows(
+  db: DbOrTx,
+  projectIds: readonly string[],
+): Promise<Array<{ projectId: string; slackUserId: string }>> {
+  if (projectIds.length === 0) return [];
+  return db
+    .select({ projectId: projectMembers.projectId, slackUserId: users.slackUserId })
+    .from(projectMembers)
+    .innerJoin(users, eq(users.id, projectMembers.userId))
+    .where(and(inArray(projectMembers.projectId, [...projectIds]), eq(users.isActive, true)));
 }

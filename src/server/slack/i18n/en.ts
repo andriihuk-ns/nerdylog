@@ -15,6 +15,7 @@ export const en = {
   "common.formExpired": "This form has expired. Please open it again.",
   "common.formNotYours": "This form belongs to someone else.",
   "common.loadFailed": "Something went wrong loading nerdylog. Please try again.",
+  "common.loggedHeader": "Logged {hours}",
   "common.saveFailedDm": "nerdylog could not save your last submission. Please try again or use the web panel.",
 
   // Modal titles (Slack caps titles at 24 characters)

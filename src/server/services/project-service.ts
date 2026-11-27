@@ -11,6 +11,7 @@ import type {
 import { MAX_MONTH_ALLOCATION_HOURS, roundToQuarter } from "@/contracts";
 import { getDb } from "@/server/db/client";
 import { findProjectRow, insertProject, listProjectRows, updateProject, type ProjectRow } from "@/server/db/queries/catalog";
+import { deleteProjectPromptsSince } from "@/server/db/queries/project-prompts";
 import { officeExists } from "@/server/db/queries/offices";
 import {
   deleteProjectRow,
@@ -22,6 +23,7 @@ import {
   replaceProjectMemberRows,
   updateProjectMemberAllocationRow,
 } from "@/server/db/queries/projects";
+import { addDays } from "./calendar";
 import { InvalidInputError, NotFoundError } from "./errors";
 import { isForeignKeyViolation, isUniqueViolation } from "./pg-errors";
 import { assertAdmin } from "./rbac";
@@ -112,10 +114,15 @@ export const upsertProject: UpsertProject = async (actor, input) => {
     throw InvalidInputError.field("statusPromptOfficeId", "Unknown office");
   }
   try {
+    const before = id ? await findProjectRow(db, id) : undefined;
     const projectId = id ?? (await insertProject(db, { ...values, createdBy: actor.userId }));
     if (id && !(await updateProject(db, id, values))) throw new NotFoundError("Project not found");
     const row = await findProjectRow(db, projectId);
     if (!row) throw new NotFoundError("Project not found");
+    if (before && promptScheduleChanged(before, row)) {
+      // Yesterday in UTC covers "today" in every zone west of it.
+      await deleteProjectPromptsSince(db, projectId, addDays(new Date().toISOString().slice(0, 10), -1));
+    }
     const members = await listProjectMemberRows(db, { projectIds: [projectId] });
     return toView(row, members, actor.userId, true);
   } catch (error) {
@@ -128,6 +135,15 @@ export const upsertProject: UpsertProject = async (actor, input) => {
     throw error;
   }
 };
+
+/** A31: a new prompt time, zone or office re-arms the status prompt. */
+function promptScheduleChanged(a: ProjectRow, b: ProjectRow): boolean {
+  return (
+    a.statusPromptTime !== b.statusPromptTime ||
+    a.statusPromptTimezone !== b.statusPromptTimezone ||
+    a.statusPromptOfficeId !== b.statusPromptOfficeId
+  );
+}
 
 /**
  * Contract DeleteProject (A16, admin). Only a project without time entries can go; otherwise

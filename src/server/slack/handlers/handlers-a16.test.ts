@@ -28,6 +28,7 @@ const target = (over: Partial<ProjectPromptTarget> = {}): ProjectPromptTarget =>
   slackChannelId: "C_DTP",
   localDate: "2026-11-26",
   logDate: "2026-11-25",
+  memberSlackIds: ["U123"],
   ...over,
 });
 
@@ -46,13 +47,14 @@ afterEach(() => {
 });
 
 describe("A16 project status prompt (cron)", () => {
-  it("posts one English message per claimed project with header, line and a primary button", async () => {
+  it("A31: sends each project's prompt privately: ephemeral in the channel plus a DM, never a public post", async () => {
     const { deps, slack, tempo } = fakeDeps();
     tempo.claimProjectPrompts.mockResolvedValueOnce([target(), target({ projectId: OTHER_PROJECT_ID, projectName: "Changelly", slackChannelId: "C_CNG" })]);
     expect(await runProjectPrompts(deps)).toEqual({ claimed: 2, posted: 2, failed: 0 });
     expect(tempo.claimProjectPrompts).toHaveBeenCalledWith(deps.now());
-    expect(slack.postMessage.mock.calls.map((c) => (c as unknown[])[0])).toEqual(["C_DTP", "C_CNG"]);
-    expect(tempo.resolveUser).not.toHaveBeenCalled(); // shared channel, no per-user lookup
+    expect(slack.postEphemeral.mock.calls.map((c) => [c[0], c[1]])).toEqual([["C_DTP", "U123"], ["C_CNG", "U123"]]);
+    expect(slack.postMessage.mock.calls.map((c) => (c as unknown[])[0])).toEqual(["D_U123", "D_U123"]);
+    expect(tempo.resolveUser).not.toHaveBeenCalled(); // recipients come with the target, no per-user lookup
 
     const [, text, blocks] = slack.postMessage.mock.calls[0] as unknown as [string, string, Json[]];
     expect(text).toBe("Daily status · DogTeamPro: Log yesterday's hours.");
@@ -64,13 +66,23 @@ describe("A16 project status prompt (cron)", () => {
     expect(JSON.parse(button.value as string)).toEqual({ projectId: PROJECT_ID, logDate: "2026-11-25" });
   });
 
-  it("continues past a failed channel post and counts it", async () => {
+  it("continues past a failed DM and counts it", async () => {
     const { deps, slack, tempo } = fakeDeps();
     const errors = vi.spyOn(console, "error").mockImplementation(() => undefined);
     tempo.claimProjectPrompts.mockResolvedValueOnce([target({ slackChannelId: "C_GONE" }), target()]);
     slack.postMessage.mockRejectedValueOnce(new Error("not_in_channel"));
     expect(await runProjectPrompts(deps)).toEqual({ claimed: 2, posted: 1, failed: 1 });
     expect(errors).toHaveBeenCalledWith("cron/morning-ping: project prompt failed", "C_GONE", "not_in_channel");
+    errors.mockRestore();
+  });
+
+  it("A31: a failed ephemeral still delivers the DM; a project without members counts as failed", async () => {
+    const { deps, slack, tempo } = fakeDeps();
+    const errors = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    tempo.claimProjectPrompts.mockResolvedValueOnce([target(), target({ memberSlackIds: [] })]);
+    slack.postEphemeral.mockRejectedValueOnce(new Error("user_not_in_channel"));
+    expect(await runProjectPrompts(deps)).toEqual({ claimed: 2, posted: 1, failed: 1 });
+    expect(slack.postMessage).toHaveBeenCalledTimes(1);
     errors.mockRestore();
   });
 
@@ -229,11 +241,11 @@ describe("A16 required inputs (view_submission)", () => {
   });
 });
 
-describe("A17 artifact links in shared posts", () => {
+describe("A17 artifact links in bot posts", () => {
   const FIGMA = "https://www.figma.com/design/AbC123/Map-modal-v2?node-id=1-2";
   const JIRA = "https://acme.atlassian.net/browse/DOG-1364";
 
-  it("project lines render Figma + Jira labels as Slack links and post with unfurls", async () => {
+  it("logged lines render Figma + Jira labels as Slack links and DM with unfurls", async () => {
     const { deps, slack } = fakeDeps();
     const input: SlackSubmissionInput = {
       viewId: "V1",
@@ -255,7 +267,7 @@ describe("A17 artifact links in shared posts", () => {
     };
     await routeSubmission(deps, profile, input);
     const [channel, text, , options] = slack.postMessage.mock.calls[0] as unknown as [string, string, unknown, unknown];
-    expect(channel).toBe("C_DTP");
+    expect(channel).toBe("D_U123");
     expect(text).toContain("|Figma · Map modal v2>");
     expect(text).toContain(`<${JIRA}|Jira · DOG-1364>`);
     expect(text).toContain(" &amp; fix ");

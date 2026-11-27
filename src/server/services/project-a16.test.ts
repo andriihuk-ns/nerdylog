@@ -19,6 +19,7 @@ vi.mock("@/server/db/queries/projects", () => ({
   findUserIdsBySlackIds: vi.fn(),
   replaceProjectMemberRows: vi.fn(),
 }));
+vi.mock("@/server/db/queries/project-prompts", () => ({ deleteProjectPromptsSince: vi.fn() }));
 vi.mock("@/server/db/queries/offices", () => ({
   listOfficeViews: vi.fn(),
   findOfficeView: vi.fn(),
@@ -32,6 +33,7 @@ vi.mock("@/server/db/queries/offices", () => ({
 import * as cat from "@/server/db/queries/catalog";
 import * as off from "@/server/db/queries/offices";
 import * as proj from "@/server/db/queries/projects";
+import * as prompts from "@/server/db/queries/project-prompts";
 import { ForbiddenError, InvalidInputError, NotFoundError } from "./errors";
 import { listOffices, upsertOffice } from "./office-service";
 import { deleteProject, listProjects, upsertProject } from "./project-service";
@@ -71,6 +73,14 @@ beforeEach(() => {
 });
 
 describe("project status prompt fields (A16)", () => {
+  it("A31: a changed prompt time re-arms today's prompt; an unchanged one does not", async () => {
+    await upsertProject(admin, { id: PROJECT, name: "A", slackChannelId: "C0123ABCD" });
+    expect(prompts.deleteProjectPromptsSince).not.toHaveBeenCalled();
+    vi.mocked(cat.findProjectRow).mockResolvedValueOnce(row).mockResolvedValueOnce({ ...row, statusPromptTime: "14:45" });
+    await upsertProject(admin, { id: PROJECT, name: "A", slackChannelId: "C0123ABCD", statusPromptTime: "14:45" });
+    expect(prompts.deleteProjectPromptsSince).toHaveBeenCalledWith(expect.anything(), PROJECT, expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/));
+  });
+
   it("listProjects passes prompt time, office and hasTimeEntries through", async () => {
     const [view] = await listProjects(admin);
     expect(view).toMatchObject({ statusPromptTime: "09:15", statusPromptOfficeId: OFFICE, hasTimeEntries: true });

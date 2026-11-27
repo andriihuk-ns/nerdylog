@@ -32,8 +32,8 @@ export interface ProjectPromptInput {
 const HEADER_MAX = 150;
 
 /**
- * A16: the daily status prompt posted once per project in its channel. SHARED channel, so the
- * copy stays English (A14); the modal it opens is in the clicker's own locale.
+ * A16/A31: the daily status prompt of a project, sent privately to each member. The copy stays
+ * English; the modal it opens is in the clicker's own locale.
  */
 export function buildProjectPrompt({ projectId, projectName, logDate }: ProjectPromptInput): SlackMessage {
   const title = `Daily status · ${projectName}`.slice(0, HEADER_MAX);

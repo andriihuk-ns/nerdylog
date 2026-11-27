@@ -16,6 +16,7 @@ export const uk: Messages = {
   "common.formExpired": "Ця форма вже застаріла. Відкрий її ще раз.",
   "common.formNotYours": "Ця форма належить комусь іншому.",
   "common.loadFailed": "Не вдалося завантажити nerdylog. Спробуй ще раз.",
+  "common.loggedHeader": "Записано {hours}",
   "common.saveFailedDm": "nerdylog не зміг зберегти твій останній запис. Спробуй ще раз або скористайся веб-панеллю.",
 
   // Modal titles (≤ 24 characters)
