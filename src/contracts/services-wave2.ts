@@ -156,22 +156,6 @@ export type UpsertOffice = (actor: Actor, input: { id?: string; code: string; na
 /** admin. Only when the office has no members and no holidays; otherwise InvalidInputError. */
 export type DeleteOffice = (actor: Actor, id: string) => Promise<void>;
 
-// ── src/server/services/ping-service.ts (system, no actor; cron only) ────────
-export interface PingTarget {
-  userId: string;
-  slackUserId: string;
-  fullName: string;
-  locale: import("./locale").Locale; // A14
-  timezone: string;
-  localDate: IsoDate; // today in the user's timezone
-  logDate: IsoDate; // previousBusinessDay(localDate)
-}
-/**
- * Amendments A4/A10. Returns active users whose local time is in [09:30, 11:00) (amendment A10) on a weekday,
- * not a company holiday, not on PTO that day, and inserts their daily_pings row
- * (ON CONFLICT DO NOTHING) — only users newly claimed are returned.
- */
-export type ClaimMorningPings = (now: Date) => Promise<PingTarget[]>; // A16: no longer called (personal DM removed)
 
 // ── A16: per-project status prompt in the project channel ───────────────────
 export interface ProjectPromptTarget {
