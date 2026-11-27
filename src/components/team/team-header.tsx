@@ -42,7 +42,7 @@ export function TeamHeader({ month, today, drawerDate, filters, exportScopeHint,
   return (
     <div className="flex flex-col gap-4">
       <h1 className="sr-only">{tm("team")}</h1>
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center">
         <PeriodSwitcher
           unit="month"
           label={f.month(month)}
@@ -57,11 +57,11 @@ export function TeamHeader({ month, today, drawerDate, filters, exportScopeHint,
             ...(filters.project ? { project: filters.project } : {}),
           }}
         />
-        <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:items-center">
+        <TeamFilterBar month={month} drawerDate={drawerDate} filters={filters} projects={projects} className="min-w-0 flex-1" />
+        <div className="grid grid-cols-1 gap-2 md:ml-auto md:flex md:flex-wrap md:items-center">
           <ExportMenus groups={exports} />
         </div>
       </div>
-      <TeamFilterBar month={month} drawerDate={drawerDate} filters={filters} projects={projects} />
       {exportScopeHint ? <p className="text-xs text-muted-foreground">{exportScopeHint}</p> : null}
     </div>
   );

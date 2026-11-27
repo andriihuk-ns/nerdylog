@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { IsoDate } from "@/contracts";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { cn } from "@/lib/utils";
 import { SearchInput } from "@/components/shell/search-input";
 import { FilterSelect, type FilterOption } from "@/components/shell/filter-select";
 import { teamHref, type TeamFilters } from "./team-summary";
@@ -16,10 +17,11 @@ interface Props {
   drawerDate: IsoDate | null;
   filters: TeamFilters;
   projects: FilterOption[]; // value = project id
+  className?: string;
 }
 
 /** A15 Team search + project filter. Written to the URL (debounced) so grid and drawer filter together. */
-export function TeamFilterBar({ month, drawerDate, filters, projects }: Props) {
+export function TeamFilterBar({ month, drawerDate, filters, projects, className }: Props) {
   const router = useRouter();
   const t = useTranslations("team.filters");
   const [query, setQuery] = useState(filters.q);
@@ -31,7 +33,7 @@ export function TeamFilterBar({ month, drawerDate, filters, projects }: Props) {
   }, [debounced, filters, month, drawerDate, router]);
 
   return (
-    <div role="search" className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+    <div role="search" className={cn("flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center", className)}>
       <SearchInput value={query} onChange={setQuery} label={t("search")} className="w-full sm:min-w-56 sm:max-w-sm sm:flex-1" />
       <FilterSelect
         label={t("project")}
