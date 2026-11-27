@@ -28,6 +28,7 @@ export function ProjectDetailPanel({ project, channels }: Props) {
   const refreshText = useMemberRefreshText();
   const { toast, show, dismiss } = useToast();
   const channel = project.slackChannelId ? channelLabel(channels, project.slackChannelId) : t("noChannel");
+  const channelDisplay = channel.startsWith("#") ? channel.slice(1) : channel;
 
   function refreshMembers() {
     startRefresh(async () => {
@@ -55,7 +56,7 @@ export function ProjectDetailPanel({ project, channels }: Props) {
           <dl className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
             <div className="inline-flex items-center gap-1.5">
               <dt className="sr-only">{t("columns.channel")}</dt>
-              <dd className="inline-flex items-center gap-1.5"><Hash aria-hidden className="size-4 shrink-0" />{channel}</dd>
+              <dd className="inline-flex items-center gap-1.5"><Hash aria-hidden className="size-4 shrink-0" />{channelDisplay}</dd>
             </div>
             <div className="inline-flex items-center gap-1.5">
               <dt className="sr-only">{t("team")}</dt>
