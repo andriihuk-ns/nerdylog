@@ -122,7 +122,7 @@ Layout: `DogTeamPro  32.0h / 40.0h · 80%` on one line (Body-strong name, Numeri
 Layout:
 - Header: week switcher (`‹`, `Nov 23 – 29, 2026`, `›`, `Today`), right: weekly total `32.5h` (Display, tabular).
 - Day-status row: one pill per day (`Work`, `Vac`, `Sick`, `Hol`) above the grid.
-- Grid: rows = projects (sticky first column, 200 px), columns = Mon–Sun (min 72 px, right-aligned) + `Total` (bold). Footer row = daily totals. Weekend columns use `muted` background at 50 %.
+- Grid: rows = projects (sticky first column, 200 px), columns = Mon–Sun (min 240 px, right-aligned) + `Total` (bold). Footer row = daily totals. Weekend columns use `muted` background at 50 %.
 - The `Add project` control stays in the sticky project column while the day columns scroll horizontally on phones.
 - PTO day: whole column tinted `pto-subtle` (`holiday-subtle` for holidays), cells show `—` and are read-only; the pill shows the label.
 - Cap pills for the user's projects sit below the grid (6.1).

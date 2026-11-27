@@ -7,7 +7,7 @@ export const STICKY_PROJECT_COLUMN = `sticky left-0 z-10 w-[132px] min-w-[132px]
 export const STICKY_TOTAL_COLUMN = `sticky right-0 z-20 w-24 min-w-24 max-w-24 bg-card text-right ${PINNED_EDGE_LEFT}`;
 
 /**
- * With `table-fixed`, the unsized day columns split the leftover width equally, so task text never
- * changes it. The minimum keeps each day at least 112 px (project + 7 × 112 + total).
+ * With `table-fixed`, the day columns share the width equally, so task text never changes it.
+ * The minimum keeps each day at least 240 px (project + 7 × 240 + total).
  */
-export const WEEK_TABLE_WIDTH = "w-full min-w-[1012px] table-fixed sm:min-w-[1080px]";
+export const WEEK_TABLE_WIDTH = "w-full min-w-[1908px] table-fixed sm:min-w-[1976px]";

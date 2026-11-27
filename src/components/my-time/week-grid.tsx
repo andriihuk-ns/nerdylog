@@ -63,7 +63,7 @@ export function WeekGrid({ matrix, display, holidayNames, addable, pendingKeys, 
       <table ref={gridRef} role="grid" aria-label={t("grid.label")} className={`${WEEK_TABLE_WIDTH} border-collapse ${TABLE_EDGE_PADDING}`}>
         <colgroup>
           <col className="w-[132px] sm:w-[200px]" />
-          {days.map((d) => <col key={d} />)}
+          {days.map((d) => <col key={d} className="w-[240px]" />)}
           <col className="w-24" />
         </colgroup>
         <thead>
