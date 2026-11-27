@@ -130,7 +130,7 @@ export function WeekGrid(props: Props) {
                       type="button"
                       onClick={() => onRemoveRow(row)}
                       aria-label={t("removeRow", { name })}
-                      className="inline-flex size-11 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-100 hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:size-8 sm:opacity-0 sm:group-hover:opacity-100"
+                      className="inline-flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground opacity-100 hover:bg-muted hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:size-8 sm:opacity-0 sm:group-hover:opacity-100"
                     >
                       <X aria-hidden className="size-4" />
                     </button>

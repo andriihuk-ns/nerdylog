@@ -30,7 +30,7 @@ export function UserMenu({ profile, navItems, navLabel }: { profile: MyProfile; 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className="hit-target inline-flex items-center justify-center rounded-full"
+        className="hit-target inline-flex items-center justify-center rounded-full hover:bg-muted aria-expanded:bg-muted"
         aria-label={t("accountFor", { name })}
       >
         <Avatar>

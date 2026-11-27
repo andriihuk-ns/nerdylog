@@ -39,7 +39,7 @@ export function SearchInput({ value, onChange, label, placeholder, className }: 
           type="button"
           onClick={() => onChange("")}
           aria-label={t("clearSearch")}
-          className="absolute top-1/2 right-1 inline-flex size-9 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          className="absolute top-1/2 right-1 inline-flex size-9 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           <X aria-hidden className="size-4" />
         </button>
