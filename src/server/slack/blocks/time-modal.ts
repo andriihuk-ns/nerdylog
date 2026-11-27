@@ -58,7 +58,7 @@ function projectRow(n: number, projects: ProjectView[], locale: Locale, preselec
       block_id: rowBlock.task(n),
       label: plain(t(locale, "time.taskLabel")),
       hint: plain(t(locale, "time.taskHint")),
-      element: { type: "plain_text_input", action_id: INPUT_ACTION, max_length: TASK_MAX_LENGTH },
+      element: { type: "plain_text_input", action_id: INPUT_ACTION, multiline: true, max_length: TASK_MAX_LENGTH },
     },
   ];
 }
