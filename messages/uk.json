@@ -80,8 +80,7 @@
     "today": "Сьогодні",
     "thisMonth": "Цей місяць",
     "thisYear": "Цей рік",
-    "jumpTo": "Обрати: {unit, select, week {тиждень} month {місяць} other {рік}}",
-    "go": "Перейти"
+    "jumpTo": "Обрати: {unit, select, week {тиждень} month {місяць} other {рік}}"
   },
   "errors": {
     "forbidden": "У тебе немає на це прав.",
@@ -451,14 +450,8 @@
   },
   "exports": {
     "label": "Експорт",
-    "week": "Експорт тижня",
-    "month": "Експорт місяця",
-    "customRange": "Діапазон дат",
-    "rangeTitle": "Експорт за період",
-    "rangeDescription": "Обери перший і останній день для експорту.",
-    "from": "Від",
-    "to": "До",
-    "invalidRange": "Обери коректні дати: кінцева має бути не раніше початкової, а період — до 366 днів.",
+    "week": "Тиждень",
+    "month": "Місяць",
     "csv": "CSV",
     "pdf": "PDF",
     "preparing": "Готуємо {format}…",

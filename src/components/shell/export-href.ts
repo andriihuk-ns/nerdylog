@@ -13,5 +13,5 @@ export function rangeExports(week: { from: IsoDate; to: IsoDate }, month: string
     { kind: "csv" as const, href: exportHref("/api/export/ledger.csv", { ...range, ...extra }) },
     { kind: "pdf" as const, href: exportHref("/api/export/report.pdf", { ...range, ...extra }) },
   ];
-  return { week: pair(week), month: pair(monthRange), customRange: { ...week, extra } };
+  return { week: pair(week), month: pair(monthRange) };
 }

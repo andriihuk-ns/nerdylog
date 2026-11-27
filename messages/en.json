@@ -80,8 +80,7 @@
     "today": "Today",
     "thisMonth": "This month",
     "thisYear": "This year",
-    "jumpTo": "Choose a {unit}",
-    "go": "Go"
+    "jumpTo": "Choose a {unit}"
   },
   "errors": {
     "forbidden": "You can't do that.",
@@ -451,14 +450,8 @@
   },
   "exports": {
     "label": "Export",
-    "week": "Export week",
-    "month": "Export month",
-    "customRange": "Custom range",
-    "rangeTitle": "Export a date range",
-    "rangeDescription": "Choose the first and last day to include in the export.",
-    "from": "From",
-    "to": "To",
-    "invalidRange": "Choose valid dates, ending on or after the start and within 366 days.",
+    "week": "Week",
+    "month": "Month",
     "csv": "CSV",
     "pdf": "PDF",
     "preparing": "Preparing {format}…",

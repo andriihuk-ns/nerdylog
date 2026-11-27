@@ -9,6 +9,7 @@ import type { IsoDate } from "@/contracts";
 import { Button } from "@/components/ui/button";
 import { isTypingTarget } from "@/hooks/use-hotkeys";
 import { addDays, isIsoDate } from "@/components/lib/dates";
+import { DatePicker } from "@/components/ui/date-picker";
 import { useFormat } from "@/hooks/use-format";
 import { STANDUPS_TOGGLE_ID } from "./team-header";
 import { teamHref, type TeamFilters } from "./team-summary";
@@ -83,15 +84,12 @@ export function DrawerShell({ date, month, filters, children }: Props) {
               <ChevronLeft aria-hidden />
             </Link>
           </Button>
-          <label className="sr-only" htmlFor="standup-date">
-            {t("date")}
-          </label>
-          <input
+          <DatePicker
             id="standup-date"
-            type="date"
             value={date}
-            onChange={(e) => isIsoDate(e.target.value) && router.push(hrefFor(e.target.value), { scroll: false })}
-            className="tabular h-11 flex-1 rounded-md border border-input bg-card px-3 hover:border-input-hover focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"
+            label={t("date")}
+            onChange={(next) => isIsoDate(next) && router.push(hrefFor(next), { scroll: false })}
+            className="min-w-0 flex-1"
           />
           <Button asChild variant="ghost" size="icon" className="hit-target">
             <Link href={hrefFor(addDays(date, 1))} scroll={false} aria-label={t("nextDay")}>

@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Toast } from "@/components/ui/toast";
 import { isIsoDate } from "@/components/lib/dates";
 import { useFormat } from "@/hooks/use-format";
@@ -87,7 +88,7 @@ export function HolidaysPanel({ holidays, offices, officeId, year, currentYear }
       <form onSubmit={add} aria-label={t("addFor", { office: office.name })} className="flex flex-wrap items-end gap-3 rounded-lg border bg-card p-4">
         <div className="flex w-full flex-col gap-1.5 sm:w-auto">
           <Label htmlFor="holiday-date">{t("date")}</Label>
-          <Input id="holiday-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} className="tabular h-11 w-full sm:w-44" />
+          <DatePicker id="holiday-date" value={date} label={t("date")} placeholder={t("pickDate")} onChange={setDate} className="w-full sm:w-44" />
         </div>
         <div className="flex min-w-48 flex-1 flex-col gap-1.5">
           <Label htmlFor="holiday-name">{t("name")}</Label>
