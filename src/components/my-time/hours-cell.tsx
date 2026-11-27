@@ -105,7 +105,7 @@ export function HoursCell(p: HoursCellProps) {
               {p.weekendLocked ? "" : p.readOnly ? "—" : p.cell.hours > 0 ? hours : "·"}
             </span>
             {p.cell.notes.length > 0 ? (
-              <div>
+              <div className="w-full">
                 <TaskGroupList summaries={p.cell.notes} />
               </div>
             ) : null}
