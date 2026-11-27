@@ -11,11 +11,12 @@ import { isTypingTarget } from "@/hooks/use-hotkeys";
 import { addDays, isIsoDate } from "@/components/lib/dates";
 import { useFormat } from "@/hooks/use-format";
 import { STANDUPS_TOGGLE_ID } from "./team-header";
-import { teamHref } from "./team-summary";
+import { teamHref, type TeamFilters } from "./team-summary";
 
 interface Props {
   date: IsoDate;
   month: string;
+  filters: TeamFilters;
   children: ReactNode;
 }
 
@@ -24,19 +25,19 @@ interface Props {
  * full screen under 640px). Focus goes to the title on open; Esc closes and returns focus
  * to the Standups toggle; ↑/↓ move between cards; ←/→ change the date.
  */
-export function DrawerShell({ date, month, children }: Props) {
+export function DrawerShell({ date, month, filters, children }: Props) {
   const router = useRouter();
   const titleRef = useRef<HTMLHeadingElement>(null);
   const t = useTranslations("standups");
   const f = useFormat();
-  const hrefFor = (d: IsoDate) => teamHref(month, d);
+  const hrefFor = (d: IsoDate) => teamHref(month, d, filters);
 
   useEffect(() => {
     titleRef.current?.focus();
   }, []);
 
   function close() {
-    router.push(teamHref(month), { scroll: false });
+    router.push(teamHref(month, null, filters), { scroll: false });
     requestAnimationFrame(() => document.getElementById(STANDUPS_TOGGLE_ID)?.focus());
   }
 

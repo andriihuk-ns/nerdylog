@@ -9,14 +9,18 @@
     "active": "Active",
     "archived": "Archived",
     "hours": "{value}h",
-    "export": "Export"
+    "export": "Export",
+    "saved": "Saved",
+    "saveFailed": "Couldn't save",
+    "clearSearch": "Clear search"
   },
   "metadata": {
     "description": "nerdylog: time tracking and async standups for the team, from Slack.",
     "signIn": "Sign in",
     "myTime": "My time",
     "team": "Team",
-    "admin": "Admin"
+    "admin": "Admin",
+    "person": "Person"
   },
   "login": {
     "tagline": "Log time and share your standup from Slack. Sign in with your workspace account",
@@ -129,18 +133,20 @@
       "invalid": "Enter a number of hours",
       "max": "Max 24h a day"
     },
-    "exports": {
-      "weekCsv": "Week CSV",
-      "weekPdf": "Week PDF",
-      "monthCsv": "Month CSV",
-      "monthPdf": "Month PDF"
-    },
     "server": {
       "invalidHours": "Hours must be between 0 and 24, in steps of 0.25.",
       "dayOff": "This day is marked as time off. Set it back to Work first.",
       "dayMax": "Max 24h a day across all projects.",
       "pickStatus": "Pick Work, Vacation, Sick or Holiday.",
       "cellBelow": "This cell combines {count} entries. Enter at least {hours}h, or 0 to clear it."
+    },
+    "access": {
+      "askToJoin": "Ask {creator} to add you to {channel}",
+      "anAdmin": "an admin",
+      "projectChannel": "the project's Slack channel",
+      "notInChannel": "{name} isn't in {channel} yet",
+      "thisPerson": "This person",
+      "notMemberUnknown": "You're not a member of this project's Slack channel."
     }
   },
   "dayStatus": {
@@ -158,21 +164,6 @@
     },
     "change": "{day}: {status}. Change day status"
   },
-  "caps": {
-    "title": "Client caps",
-    "scope": "{month} · whole team",
-    "empty": "No project hours this month yet.",
-    "noCap": "{hours}h · no cap",
-    "usage": "{used}h / {cap}h · {percent}",
-    "over": "+{hours}h over",
-    "spokenNoCap": "{project}, {hours} hours, no cap",
-    "spoken": "{project}, {used} of {cap} hours, {percent} percent, {status}",
-    "status": {
-      "neutral": "within cap",
-      "warning": "near cap",
-      "over": "over cap"
-    }
-  },
   "pto": {
     "title": "Time off",
     "left": "{remaining, plural, one {vacation day left} other {vacation days left}} of <n>{allowance}</n>",
@@ -186,8 +177,7 @@
     "empty": "No teammates in this view. Admins can sync from Slack in Admin.",
     "exports": {
       "summaryCsv": "Summary CSV",
-      "ledgerCsv": "Ledger CSV",
-      "pdf": "PDF"
+      "ledgerCsv": "Ledger CSV"
     },
     "standupsToggle": "Standups",
     "grid": {
@@ -211,6 +201,12 @@
         "vacSick": "{context}: {value} vacation or sick days",
         "holidays": "{context}: {value} holidays"
       }
+    },
+    "noMatch": "Nobody matches these filters.",
+    "filters": {
+      "search": "Search teammates",
+      "project": "Filter by project",
+      "allProjects": "All projects"
     }
   },
   "standups": {
@@ -237,8 +233,8 @@
     "tabsLabel": "Admin sections",
     "tabs": {
       "directory": "Directory",
-      "teams": "Teams",
       "projects": "Projects",
+      "offices": "Offices",
       "holidays": "Holidays",
       "settings": "Settings"
     },
@@ -251,99 +247,95 @@
       "columns": {
         "name": "Name",
         "title": "Title",
-        "teams": "Teams",
         "role": "Role",
         "dailyNorm": "Daily norm (h)",
         "allowance": "Vacation days / year",
-        "status": "Status"
+        "status": "Status",
+        "office": "Office"
       },
       "syncFailed": "Sync failed. {reason}",
       "synced": "Synced from Slack: {people}.",
-      "syncedWithTeams": "Synced from Slack: {people} · {teams}.",
       "people": "{count, plural, one {# person} other {# people}}{created, plural, =0 {} other { (# new)}}",
-      "teams": "{count, plural, one {# team} other {# teams}}{archived, plural, =0 {} other { (# archived)}}",
-      "teamsError": {
-        "missingScope": "Teams need the usergroups:read permission — update the Slack app and reinstall.",
-        "failed": "Teams couldn't be synced. Try again."
-      },
-      "updateFailed": "Couldn't update {name}. {reason}",
       "noTitle": "No title in Slack",
-      "noTeam": "No team",
-      "teamsLabel": "Teams",
       "roleFor": "Role for {name}",
       "normFor": "Daily norm hours for {name}",
       "allowanceFor": "Yearly vacation allowance in days for {name}",
-      "activeFor": "{name} active"
-    },
-    "teams": {
-      "title": "Teams",
-      "helper": "Teams mirror Slack user groups. A member's morning standup goes to each of their teams' channels; members without a team channel use the general standup channel.",
-      "empty": "No teams yet. Use “Sync from Slack” on the Directory tab to import your Slack user groups.",
-      "columns": {
-        "handle": "Handle",
-        "name": "Name",
-        "members": "Members",
-        "channel": "Standup channel"
-      },
-      "activeLabel": "Active teams",
-      "archivedLabel": "Archived teams",
-      "archivedToggle": "Archived (<n>{count}</n>)",
-      "channelFor": "Slack channel for @{handle}",
-      "noChannel": "No channel",
-      "savedTo": "@{handle} standups now post to {channel}.",
-      "removed": "@{handle} channel removed.",
-      "noMembers": "No members in nerdylog",
-      "membersSr": " members: {names}"
+      "activeFor": "{name} active",
+      "syncedWithProjects": "Synced from Slack: {people} · {projects}.",
+      "projects": "members of {count, plural, one {# project} other {# projects}} refreshed",
+      "projectsFailed": " ({count} failed)",
+      "projectsNeedInvite": " · {count, plural, one {# needs} other {# need}} @nerdylog invited to their channel",
+      "search": "Search name, email or title",
+      "projectFilter": "Filter by project",
+      "officeFilter": "Filter by office",
+      "allProjects": "All projects",
+      "allOffices": "All offices",
+      "noOffice": "No office",
+      "officeFor": "Office for {name}",
+      "noMatch": "Nobody matches these filters.",
+      "clearFilters": "Clear filters",
+      "showing": "Showing <n>{shown}</n> of <n>{total}</n>"
     },
     "projects": {
-      "title": "Projects & caps",
+      "title": "Projects",
       "new": "New project",
       "empty": "No projects yet. Create one to start logging time.",
       "columns": {
         "name": "Name",
-        "code": "Code",
-        "cap": "Monthly cap",
         "channel": "Slack channel",
-        "billable": "Billable",
         "status": "Status",
-        "actions": "Actions"
+        "actions": "Actions",
+        "createdBy": "Created by",
+        "members": "Members"
       },
-      "noCap": "No cap",
-      "billable": "Billable",
-      "nonBillable": "Non-billable",
       "edit": "Edit {name}",
-      "botNotIn": "· bot not in channel"
+      "botNotIn": "· bot not in channel",
+      "helper": "One project = one Slack channel. Its members are the people in that channel; only they can log time to it.",
+      "noChannel": "No channel",
+      "refresh": "Refresh members",
+      "refreshing": "Refreshing…",
+      "refreshFailed": "Couldn't refresh members of {name}. {reason}",
+      "refreshNeedsChannel": "Link a Slack channel first",
+      "needsInvite": "Invite @nerdylog to {channel}, then refresh members. Current members were kept.",
+      "membersRefreshed": "{channel}: {count, plural, one {# member} other {# members}}{skipped, plural, =0 {} other { (# not in nerdylog yet)}}.",
+      "membersNotRefreshed": "Members couldn't be refreshed. Use “Refresh members” to try again."
     },
     "projectForm": {
       "editLabel": "Edit {name}",
       "newLabel": "New project",
       "name": "Name",
-      "code": "Code",
-      "cap": "Monthly cap (h)",
-      "capPlaceholder": "No cap",
-      "billable": "Billable",
       "active": "Active",
       "channel": "Slack channel",
       "noChannel": "No channel",
-      "capInvalid": "Cap must be a positive number of hours, or empty for no cap.",
       "nameRequired": "Name is required.",
       "saved": "Saved {name}.",
       "created": "Created {name}.",
-      "create": "Create project"
+      "create": "Create project",
+      "channelRequired": "Pick the project's Slack channel.",
+      "channelRequiredLabel": "Slack channel (required)",
+      "channelHelper": "Members of this channel can log time to the project."
     },
     "holidays": {
       "title": "Holiday calendar",
       "date": "Date",
       "name": "Name",
       "placeholder": "Independence Day",
-      "add": "Add holiday",
       "adding": "Adding…",
       "pickDate": "Pick a date.",
       "nameRequired": "Name is required.",
       "added": "Added {name} on {day}.",
       "removeFailed": "Couldn't remove {name}. {reason}",
-      "empty": "No holidays in {year} yet.",
-      "remove": "Remove {name}"
+      "empty": "No {office} holidays in {year} yet.",
+      "remove": "Remove {name}",
+      "officeFilter": "Office",
+      "copyFrom": "Copy from {year}",
+      "copying": "Copying…",
+      "copied": "Copied {copied}, skipped {skipped}.",
+      "copyFailed": "Couldn't copy holidays. {reason}",
+      "noOffices": "Add an office on the Offices tab first; holidays are set per office.",
+      "addFor": "Add a holiday for {office}",
+      "addTo": "Add to {code}",
+      "listLabel": "{office} holidays in {year}"
     },
     "settings": {
       "title": "Settings",
@@ -371,12 +363,77 @@
       "directoryInvalid": "Daily norm must be 0.25–24h; allowance 0–366 days in half days.",
       "invalidChannel": "Not a valid Slack channel",
       "alreadyLinkedProject": "Already linked to {name}",
-      "alreadyLinkedTeam": "Already linked to @{handle}",
-      "unknownTeam": "Unknown team.",
       "unknownHoliday": "Unknown holiday.",
       "projectInvalid": "Check the project fields.",
       "holidayInvalid": "Check the holiday fields.",
-      "nameRequired": "Name is required."
+      "nameRequired": "Name is required.",
+      "channelRequired": "Pick the project's Slack channel.",
+      "unknownProject": "Unknown project.",
+      "noChannelToRefresh": "This project has no Slack channel.",
+      "officeCodeInvalid": "Code must be 2–8 letters or digits, like UA.",
+      "unknownOffice": "Unknown office."
+    },
+    "offices": {
+      "title": "Offices",
+      "helper": "Each person belongs to one office; it decides which public holidays apply to them.",
+      "new": "New office",
+      "empty": "No offices yet. Add one to assign people and holidays.",
+      "editLabel": "Edit {name}",
+      "newLabel": "New office",
+      "code": "Code",
+      "name": "Name",
+      "namePlaceholder": "Ukraine",
+      "create": "Create office",
+      "codeInvalid": "Code must be 2–8 letters or digits, like UA.",
+      "nameRequired": "Name is required.",
+      "created": "Created {name}.",
+      "saved": "Saved {name}.",
+      "edit": "Edit {name}",
+      "delete": "Delete {name}",
+      "deleteBlocked": "Move its {count, plural, one {# person} other {# people}} to another office first",
+      "confirmDelete": "Delete {name}? Its holidays must be removed first.",
+      "deleted": "Deleted {name}.",
+      "deleteFailed": "Couldn't delete {name}. {reason}",
+      "columns": {
+        "code": "Code",
+        "name": "Name",
+        "members": "People",
+        "actions": "Actions"
+      }
+    }
+  },
+  "exports": {
+    "label": "Export",
+    "week": "Week",
+    "month": "Month",
+    "menuFor": "Export {period}",
+    "csv": "CSV",
+    "pdf": "PDF"
+  },
+  "projectHours": {
+    "title": "This month by project",
+    "empty": "No hours logged this month yet.",
+    "total": "Total"
+  },
+  "people": {
+    "back": "Directory",
+    "office": "Office",
+    "role": "Role",
+    "status": "Status",
+    "noOffice": "No office",
+    "noTitle": "No title in Slack",
+    "week": "{name}'s week",
+    "totals": {
+      "title": "Month totals",
+      "empty": "Nothing logged this month.",
+      "hours": "Hours",
+      "days": "Days",
+      "vacSick": "Vac/Sick days",
+      "holidays": "Holidays"
+    },
+    "standups": {
+      "title": "Recent standups",
+      "empty": "No standups in the last 14 days."
     }
   }
 }

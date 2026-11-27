@@ -28,6 +28,11 @@ export interface ProjectRef {
   name: string;
 }
 
+/** A15 add-project picker entry: non-members see it disabled with the reason ("Ask {creator}…"). */
+export interface ProjectOption extends ProjectRef {
+  disabledReason: string | null;
+}
+
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
 /** Day status for one date: the first non-work entry type wins, else "work". */

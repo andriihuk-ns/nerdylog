@@ -8,30 +8,34 @@ import type { IsoDate } from "@/contracts";
 import { Button } from "@/components/ui/button";
 import { useHotkeys } from "@/hooks/use-hotkeys";
 import { PeriodSwitcher } from "@/components/shell/period-switcher";
-import { ExportLinks, type ExportLink } from "@/components/shell/export-links";
+import { ExportMenus, type ExportGroups } from "@/components/shell/export-menu";
+import type { FilterOption } from "@/components/shell/filter-select";
 import { shiftMonth } from "@/components/lib/dates";
 import { useFormat } from "@/hooks/use-format";
-import { teamHref } from "./team-summary";
+import { teamHref, type TeamFilters } from "./team-summary";
+import { TeamFilterBar } from "./team-filter-bar";
 
 interface Props {
   month: string;
   today: IsoDate;
   drawerDate: IsoDate | null;
-  exports: ExportLink[];
+  filters: TeamFilters;
+  projects: FilterOption[];
+  exports: ExportGroups;
 }
 
 export const STANDUPS_TOGGLE_ID = "standups-toggle";
 
-/** `‹ November 2026 ›`, exports, Standups toggle. Keys: `[` / `]` month, `S` drawer. */
-export function TeamHeader({ month, today, drawerDate, exports }: Props) {
+/** `‹ November 2026 ›`, Week ▾ / Month ▾ exports, Standups toggle, search + project filter. Keys: `[` / `]` month, `S` drawer. */
+export function TeamHeader({ month, today, drawerDate, filters, projects, exports }: Props) {
   const router = useRouter();
   const t = useTranslations("team");
   const tp = useTranslations("period");
   const f = useFormat();
-  const prev = teamHref(shiftMonth(month, -1), drawerDate);
-  const next = teamHref(shiftMonth(month, 1), drawerDate);
+  const prev = teamHref(shiftMonth(month, -1), drawerDate, filters);
+  const next = teamHref(shiftMonth(month, 1), drawerDate, filters);
   const current = today.slice(0, 7);
-  const toggleHref = teamHref(month, drawerDate ? null : today);
+  const toggleHref = teamHref(month, drawerDate ? null : today, filters);
 
   useHotkeys({
     "[": () => router.push(prev),
@@ -48,11 +52,11 @@ export function TeamHeader({ month, today, drawerDate, exports }: Props) {
           label={f.month(month)}
           prevHref={prev}
           nextHref={next}
-          todayHref={month === current ? undefined : teamHref(current, drawerDate)}
+          todayHref={month === current ? undefined : teamHref(current, drawerDate, filters)}
           todayLabel={tp("thisMonth")}
         />
         <div className="flex flex-wrap items-center gap-2">
-          <ExportLinks links={exports} />
+          <ExportMenus groups={exports} />
           <Button
             asChild
             variant={drawerDate ? "secondary" : "outline"}
@@ -72,6 +76,7 @@ export function TeamHeader({ month, today, drawerDate, exports }: Props) {
           </Button>
         </div>
       </div>
+      <TeamFilterBar month={month} drawerDate={drawerDate} filters={filters} projects={projects} />
     </div>
   );
 }

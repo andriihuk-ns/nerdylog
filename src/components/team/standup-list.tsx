@@ -10,8 +10,11 @@ import { RefreshButton } from "@/components/shell/refresh-button";
 import { StandupCard } from "./standup-card";
 import { groupStandups, type RosterMember } from "./team-summary";
 
-/** Fetches Stream B check-ins for the drawer. Errors stay inside the drawer (inline retry). */
-export async function StandupList({ date, roster }: { date: IsoDate; roster: RosterMember[] }) {
+/**
+ * Fetches Stream B check-ins for the drawer. Errors stay inside the drawer (inline retry).
+ * `roster` is already filtered (A15 Team search/project); check-ins are limited to it when `filtered`.
+ */
+export async function StandupList({ date, roster, filtered = false }: { date: IsoDate; roster: RosterMember[]; filtered?: boolean }) {
   const [t, locale] = await Promise.all([getTranslations("standups"), getLocale()]);
   let checkins: CheckinView[];
   try {
@@ -28,7 +31,9 @@ export async function StandupList({ date, roster }: { date: IsoDate; roster: Ros
     );
   }
 
-  const { blockers, plans, missing } = groupStandups(checkins, roster);
+  const inRoster = new Set(roster.map((m) => m.userId));
+  const shown = filtered ? checkins.filter((c) => inRoster.has(c.userId)) : checkins;
+  const { blockers, plans, missing } = groupStandups(shown, roster);
   return (
     <>
       {blockers.length > 0 ? (

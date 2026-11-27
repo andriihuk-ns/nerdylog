@@ -38,3 +38,10 @@ export async function actionError(err: unknown): Promise<{ ok: false; message: s
       return fail(t("generic"));
   }
 }
+
+/** First InvalidInputError code for `field` (e.g. projectId → "not_member"); matched by name. */
+export function fieldErrorCode(err: unknown, field: string): string | null {
+  if (!(err instanceof Error) || err.name !== "InvalidInputError") return null;
+  const fieldErrors = (err as Error & { fieldErrors?: Record<string, string[] | undefined> }).fieldErrors;
+  return fieldErrors?.[field]?.[0] ?? null;
+}

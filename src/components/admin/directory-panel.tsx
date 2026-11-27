@@ -1,32 +1,46 @@
 "use client";
 
-import { useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { RefreshCw } from "lucide-react";
 import { useTranslations } from "next-intl";
-import type { DirectoryUser, TeamView } from "@/contracts";
+import type { DirectoryUser, OfficeView, ProjectView } from "@/contracts";
 import { cn } from "@/lib/utils";
 import { syncFromSlackAction } from "@/app/(dashboard)/admin/actions";
 import { useToast } from "@/hooks/use-toast";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Button } from "@/components/ui/button";
 import { Toast } from "@/components/ui/toast";
+import { SearchInput } from "@/components/shell/search-input";
+import { FilterSelect } from "@/components/shell/filter-select";
 import { DirectoryRow } from "./directory-row";
-import { syncSummary, teamHandlesByUser } from "./team-helpers";
+import { ALL, EMPTY_FILTERS, filterDirectory, hasFilters, NONE } from "./directory-filters";
+import { syncSummary } from "./sync-summary";
 
-/** FR-WEB-06 Team Directory: Sync from Slack (people + teams, A13), title (A12) and teams (A13) read-only, role, daily norm, PTO allowance (A9), active. */
-export function DirectoryPanel({ users, teams }: { users: DirectoryUser[]; teams: TeamView[] }) {
+interface Props {
+  users: DirectoryUser[];
+  projects: ProjectView[];
+  offices: OfficeView[];
+}
+
+const COLUMNS = ["name", "title", "office", "role", "dailyNorm", "allowance", "status"] as const;
+
+/** FR-WEB-06 Team Directory (A15): Sync from Slack, search + project/office filters, per-field save status. */
+export function DirectoryPanel({ users, projects, offices }: Props) {
   const t = useTranslations("admin.directory");
   const { toast, show, dismiss } = useToast();
   const [syncing, startSync] = useTransition();
-  const handles = teamHandlesByUser(teams);
-  const sorted = [...users].sort((a, b) => Number(b.isActive) - Number(a.isActive) || a.fullName.localeCompare(b.fullName));
+  const [query, setQuery] = useState("");
+  const [projectId, setProjectId] = useState(ALL);
+  const [officeId, setOfficeId] = useState(ALL);
+  const debounced = useDebouncedValue(query);
+  const filters = { query: debounced, projectId, officeId };
+  const shown = useMemo(() => filterDirectory(users, { query: debounced, projectId, officeId }), [users, debounced, projectId, officeId]);
 
   function sync() {
     startSync(async () => {
       const res = await syncFromSlackAction();
       if (!res.ok) show(t("syncFailed", { reason: res.message }), { tone: "error", onRetry: sync });
-      else if (res.data.teamsError) {
-        show(`${syncSummary(res.data, t)} ${t(`teamsError.${res.data.teamsError}`)}`, { tone: "error", onRetry: sync });
-      } else show(syncSummary(res.data, t));
+      else show(syncSummary(res.data, t), res.data.projects.failed > 0 ? { tone: "error", onRetry: sync } : {});
     });
   }
 
@@ -46,45 +60,71 @@ export function DirectoryPanel({ users, teams }: { users: DirectoryUser[]; teams
           </p>
         </div>
         <Button onClick={sync} disabled={syncing} className="hit-target">
-          <RefreshCw aria-hidden className={cn(syncing && "animate-spin")} />
+          <RefreshCw aria-hidden className={cn(syncing && "motion-safe:animate-spin")} />
           {syncing ? t("syncing") : t("sync")}
         </Button>
       </div>
-      {sorted.length === 0 ? (
-        <p className="rounded-lg border bg-card p-6 text-muted-foreground">
-          {t("empty")}
-        </p>
+      <div role="search" className="flex flex-wrap items-center gap-2">
+        <SearchInput value={query} onChange={setQuery} label={t("search")} className="min-w-56 flex-1" />
+        <FilterSelect
+          label={t("projectFilter")}
+          value={projectId}
+          onChange={setProjectId}
+          options={[{ value: ALL, label: t("allProjects") }, ...projects.map((p) => ({ value: p.id, label: p.name }))]}
+        />
+        <FilterSelect
+          label={t("officeFilter")}
+          value={officeId}
+          onChange={setOfficeId}
+          options={[
+            { value: ALL, label: t("allOffices") },
+            ...offices.map((o) => ({ value: o.id, label: `${o.code} · ${o.name}` })),
+            { value: NONE, label: t("noOffice") },
+          ]}
+          className="w-44"
+        />
+      </div>
+      {users.length === 0 ? (
+        <p className="rounded-lg border bg-card p-6 text-muted-foreground">{t("empty")}</p>
+      ) : shown.length === 0 ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card p-6 text-muted-foreground">
+          <p>{t("noMatch")}</p>
+          <Button
+            variant="outline"
+            className="hit-target"
+            onClick={() => {
+              setQuery(EMPTY_FILTERS.query);
+              setProjectId(ALL);
+              setOfficeId(ALL);
+            }}
+          >
+            {t("clearFilters")}
+          </Button>
+        </div>
       ) : (
         <div className="overflow-x-auto rounded-lg border bg-card">
+          {hasFilters(filters) ? (
+            <p className="border-b px-4 py-2 text-xs text-muted-foreground" aria-live="polite">
+              {t("showing", { shown: shown.length, total: users.length })}
+            </p>
+          ) : null}
           <table className="w-full border-collapse">
             <thead>
               <tr className="border-b text-xs font-medium text-muted-foreground">
-                <th scope="col" className="h-10 px-4 text-left font-medium">
-                  {t("columns.name")}
-                </th>
-                <th scope="col" className="px-2 text-left font-medium">
-                  {t("columns.title")}
-                </th>
-                <th scope="col" className="px-2 text-left font-medium">
-                  {t("columns.teams")}
-                </th>
-                <th scope="col" className="px-2 text-left font-medium">
-                  {t("columns.role")}
-                </th>
-                <th scope="col" className="px-2 text-right font-medium">
-                  {t("columns.dailyNorm")}
-                </th>
-                <th scope="col" className="px-2 text-right font-medium">
-                  {t("columns.allowance")}
-                </th>
-                <th scope="col" className="px-4 text-left font-medium">
-                  {t("columns.status")}
-                </th>
+                {COLUMNS.map((c) => (
+                  <th
+                    key={c}
+                    scope="col"
+                    className={cn("h-10 px-2 font-medium", c === "name" ? "px-4 text-left" : "text-left", (c === "dailyNorm" || c === "allowance") && "text-right")}
+                  >
+                    {t(`columns.${c}`)}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {sorted.map((u) => (
-                <DirectoryRow key={u.id} user={u} teamHandles={handles.get(u.id) ?? []} onError={(m) => show(m, { tone: "error" })} />
+              {shown.map((u) => (
+                <DirectoryRow key={u.id} user={u} offices={offices} />
               ))}
             </tbody>
           </table>

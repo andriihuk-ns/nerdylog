@@ -1,28 +1,24 @@
-/** A13: "Sync from Slack" result: people always; teams when the user-group step succeeded. */
-export interface TeamSyncCounts {
-  created: number;
-  updated: number;
-  archived: number;
-  skippedMembers: number;
+/** A15 result shapes shared by the admin actions and the client toasts. */
+export interface MemberCounts {
+  members: number;
+  skipped: number; // channel members unknown to nerdylog
 }
 
+/**
+ * One project's refresh. `needsInvite`: Slack returned no members (bot not in the channel);
+ * existing members were kept and the admin is told to invite @nerdylog.
+ */
+export type MemberRefresh = ({ status: "ok" } & MemberCounts) | { status: "needsInvite" };
+
+export interface ProjectsRefresh {
+  refreshed: number;
+  failed: number;
+  needsInvite: number;
+  members: number;
+}
+
+/** "Sync from Slack": people always; then members of every project with a channel. */
 export interface SlackSyncResult {
   people: { created: number; updated: number };
-  teams: TeamSyncCounts | null;
-  /** Set when the team step failed; the people result still stands. Key under `admin.directory.teamsError`. */
-  teamsError: TeamsErrorCode | null;
-}
-
-export type TeamsErrorCode = "missingScope" | "failed";
-
-/** @slack/web-api platform error `missing_scope` (in `data.error` or, when wrapped, in the message). */
-export function isMissingScopeError(err: unknown): boolean {
-  const data = (err as { data?: { error?: unknown } } | null)?.data;
-  if (data && data.error === "missing_scope") return true;
-  return err instanceof Error && err.message.includes("missing_scope");
-}
-
-/** Team-step failure → message code for the toast. Missing scope names the exact fix. */
-export function teamsErrorCode(err: unknown): TeamsErrorCode {
-  return isMissingScopeError(err) ? "missingScope" : "failed";
+  projects: ProjectsRefresh;
 }

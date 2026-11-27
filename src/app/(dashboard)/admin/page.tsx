@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import type { AppSettings, DirectoryUser, HolidayView, ProjectView, SlackChannelOption, TeamView } from "@/contracts";
+import type { AppSettings, DirectoryUser, HolidayView, OfficeView, ProjectView, SlackChannelOption } from "@/contracts";
 import { requireActor } from "@/server/auth/session";
 import { listDirectory } from "@/server/services/directory-service";
 import { listProjects } from "@/server/services/project-service";
 import { listHolidays } from "@/server/services/holiday-service";
+import { listOffices } from "@/server/services/office-service";
 import { getAppSettings } from "@/server/services/settings-service";
-import { listTeams } from "@/server/services/team-service";
 import { todayIn } from "@/components/lib/dates";
 import { NoAccessPanel } from "@/components/shell/state-panels";
 import { getCurrentProfile } from "@/components/shell/profile";
@@ -14,9 +14,9 @@ import { AdminTabs } from "@/components/admin/admin-tabs";
 import { parseAdminTab } from "@/components/admin/admin-tab";
 import { DirectoryPanel } from "@/components/admin/directory-panel";
 import { ProjectsPanel } from "@/components/admin/projects-panel";
+import { OfficesPanel } from "@/components/admin/offices-panel";
 import { HolidaysPanel } from "@/components/admin/holidays-panel";
 import { SettingsPanel } from "@/components/admin/settings-panel";
-import { TeamsPanel } from "@/components/admin/teams-panel";
 import { loadSlackChannels } from "./load-channels";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -30,6 +30,12 @@ function parseYear(value: unknown, fallback: number): number {
   return n >= 2000 && n <= 2100 ? n : fallback;
 }
 
+/** `?office=` when it names a known office, else the first office by code (UA before PL). */
+function pickOffice(offices: OfficeView[], value: unknown): string | null {
+  const byCode = [...offices].sort((a, b) => a.code.localeCompare(b.code));
+  return offices.find((o) => o.id === value)?.id ?? byCode[0]?.id ?? null;
+}
+
 export default async function AdminPage({ searchParams }: { searchParams: SearchParams }) {
   const actor = await requireActor();
   if (actor.role !== "admin") return <NoAccessPanel area="admin" />;
@@ -38,22 +44,17 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
   const tab = parseAdminTab(params.tab);
   const currentYear = Number(todayIn(profile.timezone).slice(0, 4));
   const year = parseYear(params.year, currentYear);
-  const [users, teams, projects, holidays, settings, channels]: [
-    DirectoryUser[],
-    TeamView[],
-    ProjectView[],
-    HolidayView[],
-    AppSettings,
-    SlackChannelOption[] | null,
-  ] = await Promise.all([
-    listDirectory(actor),
-    listTeams(actor, { includeArchived: true }),
-    listProjects(actor, { includeArchived: true }),
-    listHolidays(actor, year),
-    getAppSettings(actor),
-    // Only the Teams/Projects/Settings pickers need Slack channels (Tier 2 rate limits).
-    tab === "directory" || tab === "holidays" ? Promise.resolve(null) : loadSlackChannels(),
-  ]);
+  const needsChannels = tab === "projects" || tab === "settings"; // Slack Tier 2 rate limits
+  const [users, projects, offices, settings, channels]: [DirectoryUser[], ProjectView[], OfficeView[], AppSettings, SlackChannelOption[] | null] =
+    await Promise.all([
+      listDirectory(actor),
+      listProjects(actor, { includeArchived: true }),
+      listOffices(actor),
+      getAppSettings(actor),
+      needsChannels ? loadSlackChannels() : Promise.resolve(null),
+    ]);
+  const officeId = pickOffice(offices, params.office);
+  const holidays: HolidayView[] = officeId ? await listHolidays(actor, year, officeId) : [];
 
   return (
     <div className="flex flex-col gap-6">
@@ -61,11 +62,14 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
       <AdminTabs
         tab={tab}
         year={year}
+        officeId={officeId}
         panels={{
-          directory: <DirectoryPanel users={users} teams={teams} />,
-          teams: <TeamsPanel teams={teams} users={users} channels={channels} />,
+          directory: <DirectoryPanel users={users} projects={projects.filter((p) => p.isActive)} offices={offices} />,
           projects: <ProjectsPanel projects={projects} channels={channels} />,
-          holidays: <HolidaysPanel key={year} holidays={holidays} year={year} currentYear={currentYear} />,
+          offices: <OfficesPanel offices={offices} />,
+          holidays: (
+            <HolidaysPanel key={`${officeId}-${year}`} holidays={holidays} offices={offices} officeId={officeId} year={year} currentYear={currentYear} />
+          ),
           settings: <SettingsPanel settings={settings} channels={channels} />,
         }}
       />

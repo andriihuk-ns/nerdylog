@@ -12,11 +12,11 @@ import type { CommitMove } from "./cell-editor";
 import { DAY_STATUS_COLUMN } from "./day-status";
 import { DayStatusPill } from "./day-status-pill";
 import { HoursCell } from "./hours-cell";
-import type { ProjectRef, WeekMatrix } from "./week-matrix";
+import type { ProjectOption, ProjectRef, WeekMatrix } from "./week-matrix";
 
 interface Props {
   matrix: WeekMatrix;
-  addable: ProjectRef[];
+  addable: ProjectOption[];
   pendingKeys: readonly string[];
   failedKey: string | null;
   onSaveCell: (project: ProjectRef, date: IsoDate, hours: number, note?: string) => void;

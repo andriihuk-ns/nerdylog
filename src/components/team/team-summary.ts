@@ -36,10 +36,20 @@ export function bucketValues(t: RollupTotals): [number, number, number, number] 
   return [t.hours, t.days, t.vacSick, t.holidays];
 }
 
-/** /team URL with month and optional drawer date. */
-export function teamHref(month: string, date?: IsoDate | null): string {
+/** A15 Team filters, kept in the URL so the server-rendered drawer applies them too. */
+export interface TeamFilters {
+  q: string;
+  project: string | null;
+}
+
+export const NO_TEAM_FILTERS: TeamFilters = { q: "", project: null };
+
+/** /team URL with month, optional drawer date and filters. */
+export function teamHref(month: string, date?: IsoDate | null, filters: TeamFilters = NO_TEAM_FILTERS): string {
   const params = new URLSearchParams({ month });
   if (date) params.set("date", date);
+  if (filters.q.trim()) params.set("q", filters.q.trim());
+  if (filters.project) params.set("project", filters.project);
   return `/team?${params.toString()}`;
 }
 

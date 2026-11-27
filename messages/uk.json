@@ -9,14 +9,18 @@
     "active": "Активний",
     "archived": "В архіві",
     "hours": "{value} год",
-    "export": "Експорт"
+    "export": "Експорт",
+    "saved": "Збережено",
+    "saveFailed": "Не вдалося зберегти",
+    "clearSearch": "Очистити пошук"
   },
   "metadata": {
     "description": "nerdylog: облік часу й асинхронні стендапи для команди прямо зі Slack.",
     "signIn": "Вхід",
     "myTime": "Мій час",
     "team": "Команда",
-    "admin": "Адміністрування"
+    "admin": "Адміністрування",
+    "person": "Людина"
   },
   "login": {
     "tagline": "Записуй час і ділись стендапом прямо зі Slack. Увійди через свій робочий акаунт",
@@ -129,18 +133,20 @@
       "invalid": "Введи кількість годин",
       "max": "Не більше 24 год на день"
     },
-    "exports": {
-      "weekCsv": "Тиждень CSV",
-      "weekPdf": "Тиждень PDF",
-      "monthCsv": "Місяць CSV",
-      "monthPdf": "Місяць PDF"
-    },
     "server": {
       "invalidHours": "Години мають бути від 0 до 24 з кроком 0,25.",
       "dayOff": "Цей день позначено як вихідний. Спершу поверни статус «Робота».",
       "dayMax": "Не більше 24 год на день за всіма проєктами.",
       "pickStatus": "Обери: Робота, Відпустка, Лікарняний або Свято.",
       "cellBelow": "У цій клітинці об’єднано записів: {count}. Введи щонайменше {hours} год або 0, щоб очистити."
+    },
+    "access": {
+      "askToJoin": "Доступ дає {creator}: попроси додати тебе в {channel}",
+      "anAdmin": "адмін",
+      "projectChannel": "канал проєкту в Slack",
+      "notInChannel": "{name} ще не в {channel}",
+      "thisPerson": "Ця людина",
+      "notMemberUnknown": "Ти не в Slack-каналі цього проєкту."
     }
   },
   "dayStatus": {
@@ -158,21 +164,6 @@
     },
     "change": "{day}: {status}. Змінити статус дня"
   },
-  "caps": {
-    "title": "Ліміти клієнтів",
-    "scope": "{month} · уся команда",
-    "empty": "Цього місяця годин за проєктами ще немає.",
-    "noCap": "{hours} год · без ліміту",
-    "usage": "{used} / {cap} год · {percent}",
-    "over": "+{hours} год понад ліміт",
-    "spokenNoCap": "{project}, {hours} год, без ліміту",
-    "spoken": "{project}, {used} з {cap} год, {percent} відсотків, {status}",
-    "status": {
-      "neutral": "у межах ліміту",
-      "warning": "майже вичерпано",
-      "over": "понад ліміт"
-    }
-  },
   "pto": {
     "title": "Відпочинок",
     "left": "{remaining, plural, one {день відпустки залишився} few {дні відпустки залишилось} many {днів відпустки залишилось} other {дня відпустки залишилось}} з <n>{allowance}</n>",
@@ -186,8 +177,7 @@
     "empty": "У цьому поданні немає колег. Адміністратор може синхронізувати їх зі Slack в «Адмініструванні».",
     "exports": {
       "summaryCsv": "Зведення CSV",
-      "ledgerCsv": "Журнал CSV",
-      "pdf": "PDF"
+      "ledgerCsv": "Журнал CSV"
     },
     "standupsToggle": "Стендапи",
     "grid": {
@@ -211,6 +201,12 @@
         "vacSick": "{context}: {value} дн. відпустки або лікарняного",
         "holidays": "{context}: {value} свят."
       }
+    },
+    "noMatch": "Під ці фільтри ніхто не підходить.",
+    "filters": {
+      "search": "Пошук по команді",
+      "project": "Фільтр за проєктом",
+      "allProjects": "Усі проєкти"
     }
   },
   "standups": {
@@ -237,8 +233,8 @@
     "tabsLabel": "Розділи адміністрування",
     "tabs": {
       "directory": "Люди",
-      "teams": "Команди",
       "projects": "Проєкти",
+      "offices": "Офіси",
       "holidays": "Свята",
       "settings": "Налаштування"
     },
@@ -251,99 +247,95 @@
       "columns": {
         "name": "Ім’я",
         "title": "Посада",
-        "teams": "Команди",
         "role": "Роль",
         "dailyNorm": "Норма на день (год)",
         "allowance": "Днів відпустки на рік",
-        "status": "Статус"
+        "status": "Статус",
+        "office": "Офіс"
       },
       "syncFailed": "Синхронізація не вдалася. {reason}",
       "synced": "Синхронізовано зі Slack: {people}.",
-      "syncedWithTeams": "Синхронізовано зі Slack: {people} · {teams}.",
       "people": "{count, plural, one {# людина} few {# людини} many {# людей} other {# людини}}{created, plural, =0 {} other { (нових: #)}}",
-      "teams": "{count, plural, one {# команда} few {# команди} many {# команд} other {# команди}}{archived, plural, =0 {} other { (в архіві: #)}}",
-      "teamsError": {
-        "missingScope": "Для команд потрібен дозвіл usergroups:read — онови Slack-застосунок і перевстанови його.",
-        "failed": "Не вдалося синхронізувати команди. Спробуй ще раз."
-      },
-      "updateFailed": "Не вдалося оновити: {name}. {reason}",
       "noTitle": "Посаду в Slack не вказано",
-      "noTeam": "Без команди",
-      "teamsLabel": "Команди",
       "roleFor": "Роль: {name}",
       "normFor": "Норма годин на день: {name}",
       "allowanceFor": "Днів відпустки на рік: {name}",
-      "activeFor": "{name}: активний"
-    },
-    "teams": {
-      "title": "Команди",
-      "helper": "Команди повторюють групи користувачів у Slack. Ранковий стендап учасника надходить у канали всіх його команд; хто не має каналу команди, потрапляє в загальний канал стендапів.",
-      "empty": "Команд поки немає. Натисни «Синхронізувати зі Slack» на вкладці «Люди», щоб імпортувати групи користувачів Slack.",
-      "columns": {
-        "handle": "Тег",
-        "name": "Назва",
-        "members": "Учасники",
-        "channel": "Канал стендапів"
-      },
-      "activeLabel": "Активні команди",
-      "archivedLabel": "Команди в архіві",
-      "archivedToggle": "В архіві (<n>{count}</n>)",
-      "channelFor": "Канал Slack для @{handle}",
-      "noChannel": "Без каналу",
-      "savedTo": "Стендапи @{handle} тепер надходять у {channel}.",
-      "removed": "Канал @{handle} прибрано.",
-      "noMembers": "Немає учасників у nerdylog",
-      "membersSr": " учасників: {names}"
+      "activeFor": "{name}: активний",
+      "syncedWithProjects": "Синхронізовано зі Slack: {people} · {projects}.",
+      "projects": "оновлено учасників {count, plural, one {# проєкту} few {# проєктів} many {# проєктів} other {# проєкту}}",
+      "projectsFailed": " (з помилкою: {count})",
+      "projectsNeedInvite": " · {count, plural, one {# каналу} few {# каналам} many {# каналам} other {# каналу}} треба запросити @nerdylog",
+      "search": "Пошук за іменем, поштою чи посадою",
+      "projectFilter": "Фільтр за проєктом",
+      "officeFilter": "Фільтр за офісом",
+      "allProjects": "Усі проєкти",
+      "allOffices": "Усі офіси",
+      "noOffice": "Без офісу",
+      "officeFor": "Офіс для {name}",
+      "noMatch": "Під ці фільтри ніхто не підходить.",
+      "clearFilters": "Скинути фільтри",
+      "showing": "Показано <n>{shown}</n> з <n>{total}</n>"
     },
     "projects": {
-      "title": "Проєкти й ліміти",
+      "title": "Проєкти",
       "new": "Новий проєкт",
       "empty": "Проєктів поки немає. Створи перший, щоб почати облік часу.",
       "columns": {
         "name": "Назва",
-        "code": "Код",
-        "cap": "Ліміт на місяць",
-        "channel": "Канал Slack",
-        "billable": "Оплачуваний",
+        "channel": "Slack-канал",
         "status": "Статус",
-        "actions": "Дії"
+        "actions": "Дії",
+        "createdBy": "Хто створив",
+        "members": "Учасники"
       },
-      "noCap": "Без ліміту",
-      "billable": "Оплачуваний",
-      "nonBillable": "Неоплачуваний",
       "edit": "Редагувати {name}",
-      "botNotIn": "· бота немає в каналі"
+      "botNotIn": "· бота немає в каналі",
+      "helper": "Один проєкт = один Slack-канал. Учасники проєкту — це люди в каналі; тільки вони можуть логувати сюди час.",
+      "noChannel": "Без каналу",
+      "refresh": "Оновити учасників",
+      "refreshing": "Оновлюю…",
+      "refreshFailed": "Не вдалося оновити учасників {name}. {reason}",
+      "refreshNeedsChannel": "Спершу прив'яжи Slack-канал",
+      "needsInvite": "Запроси @nerdylog у {channel} і онови учасників. Поточних учасників залишено.",
+      "membersRefreshed": "{channel}: {count, plural, one {# учасник} few {# учасники} many {# учасників} other {# учасника}}{skipped, plural, =0 {} other { (ще не в nerdylog: #)}}.",
+      "membersNotRefreshed": "Учасників не вдалося оновити. Спробуй ще раз через «Оновити учасників»."
     },
     "projectForm": {
       "editLabel": "Редагувати {name}",
       "newLabel": "Новий проєкт",
       "name": "Назва",
-      "code": "Код",
-      "cap": "Ліміт на місяць (год)",
-      "capPlaceholder": "Без ліміту",
-      "billable": "Оплачуваний",
       "active": "Активний",
       "channel": "Канал Slack",
       "noChannel": "Без каналу",
-      "capInvalid": "Ліміт має бути додатною кількістю годин або порожнім, якщо ліміту немає.",
       "nameRequired": "Вкажи назву.",
       "saved": "Збережено: {name}.",
       "created": "Створено: {name}.",
-      "create": "Створити проєкт"
+      "create": "Створити проєкт",
+      "channelRequired": "Обери Slack-канал проєкту.",
+      "channelRequiredLabel": "Slack-канал (обов'язково)",
+      "channelHelper": "Люди з цього каналу зможуть логувати час на проєкт."
     },
     "holidays": {
       "title": "Календар свят",
       "date": "Дата",
       "name": "Назва",
       "placeholder": "День Незалежності",
-      "add": "Додати свято",
       "adding": "Додаємо…",
       "pickDate": "Обери дату.",
       "nameRequired": "Вкажи назву.",
       "added": "Додано: {name}, {day}.",
       "removeFailed": "Не вдалося видалити: {name}. {reason}",
-      "empty": "Свят на {year} рік ще немає.",
-      "remove": "Видалити {name}"
+      "empty": "У {year} для {office} ще немає свят.",
+      "remove": "Видалити {name}",
+      "officeFilter": "Офіс",
+      "copyFrom": "Скопіювати з {year}",
+      "copying": "Копіюю…",
+      "copied": "Скопійовано: {copied}, пропущено: {skipped}.",
+      "copyFailed": "Не вдалося скопіювати свята. {reason}",
+      "noOffices": "Спершу додай офіс на вкладці «Офіси» — свята задаються для кожного офісу.",
+      "addFor": "Додати свято для {office}",
+      "addTo": "Додати в {code}",
+      "listLabel": "Свята {office} у {year}"
     },
     "settings": {
       "title": "Налаштування",
@@ -371,12 +363,77 @@
       "directoryInvalid": "Норма на день — 0,25–24 год; ліміт відпустки — 0–366 днів із кроком пів дня.",
       "invalidChannel": "Некоректний канал Slack",
       "alreadyLinkedProject": "Уже прив’язано до {name}",
-      "alreadyLinkedTeam": "Уже прив’язано до @{handle}",
-      "unknownTeam": "Невідома команда.",
       "unknownHoliday": "Невідоме свято.",
       "projectInvalid": "Перевір поля проєкту.",
       "holidayInvalid": "Перевір поля свята.",
-      "nameRequired": "Вкажи назву."
+      "nameRequired": "Вкажи назву.",
+      "channelRequired": "Обери Slack-канал проєкту.",
+      "unknownProject": "Невідомий проєкт.",
+      "noChannelToRefresh": "У цього проєкту немає Slack-каналу.",
+      "officeCodeInvalid": "Код — це 2–8 літер або цифр, наприклад UA.",
+      "unknownOffice": "Невідомий офіс."
+    },
+    "offices": {
+      "title": "Офіси",
+      "helper": "Кожна людина належить до одного офісу — від нього залежать її державні свята.",
+      "new": "Новий офіс",
+      "empty": "Офісів ще немає. Додай перший, щоб призначати людей і свята.",
+      "editLabel": "Редагувати {name}",
+      "newLabel": "Новий офіс",
+      "code": "Код",
+      "name": "Назва",
+      "namePlaceholder": "Україна",
+      "create": "Створити офіс",
+      "codeInvalid": "Код — це 2–8 літер або цифр, наприклад UA.",
+      "nameRequired": "Вкажи назву.",
+      "created": "Створено {name}.",
+      "saved": "Збережено {name}.",
+      "edit": "Редагувати {name}",
+      "delete": "Видалити {name}",
+      "deleteBlocked": "Спершу переведи {count, plural, one {# людину} few {# людей} many {# людей} other {# людини}} в інший офіс",
+      "confirmDelete": "Видалити {name}? Спершу треба прибрати його свята.",
+      "deleted": "Видалено {name}.",
+      "deleteFailed": "Не вдалося видалити {name}. {reason}",
+      "columns": {
+        "code": "Код",
+        "name": "Назва",
+        "members": "Люди",
+        "actions": "Дії"
+      }
+    }
+  },
+  "exports": {
+    "label": "Експорт",
+    "week": "Тиждень",
+    "month": "Місяць",
+    "menuFor": "Експорт: {period}",
+    "csv": "CSV",
+    "pdf": "PDF"
+  },
+  "projectHours": {
+    "title": "Цей місяць за проєктами",
+    "empty": "Цього місяця ще нічого не залоговано.",
+    "total": "Разом"
+  },
+  "people": {
+    "back": "Довідник",
+    "office": "Офіс",
+    "role": "Роль",
+    "status": "Статус",
+    "noOffice": "Без офісу",
+    "noTitle": "Немає посади в Slack",
+    "week": "Тиждень: {name}",
+    "totals": {
+      "title": "Підсумки місяця",
+      "empty": "Цього місяця нічого не залоговано.",
+      "hours": "Години",
+      "days": "Дні",
+      "vacSick": "Відпустка/лікарняні",
+      "holidays": "Свята"
+    },
+    "standups": {
+      "title": "Останні стендапи",
+      "empty": "За останні 14 днів стендапів немає."
     }
   }
 }

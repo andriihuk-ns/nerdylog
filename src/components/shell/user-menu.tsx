@@ -1,7 +1,6 @@
 "use client";
 
-import { useId } from "react";
-import { LogOut, Monitor, Moon, Sun, type LucideIcon } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { MyProfile } from "@/contracts";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -11,26 +10,19 @@ import {
   DropdownMenuItem,
   DropdownMenuGroup,
   DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { initials } from "@/components/lib/format";
 import { signOutAction } from "@/app/(dashboard)/sign-out-action";
 import { profileDisplayName, profileSubtitle } from "./profile-label";
-import { LocaleMenuGroup } from "./locale-menu-group";
-import { parseThemePref, THEME_ORDER, type ThemePref } from "./theme";
-import { useTheme } from "./use-theme";
-
-const THEME_ICON: Record<ThemePref, LucideIcon> = { system: Monitor, light: Sun, dark: Moon };
+import { LocaleMenuRow } from "./locale-menu-group";
+import { ThemeMenuRow } from "./theme-menu-row";
 
 export function UserMenu({ profile }: { profile: MyProfile }) {
   const t = useTranslations("userMenu");
   const tRole = useTranslations("roles");
   const name = profileDisplayName(profile, t("signedIn"));
-  const { choice, setChoice } = useTheme();
-  const themeLabelId = useId();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -42,7 +34,7 @@ export function UserMenu({ profile }: { profile: MyProfile }) {
           <AvatarFallback>{initials(name)}</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-56">
+      <DropdownMenuContent align="end" className="min-w-64">
         <DropdownMenuLabel className="flex flex-col gap-0.5">
           <span className="text-sm font-medium text-foreground">{name}</span>
           <span className="text-xs text-muted-foreground">{profileSubtitle(profile, tRole(profile.role))}</span>
@@ -50,27 +42,9 @@ export function UserMenu({ profile }: { profile: MyProfile }) {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuLabel id={themeLabelId} className="text-xs font-medium text-muted-foreground">
-            {t("theme")}
-          </DropdownMenuLabel>
-          <DropdownMenuRadioGroup
-            aria-labelledby={themeLabelId}
-            value={choice}
-            onValueChange={(v) => setChoice(parseThemePref(v))}
-          >
-            {THEME_ORDER.map((pref) => {
-              const Icon = THEME_ICON[pref];
-              return (
-                <DropdownMenuRadioItem key={pref} value={pref} className="min-h-11">
-                  <Icon aria-hidden />
-                  {t(`themes.${pref}`)}
-                </DropdownMenuRadioItem>
-              );
-            })}
-          </DropdownMenuRadioGroup>
+          <ThemeMenuRow />
+          <LocaleMenuRow />
         </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <LocaleMenuGroup />
         <DropdownMenuSeparator />
         <form action={signOutAction}>
           <DropdownMenuItem asChild className="min-h-11">
