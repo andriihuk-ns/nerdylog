@@ -10,7 +10,8 @@ import { initials } from "@/components/lib/format";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SummaryCell } from "./summary-cell";
 import { bucketValues, SUB_COLUMNS, teamTotals } from "./team-summary";
-import { TABLE_EDGE_PADDING } from "@/components/shell/table-styles";
+import { PINNED_EDGE_LEFT, PINNED_EDGE_RIGHT, TABLE_EDGE_PADDING } from "@/components/shell/table-styles";
+import { SUB_WIDTH_CLASS, subColumnOffset, summaryTableWidth } from "./summary-grid-styles";
 
 interface Props {
   rows: UserMonthRollup[];
@@ -22,7 +23,7 @@ interface Props {
   selfId: string;
 }
 
-const STICKY = "sticky left-0 z-10 w-[150px] min-w-[150px] max-w-[150px] bg-card text-left sticky-edge-right sm:w-[220px] sm:min-w-[220px] sm:max-w-[220px]";
+const STICKY = `sticky left-0 z-10 bg-card text-left ${PINNED_EDGE_RIGHT}`;
 const SUBS = [0, 1, 2, 3] as const;
 
 /** FR-WEB-04 / A2 Summary matrix: month-weeks × (Hours, Days, Vac/Sick, Holidays) + Monthly total. */
@@ -36,7 +37,20 @@ export function SummaryGrid({ rows, weeks, today, avatars, selfId }: Props) {
 
   return (
     <div className="overflow-x-auto rounded-lg border bg-card">
-      <table ref={gridRef} role="grid" aria-readonly aria-label={t("label")} className={`w-full border-collapse ${TABLE_EDGE_PADDING}`}>
+      <table
+        ref={gridRef}
+        role="grid"
+        aria-readonly
+        aria-label={t("label")}
+        className={`table-fixed border-collapse [--name-col:150px] sm:[--name-col:220px] ${TABLE_EDGE_PADDING}`}
+        style={{ width: summaryTableWidth(cols) }}
+      >
+        <colgroup>
+          <col className="w-[var(--name-col)]" />
+          {Array.from({ length: cols }, (_, i) => (
+            <col key={i} className={SUB_WIDTH_CLASS} />
+          ))}
+        </colgroup>
         <thead>
           <tr>
             <th scope="col" rowSpan={2} className={cn(STICKY, "border-b px-4 text-xs font-medium text-muted-foreground")}>
@@ -55,7 +69,7 @@ export function SummaryGrid({ rows, weeks, today, avatars, selfId }: Props) {
                 </span>
               </th>
             ))}
-            <th scope="colgroup" colSpan={4} className="sticky sticky-edge-left right-0 z-30 w-96 min-w-96 border-b border-l border-l-foreground/20 bg-card px-3 text-left text-xs font-semibold">
+            <th scope="colgroup" colSpan={4} className={cn("sticky right-0 z-30 border-b bg-card px-3 text-left text-xs font-semibold", PINNED_EDGE_LEFT)}>
               {t("monthlyTotal")}
             </th>
           </tr>
@@ -66,13 +80,12 @@ export function SummaryGrid({ rows, weeks, today, avatars, selfId }: Props) {
                   key={`${g}-${sub}`}
                   scope="col"
                   className={cn(
-                    "h-8 border-b px-3 text-right font-medium whitespace-nowrap",
-                    s === 0 && "border-l",
-                    s === 0 && w === null && "border-l-foreground/20",
-                    w === null && "sticky z-20 w-24 min-w-24 max-w-24 bg-card",
-                    w === null && s === 0 && "sticky-edge-left",
+                    "h-8 border-b px-2 text-right font-medium whitespace-nowrap",
+                    s === 0 && w !== null && "border-l",
+                    w === null && "sticky z-20 bg-card",
+                    w === null && s === 0 && PINNED_EDGE_LEFT,
                   )}
-                  style={w === null ? { right: `${(SUB_COLUMNS.length - s - 1) * 6}rem` } : undefined}
+                  style={w === null ? { right: subColumnOffset(s) } : undefined}
                 >
                   {t(`sub.${sub}`)}
                 </th>
@@ -107,7 +120,7 @@ export function SummaryGrid({ rows, weeks, today, avatars, selfId }: Props) {
                     context={isTotal ? t("contextMonth", { name: row.fullName }) : t("contextWeek", { name: row.fullName, n: g + 1 })}
                     groupStart={s === 0}
                     total={isTotal}
-                    stickyOffset={isTotal ? (SUB_COLUMNS.length - s - 1) * 6 : undefined}
+                    stickyOffset={isTotal ? subColumnOffset(s) : undefined}
                     navProps={cellProps(r, g * 4 + s)}
                     onKeyDown={handleNavKey}
                   />
@@ -131,7 +144,7 @@ export function SummaryGrid({ rows, weeks, today, avatars, selfId }: Props) {
                   context={g === weeks.length ? t("contextMonth", { name: t("team") }) : t("contextWeek", { name: t("team"), n: g + 1 })}
                   groupStart={s === 0}
                   total
-                  stickyOffset={(SUB_COLUMNS.length - s - 1) * 6}
+                  stickyOffset={g === weeks.length ? subColumnOffset(s) : undefined}
                 />
               ));
             })}

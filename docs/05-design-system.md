@@ -84,7 +84,7 @@ Rules: body never under 14 px (caption only for labels). Use the `tabular` utili
 - Select triggers are 44 px high by default; option rows have a 44 px minimum height. Menus align below the trigger, start-aligned, at the trigger's width.
 - Page: max width 1280 px, gutters 24 px (16 px under 640 px). Section gap 32 px.
 - Radius: `--radius` 10 px for cards and popovers; full for buttons, switches, and dots; 6 px for cells' focus outline and compact pills (`rounded-sm`).
-- Borders: 1 px `border` hairlines. Grids have no broad card shadows. Pinned table columns use only a directional edge cue (`sticky-edge-left` / `sticky-edge-right`), backed by low-contrast `--sticky-edge-shadow-left` / `--sticky-edge-shadow-right` tokens that adapt in dark mode. Popovers and drawers use one shadow `0 8px 24px rgb(0 0 0 / 0.08)` (dark: 0.4).
+- Borders: 1 px `border` hairlines. Grids have no broad card shadows. Pinned table columns are marked by a 1 px `border` rule on their inner edge (`PINNED_EDGE_LEFT` / `PINNED_EDGE_RIGHT`), drawn as a pseudo-element so it stays put while the grid scrolls. Popovers and drawers use one shadow `0 8px 24px rgb(0 0 0 / 0.08)` (dark: 0.4).
 
 ## 5. Motion
 

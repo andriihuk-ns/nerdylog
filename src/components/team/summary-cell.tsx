@@ -3,6 +3,7 @@ import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { orDot } from "@/components/lib/format";
 import { useFormat } from "@/hooks/use-format";
+import { PINNED_EDGE_LEFT } from "@/components/shell/table-styles";
 import { SUB_COLUMNS } from "./team-summary";
 
 interface Props {
@@ -11,7 +12,7 @@ interface Props {
   context: string; // "Jane Doe, week 2"
   groupStart: boolean;
   total: boolean;
-  stickyOffset?: number;
+  stickyOffset?: string; // CSS `right` of a pinned monthly-total cell
   navProps?: { "data-row": number; "data-col": number; tabIndex: number; onFocus: () => void };
   onKeyDown?: KeyboardEventHandler;
 }
@@ -28,15 +29,14 @@ export function SummaryCell({ value, sub, context, groupStart, total, stickyOffs
       role="gridcell"
       {...navProps}
       onKeyDown={onKeyDown}
-      style={stickyOffset === undefined ? undefined : { right: `${stickyOffset}rem` }}
+      style={stickyOffset === undefined ? undefined : { right: stickyOffset }}
       aria-label={t(SUB_COLUMNS[sub], { context, value: format(value) })}
       className={cn(
-        "tabular h-11 min-w-16 border-b px-3 text-right outline-none",
-        stickyOffset !== undefined && "sticky z-20 w-24 min-w-24 max-w-24 bg-card",
-        stickyOffset !== undefined && groupStart && "sticky-edge-left",
+        "tabular h-11 border-b px-2 text-right outline-none",
+        stickyOffset !== undefined && "sticky z-20 bg-card",
+        stickyOffset !== undefined && groupStart && PINNED_EDGE_LEFT,
         "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
-        groupStart && "border-l",
-        total && groupStart && "border-l-foreground/20",
+        groupStart && stickyOffset === undefined && "border-l",
         total && "font-semibold",
         value === 0 && "text-muted-foreground",
         vacSick && "bg-pto-subtle text-pto",
