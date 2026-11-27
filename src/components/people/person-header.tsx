@@ -1,7 +1,6 @@
 import Link from "next/link";
 import {
   BriefcaseBusiness,
-  Building2,
   ChevronLeft,
   CircleCheck,
   CircleX,
@@ -60,7 +59,7 @@ export function PersonHeader({ user, office, from }: { user: DirectoryUser; offi
             <div className="inline-flex items-center gap-1.5">
               <dt className="sr-only">{t("office")}</dt>
               <dd className="inline-flex items-center gap-1.5" aria-label={`${t("office")}: ${officeValue}`}>
-                {office ? <Building2 aria-hidden className="size-4 shrink-0" /> : <MapPin aria-hidden className="size-4 shrink-0" />}
+                <MapPin aria-hidden className="size-4 shrink-0" />
                 {officeValue}
               </dd>
             </div>

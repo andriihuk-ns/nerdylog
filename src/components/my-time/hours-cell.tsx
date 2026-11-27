@@ -1,11 +1,9 @@
 "use client";
 
 import type { KeyboardEvent } from "react";
-import { PencilLine, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { useFormat } from "@/hooks/use-format";
 import { taskSummaryDisplayText } from "@/contracts";
 import { CellEditor, type CommitMove } from "./cell-editor";
@@ -22,7 +20,7 @@ export interface HoursCellProps {
   weekend: boolean;
   columnTint: string;
   editing: string | null; // initial draft when editing
-  noteDraft: string | null; // non-null → popover open
+  noteDraft: string | null; // non-null → task editor dialog open
   pending: boolean;
   failed: boolean;
   navProps: { "data-row": number; "data-col": number; tabIndex: number; onFocus: () => void };
@@ -37,7 +35,6 @@ const DRAFT_KEY = /^[0-9.,]$/;
 
 export function HoursCell(p: HoursCellProps) {
   const t = useTranslations("myTime.cell");
-  const tm = useTranslations("myTime");
   const f = useFormat();
   const current = p.cell.hours > 0 ? f.hours(p.cell.hours) : "";
 
@@ -76,9 +73,10 @@ export function HoursCell(p: HoursCellProps) {
       aria-readonly={p.readOnly || undefined}
       aria-label={`${p.label}: ${spoken}`}
       onKeyDown={onKeyDown}
-      onClick={() => {
+      onClick={(event) => {
+        if (event.target instanceof Element && event.target.closest("a, button, input")) return;
         if (!p.readOnly && p.editing === null && p.noteDraft === null) {
-          p.onStartEdit(current);
+          p.onOpenNote(current);
         }
       }}
       className={cn(
@@ -107,25 +105,9 @@ export function HoursCell(p: HoursCellProps) {
               {p.weekendLocked ? "" : p.readOnly ? "—" : p.cell.hours > 0 ? hours : "·"}
             </span>
             {p.cell.notes.length > 0 ? (
-              <div onClick={(event) => event.stopPropagation()}>
+              <div>
                 <TaskGroupList summaries={p.cell.notes} />
               </div>
-            ) : null}
-            {!p.readOnly && p.cell.hours > 0 ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="hit-target h-11 w-full justify-start gap-1.5 px-1.5 text-xs text-muted-foreground"
-                aria-label={`${p.label}: ${tm(p.cell.notes.length > 0 ? "note.editTasks" : "note.addTasks")}`}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  p.onOpenNote(current);
-                }}
-              >
-                {p.cell.notes.length > 0 ? <PencilLine aria-hidden className="size-3.5" /> : <Plus aria-hidden className="size-3.5" />}
-                {tm(p.cell.notes.length > 0 ? "note.editTasks" : "note.addTasks")}
-              </Button>
             ) : null}
           </div>
         )}

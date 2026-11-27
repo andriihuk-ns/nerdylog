@@ -104,7 +104,7 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
                 setHours(cleaned);
                 setHoursError(cleaned !== raw ? t("input.numbersOnly") : null);
               }}
-              className="tabular h-11 text-right"
+              className="tabular h-11 text-left"
             />
             {hoursError ? (
               <p role="alert" className="text-xs text-destructive">
