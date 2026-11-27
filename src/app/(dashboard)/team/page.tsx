@@ -41,6 +41,10 @@ export default async function TeamPage({ searchParams }: { searchParams: SearchP
   const week = weeks.find((w) => w.start <= today && today <= w.end) ?? weeks[0];
   const range = { from: firstDayOfMonth(month), to: lastDayOfMonth(month) };
   const weekRange = week ? { from: week.start, to: week.end } : range;
+  const exportScope: Record<string, string> = filters.project ? { projectIds: filters.project } : {};
+  const exportScopeHint = filters.project
+    ? t("exports.projectScope", { project: active.find((p) => p.id === filters.project)?.name ?? "" })
+    : undefined;
 
   return (
     <div className="flex flex-col gap-6">
@@ -49,16 +53,17 @@ export default async function TeamPage({ searchParams }: { searchParams: SearchP
         today={today}
         drawerDate={null}
         filters={filters}
+        exportScopeHint={exportScopeHint}
         projects={active.map((p) => ({ value: p.id, label: p.name }))}
         exports={{
           week: [
-            { kind: "csv", href: exportHref("/api/export/ledger.csv", weekRange) },
-            { kind: "pdf", href: exportHref("/api/export/report.pdf", weekRange) },
+            { kind: "csv", href: exportHref("/api/export/ledger.csv", { ...weekRange, ...exportScope }) },
+            ...(!filters.project ? [{ kind: "pdf" as const, href: exportHref("/api/export/report.pdf", weekRange) }] : []),
           ],
           month: [
-            { kind: "csv", label: t("exports.summaryCsv"), href: exportHref("/api/export/summary.csv", { month }) },
-            { kind: "csv", label: t("exports.ledgerCsv"), href: exportHref("/api/export/ledger.csv", range) },
-            { kind: "pdf", href: exportHref("/api/export/report.pdf", range) },
+            ...(!filters.project ? [{ kind: "csv" as const, label: t("exports.summaryCsv"), href: exportHref("/api/export/summary.csv", { month }) }] : []),
+            { kind: "csv", label: t("exports.ledgerCsv"), href: exportHref("/api/export/ledger.csv", { ...range, ...exportScope }) },
+            ...(!filters.project ? [{ kind: "pdf" as const, href: exportHref("/api/export/report.pdf", range) }] : []),
           ],
         }}
       />

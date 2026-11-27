@@ -191,7 +191,8 @@
     "empty": "Nobody here yet.",
     "exports": {
       "summaryCsv": "Summary CSV",
-      "ledgerCsv": "Ledger CSV"
+      "ledgerCsv": "Ledger CSV",
+      "projectScope": "CSV exports include only {project}. Summary and PDF exports are available with All projects."
     },
     "standupsToggle": "Status",
     "grid": {

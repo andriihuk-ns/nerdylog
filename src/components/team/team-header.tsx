@@ -17,6 +17,7 @@ interface Props {
   today: IsoDate;
   drawerDate: IsoDate | null;
   filters: TeamFilters;
+  exportScopeHint?: string;
   projects: FilterOption[];
   exports: ExportGroups;
 }
@@ -24,7 +25,7 @@ interface Props {
 export const STANDUPS_TOGGLE_ID = "standups-toggle";
 
 /** `‹ November 2026 ›`, Export week ▾ / Export month ▾, search + project filter. Keys: `[` / `]` month. */
-export function TeamHeader({ month, today, drawerDate, filters, projects, exports }: Props) {
+export function TeamHeader({ month, today, drawerDate, filters, exportScopeHint, projects, exports }: Props) {
   const router = useRouter();
   const tm = useTranslations("metadata");
   const tp = useTranslations("period");
@@ -55,6 +56,7 @@ export function TeamHeader({ month, today, drawerDate, filters, projects, export
         </div>
       </div>
       <TeamFilterBar month={month} drawerDate={drawerDate} filters={filters} projects={projects} />
+      {exportScopeHint ? <p className="text-xs text-muted-foreground">{exportScopeHint}</p> : null}
     </div>
   );
 }

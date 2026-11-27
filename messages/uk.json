@@ -191,7 +191,8 @@
     "empty": "Тут поки нікого.",
     "exports": {
       "summaryCsv": "Зведення CSV",
-      "ledgerCsv": "Журнал CSV"
+      "ledgerCsv": "Журнал CSV",
+      "projectScope": "CSV міститиме лише проєкт «{project}». Зведення та PDF доступні для всіх проєктів."
     },
     "standupsToggle": "Статус",
     "grid": {
