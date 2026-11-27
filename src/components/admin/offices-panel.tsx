@@ -61,8 +61,8 @@ export function OfficesPanel({ offices }: { offices: OfficeView[] }) {
           <table className={`w-full border-collapse ${TABLE_EDGE_PADDING}`}>
             <thead>
               <tr className="border-b text-xs font-medium text-muted-foreground">
-                <th scope="col" className="h-10 w-24 px-4 text-left font-medium">{t("columns.code")}</th>
-                <th scope="col" className="px-3 text-left font-medium">{t("columns.name")}</th>
+                <th scope="col" className="h-10 w-px pr-2 pl-4 text-left font-medium whitespace-nowrap">{t("columns.code")}</th>
+                <th scope="col" className="px-4 text-left font-medium">{t("columns.name")}</th>
                 <th scope="col" className="px-3 text-left font-medium">{t("columns.timezone")}</th>
                 <th scope="col" className="px-3 text-right font-medium">{t("columns.members")}</th>
                 <th scope="col" className="px-4 text-right font-medium">
@@ -80,8 +80,8 @@ export function OfficesPanel({ offices }: { offices: OfficeView[] }) {
                   </tr>
                 ) : (
                   <tr key={o.id} className="h-11 border-b last:border-b-0">
-                    <td className="px-4 font-mono text-xs font-medium">{o.code}</td>
-                    <th scope="row" className="px-3 text-left font-medium">{o.name}</th>
+                    <td className="pr-2 pl-4 font-mono text-xs font-medium">{o.code}</td>
+                    <th scope="row" className="px-4 text-left font-medium">{o.name}</th>
                     <td className="px-3 text-sm whitespace-nowrap text-muted-foreground">{o.timezone}</td>
                     <td className="tabular px-3 text-right font-medium">{f.count(o.memberCount)}</td>
                     <td className="px-2">

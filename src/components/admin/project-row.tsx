@@ -60,7 +60,7 @@ export function ProjectRow({ project: p, channels, offices, onEdit, onDelete, on
       }}
       className={cn("group h-11 cursor-pointer border-b last:border-b-0 hover:bg-muted/50", !active && "text-muted-foreground")}
     >
-      <td className="px-3">
+      <td className="pr-2 pl-3">
         <Switch
           checked={active}
           onCheckedChange={setActive}

@@ -4,6 +4,7 @@ import { useMemo, useOptimistic, useState, useTransition } from "react";
 import { Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { OfficeView, ProjectView, SlackChannelOption } from "@/contracts";
+import { cn } from "@/lib/utils";
 import { deleteProjectAction, type ProjectSaveResult } from "@/app/(dashboard)/admin/project-actions";
 import { useToast } from "@/hooks/use-toast";
 import { useConfirm } from "@/hooks/use-confirm";
@@ -110,7 +111,11 @@ export function ProjectsPanel({ projects, channels, offices }: Props) {
             <thead>
               <tr className="border-b text-xs font-medium text-muted-foreground">
                 {COLUMNS.map((c) => (
-                  <th key={c} scope="col" className={c === "name" ? "h-10 px-4 text-left font-medium" : "px-3 text-left font-medium whitespace-nowrap"}>
+                  <th key={c} scope="col" className={cn(
+                    "h-10 text-left font-medium whitespace-nowrap",
+                    // The status column shrinks to its switch so the name sits next to it, as on People.
+                    c === "status" ? "w-px pr-2" : c === "name" ? "px-4" : "px-3",
+                  )}>
                     {t(`columns.${c}`)}
                   </th>
                 ))}

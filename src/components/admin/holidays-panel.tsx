@@ -83,11 +83,11 @@ export function HolidaysPanel({ holidays, offices, officeId, year, currentYear }
         />
         <form onSubmit={add} aria-label={t("addFor", { office: office.name })} className="flex min-w-0 flex-1 flex-wrap items-end gap-3">
           <div className="flex w-full flex-col gap-1.5 sm:w-auto">
-            <Label htmlFor="holiday-date">{t("date")}</Label>
+            <Label htmlFor="holiday-date" className="sr-only">{t("date")}</Label>
             <DatePicker id="holiday-date" value={date} label={t("date")} placeholder={t("pickDate")} onChange={setDate} className="w-full sm:w-44" />
           </div>
           <div className="flex min-w-48 flex-1 flex-col gap-1.5">
-            <Label htmlFor="holiday-name">{t("name")}</Label>
+            <Label htmlFor="holiday-name" className="sr-only">{t("name")}</Label>
             <Input id="holiday-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={120} placeholder={t("placeholder")} className="h-11" />
           </div>
           <Button type="submit" disabled={adding} className="hit-target w-full sm:w-auto">
