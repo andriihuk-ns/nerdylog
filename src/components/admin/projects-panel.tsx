@@ -14,7 +14,7 @@ import { ProjectRow } from "./project-row";
 import { channelLabel, takenChannelMap } from "./channel-options";
 import { useMemberRefreshText } from "./use-member-refresh-text";
 
-const COLUMNS = ["name", "channel", "prompt", "createdBy", "members", "status"] as const;
+const COLUMNS = ["name", "channel", "prompt", "team", "status"] as const;
 
 interface Props {
   projects: ProjectView[];

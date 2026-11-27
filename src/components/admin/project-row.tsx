@@ -1,7 +1,8 @@
 "use client";
 
 import { useTransition } from "react";
-import { Lock, Pencil, RefreshCw, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { Lock, Pencil, RefreshCw, Trash2, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { OfficeView, ProjectView, SlackChannelOption } from "@/contracts";
 import { cn } from "@/lib/utils";
@@ -10,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { channelLabel, findChannel } from "./channel-options";
 import { useMemberRefreshText } from "./use-member-refresh-text";
-import { ProjectMemberAllocationControl } from "./project-member-allocation";
 
 interface Props {
   project: ProjectView;
@@ -21,7 +21,7 @@ interface Props {
   onToast: (message: string, tone: "neutral" | "error", retry?: () => void) => void;
 }
 
-/** One Projects row: name, #channel, prompt ("Asks at 10:00 · UA"), creator, members, status; Refresh, Edit, Delete. */
+/** Compact project summary; the team and allocations live on the project's detail page. */
 export function ProjectRow({ project: p, channels, offices, onEdit, onDelete, onToast }: Props) {
   const t = useTranslations("admin.projects");
   const tc = useTranslations("common");
@@ -41,8 +41,10 @@ export function ProjectRow({ project: p, channels, offices, onEdit, onDelete, on
 
   return (
     <tr className={cn("h-11 border-b last:border-b-0", !p.isActive && "text-muted-foreground")}>
-      <th scope="row" className="sticky left-0 z-10 max-w-48 truncate bg-card px-4 text-left font-medium">
-        {p.name}
+      <th scope="row" className="sticky left-0 z-10 max-w-56 truncate bg-card px-4 text-left font-medium">
+        <Link href={`/admin/projects/${p.id}`} className="rounded-sm underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          {p.name}
+        </Link>
       </th>
       <td className="px-3 whitespace-nowrap">
         <ChannelCell channels={channels} channelId={p.slackChannelId} />
@@ -50,21 +52,11 @@ export function ProjectRow({ project: p, channels, offices, onEdit, onDelete, on
       <td className="tabular px-3 text-sm whitespace-nowrap text-muted-foreground">
         {t("asksAt", { time: p.statusPromptTime, office: office?.code ?? "UA" })}
       </td>
-      <td className="px-3 whitespace-nowrap">{p.createdBy?.fullName ?? <span className="text-muted-foreground">—</span>}</td>
-      <td className="px-3 py-2 align-top">
-        {p.memberAllocations.length > 0 ? (
-          <ul className="flex flex-col gap-1.5">
-            {p.memberAllocations.map((member) => (
-              <ProjectMemberAllocationControl
-                key={member.userId}
-                projectId={p.id}
-                projectName={p.name}
-                member={member}
-                onToast={onToast}
-              />
-            ))}
-          </ul>
-        ) : <span className="text-sm text-muted-foreground">{t("noMembers")}</span>}
+      <td className="px-3 whitespace-nowrap">
+        <Link href={`/admin/projects/${p.id}`} className="inline-flex min-h-11 items-center gap-2 rounded-sm text-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={t("viewTeam", { name: p.name })}>
+          <Users aria-hidden className="size-4" />
+          {t("teamCount", { count: p.memberAllocations.length })}
+        </Link>
       </td>
       <td className="px-3">{p.isActive ? tc("active") : tc("archived")}</td>
       <td className="px-2">

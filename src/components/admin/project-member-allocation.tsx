@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { Check } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
   PROJECT_ALLOCATION_PRESETS,
@@ -39,9 +40,9 @@ export function ProjectMemberAllocationControl({ projectId, projectName, member,
   );
 
   return (
-    <li aria-busy={pending} className="flex min-w-[19rem] flex-col gap-1.5 rounded-md bg-muted/40 px-2 py-2 sm:min-w-[24rem] sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-      <span className="max-w-48 truncate text-sm font-medium" title={member.fullName}>{member.fullName}</span>
-      <div className="flex items-center gap-1.5">
+    <li aria-busy={pending} className="grid min-w-0 gap-3 rounded-lg border bg-card p-3 sm:grid-cols-[minmax(9rem,1fr)_auto] sm:items-center sm:gap-4">
+      <span className="truncate text-sm font-medium" title={member.fullName}>{member.fullName}</span>
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
         <div role="group" aria-label={t("allocationPresets", { name: member.fullName })} className="flex items-center gap-1">
           {PROJECT_ALLOCATION_PRESETS.map((value) => {
             const hours = hoursForAllocationPercent(value);
@@ -50,18 +51,22 @@ export function ProjectMemberAllocationControl({ projectId, projectName, member,
                 key={value}
                 type="button"
                 size="sm"
-                variant={percent === value ? "secondary" : "ghost"}
+                variant="ghost"
+                className={percent === value
+                  ? "min-h-11 min-w-14 gap-1.5 bg-foreground px-3 text-background hover:bg-foreground/90 hover:text-background"
+                  : "min-h-11 min-w-14 border border-input bg-background px-3 text-foreground hover:bg-muted"}
                 aria-pressed={percent === value}
                 aria-label={t("allocationPercent", { name: member.fullName, percent: value })}
                 disabled={pending}
                 onClick={() => save(hours)}
               >
+                {percent === value ? <Check aria-hidden className="size-3.5" /> : null}
                 {value}%
               </Button>
             );
           })}
         </div>
-        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+        <span className="flex items-center gap-1 text-sm font-medium text-foreground">
           <NumberCommitInput
             key={`${member.userId}-${member.allocationHoursPerMonth}`}
             value={member.allocationHoursPerMonth}
