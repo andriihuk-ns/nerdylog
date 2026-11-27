@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   addDays,
   dayHead,
@@ -96,5 +96,17 @@ describe("dates", () => {
     expect(formatDayLong("2026-11-24", "uk")).toBe("Вт, 24 лист.");
     expect(formatWeekRange("2026-11-23", "2026-11-29", "uk")).toBe("23–29 лист. 2026 р.");
     expect(formatShortRange("2026-11-02", "2026-11-08", "uk")).toBe("2–8 лист.");
+  });
+
+  it("normalises the spaces that differ between ICU versions", () => {
+    const spy = vi
+      .spyOn(Intl.DateTimeFormat.prototype, "formatRange")
+      .mockReturnValue("2\u2009–\u20098\u00a0лист. 2026\u202fр.");
+    try {
+      expect(formatWeekRange("2026-11-02", "2026-11-08", "uk")).toBe("2 – 8 лист. 2026 р.");
+      expect(formatShortRange("2026-11-02", "2026-11-08", "uk")).toBe("2–8 лист. 2026 р.");
+    } finally {
+      spy.mockRestore();
+    }
   });
 });

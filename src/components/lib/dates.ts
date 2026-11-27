@@ -113,8 +113,8 @@ export function lastDayOfMonth(month: string): IsoDate {
 
 /*
  * A14: labels use Intl with the active locale ("en" | "uk"). Dates are UTC midnights, so the
- * formatter runs in UTC. ICU puts thin spaces around range dashes; they are normalised so server
- * and browser output match.
+ * formatter runs in UTC. ICU versions differ in the spaces they emit (thin around range dashes,
+ * no-break before uk "р."); range labels normalise them so server and browser output match.
  */
 const dateFormats = new Map<string, Intl.DateTimeFormat>();
 
@@ -128,6 +128,7 @@ function fmt(locale: string, opts: Intl.DateTimeFormatOptions): Intl.DateTimeFor
   return df;
 }
 
+const NO_BREAK_SPACES = /[\u00a0\u202f]/g;
 const utc = (date: IsoDate) => new Date(toUtcMs(date));
 const capitalize = (s: string) => s.charAt(0).toLocaleUpperCase() + s.slice(1);
 const SHORT_DATE: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
@@ -136,14 +137,15 @@ const SHORT_DATE: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" 
 export function formatWeekRange(start: IsoDate, end: IsoDate, locale = "en"): string {
   return fmt(locale, { ...SHORT_DATE, year: "numeric" })
     .formatRange(utc(start), utc(end))
-    .replace(/\u2009/g, " ");
+    .replace(/\u2009/g, " ")
+    .replace(NO_BREAK_SPACES, " ");
 }
 
 /** Month-week caption: en "Nov 1–2", "Nov 30"; uk "1–2 лист.". */
 export function formatShortRange(start: IsoDate, end: IsoDate, locale = "en"): string {
   const f = fmt(locale, SHORT_DATE);
   if (start === end) return f.format(utc(start));
-  return f.formatRange(utc(start), utc(end)).replace(/\u2009/g, "");
+  return f.formatRange(utc(start), utc(end)).replace(/\u2009/g, "").replace(NO_BREAK_SPACES, " ");
 }
 
 /** en "November 2026", uk "Листопад 2026" (stand-alone month name, no "р."). */

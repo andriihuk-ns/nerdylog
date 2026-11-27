@@ -100,6 +100,23 @@ describe("buildPtoModal", () => {
 });
 
 describe("buildStandupCard", () => {
+  it("A20: shows one open task inline and several tasks as a checklist", () => {
+    const yesterday = (items: Array<{ text: string; done: boolean }>) =>
+      JSON.stringify(
+        buildStandupCard({
+          fullName: "A",
+          avatarUrl: null,
+          yesterday: [{ hours: 4, projectName: "DogTeamPro", taskSummary: JSON.stringify(items) }],
+          plannedToday: "",
+          blockers: "",
+        }).blocks,
+      );
+    const open = { text: "Map modal", done: false };
+    expect(yesterday([open])).toContain("4h DogTeamPro — Map modal");
+    expect(yesterday([{ ...open, done: true }])).toContain("4h DogTeamPro — ☑ Map modal");
+    expect(yesterday([open, { text: "Review", done: false }])).toContain("4h DogTeamPro\\n  ☐ Map modal\\n  ☐ Review");
+  });
+
   it("formats yesterday, today and blockers", () => {
     const card = buildStandupCard({
       fullName: "Olena",

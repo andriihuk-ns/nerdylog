@@ -43,7 +43,7 @@ describe("parseTimeSubmission", () => {
         workDate: "2026-11-25",
         hours: 2.5,
         entryType: "work",
-        taskSummary: "Map modal DOG-1364",
+        taskSummary: JSON.stringify([{ text: "Map modal DOG-1364", done: false }]),
         source: "slack_standup",
         slackViewId: "V1",
       },

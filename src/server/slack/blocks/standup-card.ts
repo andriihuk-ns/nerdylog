@@ -24,15 +24,15 @@ function clip(text: string, max = 1900): string {
 function formatTaskForSlack(raw: string): string {
   const items = parseChecklist(raw);
   if (!items) return linkifyMrkdwn(raw.trim());
-  return items
+  const lines = items
     .filter((i) => i.text.trim() || checklistItemLinks(i).some((link) => link.trim()))
     .map((i) => {
-      const box = i.done ? "☑" : "☐";
-      const text = i.text.trim() ? linkifyMrkdwn(i.text.trim()) : "";
-      const links = checklistItemLinks(i).filter((link) => link.trim()).map((link) => ` ${linkifyMrkdwn(link.trim())}`).join("");
-      return `  ${box} ${text}${links}`.trimEnd();
-    })
-    .join("\n");
+      const parts = [i.text, ...checklistItemLinks(i)].map((part) => part.trim()).filter(Boolean);
+      return { done: i.done, body: parts.map(linkifyMrkdwn).join(" ") };
+    });
+  // A single item stays on the project line (design system 7.3); only a done one needs a mark.
+  if (lines.length === 1) return `${lines[0].done ? "☑ " : ""}${lines[0].body}`;
+  return lines.map((line) => `  ${line.done ? "☑" : "☐"} ${line.body}`).join("\n");
 }
 
 function yesterdayText(rows: StandupCardInput["yesterday"]): string {
