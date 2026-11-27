@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-import { ArrowLeft, CircleCheck, CircleX, Hash, RefreshCw, Users } from "lucide-react";
+import { ArrowLeft, CircleCheck, CircleX, Clock, Hash, RefreshCw, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
-import type { ProjectView, SlackChannelOption } from "@/contracts";
+import type { OfficeView, ProjectView, SlackChannelOption } from "@/contracts";
 import { refreshProjectMembersAction } from "@/app/(dashboard)/admin/project-actions";
 import { Button } from "@/components/ui/button";
 import { Toast } from "@/components/ui/toast";
@@ -18,10 +18,11 @@ import { TABLE_EDGE_PADDING } from "@/components/shell/table-styles";
 
 interface Props {
   project: ProjectView;
+  offices: OfficeView[];
   channels: SlackChannelOption[] | null;
 }
 
-export function ProjectDetailPanel({ project, channels }: Props) {
+export function ProjectDetailPanel({ project, offices, channels }: Props) {
   const t = useTranslations("admin.projects");
   const tc = useTranslations("common");
   const router = useRouter();
@@ -30,6 +31,9 @@ export function ProjectDetailPanel({ project, channels }: Props) {
   const { toast, show, dismiss } = useToast();
   const channel = project.slackChannelId ? channelLabel(channels, project.slackChannelId) : t("noChannel");
   const channelDisplay = channel.startsWith("#") ? channel.slice(1) : channel;
+
+  const office = offices.find((o) => o.id === project.statusPromptOfficeId) ?? offices.find((o) => o.code === "UA");
+  const asksAt = t("asksAt", { time: project.statusPromptTime, office: office?.code ?? "UA" });
 
   function refreshMembers() {
     startRefresh(async () => {
@@ -64,6 +68,10 @@ export function ProjectDetailPanel({ project, channels }: Props) {
               <dd className="inline-flex items-center gap-1.5" aria-label={t("memberCount", { count: project.memberAllocations.length })}>
                 <Users aria-hidden className="size-4 shrink-0" />{t("memberCount", { count: project.memberAllocations.length })}
               </dd>
+            </div>
+            <div className="inline-flex items-center gap-1.5">
+              <dt className="sr-only">{t("columns.prompt")}</dt>
+              <dd className="tabular inline-flex items-center gap-1.5"><Clock aria-hidden className="size-4 shrink-0" />{asksAt}</dd>
             </div>
             <div className="inline-flex items-center gap-1.5">
               <dt className="sr-only">{t("columns.status")}</dt>
