@@ -39,9 +39,9 @@ export function TeamHeader({ month, today, drawerDate, filters, projects, export
   const toggleHref = teamHref(month, drawerDate ? null : today, filters);
 
   useHotkeys({
-    "[": () => router.push(prev),
-    "]": () => router.push(next),
-    s: () => router.push(toggleHref),
+    "[": () => router.push(prev, { scroll: false }),
+    "]": () => router.push(next, { scroll: false }),
+    s: () => router.push(toggleHref, { scroll: false }),
   });
 
   return (

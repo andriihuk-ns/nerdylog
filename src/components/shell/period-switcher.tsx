@@ -18,7 +18,7 @@ export function PeriodSwitcher({ label, unit, prevHref, nextHref, todayHref, tod
   return (
     <div className="flex items-center gap-1">
       <Button asChild variant="ghost" size="icon" className="hit-target">
-        <Link href={prevHref} aria-label={t("previous", { unit })} aria-keyshortcuts="[">
+        <Link href={prevHref} scroll={false} aria-label={t("previous", { unit })} aria-keyshortcuts="[">
           <ChevronLeft aria-hidden />
         </Link>
       </Button>
@@ -26,13 +26,13 @@ export function PeriodSwitcher({ label, unit, prevHref, nextHref, todayHref, tod
         {label}
       </p>
       <Button asChild variant="ghost" size="icon" className="hit-target">
-        <Link href={nextHref} aria-label={t("next", { unit })} aria-keyshortcuts="]">
+        <Link href={nextHref} scroll={false} aria-label={t("next", { unit })} aria-keyshortcuts="]">
           <ChevronRight aria-hidden />
         </Link>
       </Button>
       {todayHref ? (
         <Button asChild variant="outline" className="hit-target ml-1">
-          <Link href={todayHref} aria-keyshortcuts="T">
+          <Link href={todayHref} scroll={false} aria-keyshortcuts="T">
             {todayLabel ?? t("today")}
           </Link>
         </Button>

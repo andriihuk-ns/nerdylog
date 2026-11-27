@@ -23,7 +23,9 @@ export function AdminTabs({ tab, year, officeId, panels }: Props) {
     <Tabs
       defaultValue={tab}
       onValueChange={(value) => {
+        const y = window.scrollY;
         router.replace(adminHref(value as AdminTab, year, officeId), { scroll: false });
+        requestAnimationFrame(() => window.scrollTo({ top: y }));
       }}
       className="flex flex-col gap-6"
     >

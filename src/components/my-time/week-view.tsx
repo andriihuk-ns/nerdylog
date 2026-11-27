@@ -61,9 +61,9 @@ export function WeekView({ weekStart, today, entries, projects, userId, basePath
   const next = addDays(weekStart, 7);
   const thisWeek = mondayOf(today);
   useHotkeys({
-    "[": () => router.push(weekHref(prev)),
-    "]": () => router.push(weekHref(next)),
-    t: () => router.push(weekHref(thisWeek)),
+    "[": () => router.push(weekHref(prev), { scroll: false }),
+    "]": () => router.push(weekHref(next), { scroll: false }),
+    t: () => router.push(weekHref(thisWeek), { scroll: false }),
   });
 
   const pin = (project: ProjectRef) =>
@@ -83,6 +83,8 @@ export function WeekView({ weekStart, today, entries, projects, userId, basePath
           tone: "error",
           onRetry: () => saveCell(project, date, hours, note),
         });
+      } else {
+        show(tc("saved"));
       }
     });
   }
@@ -96,6 +98,8 @@ export function WeekView({ weekStart, today, entries, projects, userId, basePath
           tone: "error",
           onRetry: () => sendStatus(date, status),
         });
+      } else {
+        show(tc("saved"));
       }
     });
   }

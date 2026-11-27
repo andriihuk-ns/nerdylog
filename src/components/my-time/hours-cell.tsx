@@ -71,14 +71,18 @@ export function HoursCell(p: HoursCellProps) {
       aria-readonly={p.readOnly || undefined}
       aria-label={`${p.label}: ${spoken}`}
       onKeyDown={onKeyDown}
-      onDoubleClick={() => !p.readOnly && p.onStartEdit(current)}
-      onClick={(e) => e.currentTarget.focus()}
+      onClick={() => {
+        if (!p.readOnly && p.editing === null && p.noteDraft === null) {
+          p.onStartEdit(current);
+        }
+      }}
       className={cn(
         "relative h-11 min-w-[64px] border-b p-0 text-right outline-none transition-colors duration-[var(--duration-base)] ease-standard",
         "focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset focus-visible:outline-none",
         p.weekend && !p.columnTint && "bg-muted/50",
         p.columnTint,
-        !p.readOnly && "cursor-cell",
+        !p.readOnly && "cursor-text",
+        !p.readOnly && p.editing === null && "hover:bg-muted/60 hover:ring-1 hover:ring-ring/40 hover:ring-inset",
         p.pending && "bg-work-subtle",
         p.failed && "ring-1 ring-destructive ring-inset",
       )}

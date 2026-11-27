@@ -19,47 +19,38 @@ import { Switch } from "@/components/ui/switch";
 import { FilterSelect } from "@/components/shell/filter-select";
 import { initials } from "@/components/lib/format";
 import { useFormat } from "@/hooks/use-format";
-import { useFieldSave } from "@/hooks/use-field-save";
 import { useConfirm } from "@/hooks/use-confirm";
-import type { FieldSave } from "@/hooks/save-state";
 import { NumberCommitInput } from "./number-commit-input";
-import { SaveIndicator } from "./save-indicator";
 import { NONE } from "./directory-filters";
 
-type Field = keyof DirectoryPatch;
-
-/** One Directory row (Status first, A16); every control saves optimistically with its own "Saving… / Saved ✓ / error" status. */
+/** One Directory row (Status first, A16); every control saves optimistically and reports via bottom toast. */
 export function DirectoryRow({
   user,
   offices,
+  onToast,
 }: {
   user: DirectoryUser;
   offices: OfficeView[];
+  onToast: (message: string, tone?: "neutral" | "error") => void;
 }) {
   const [view, applyPatch] = useOptimistic(
     user,
     (u: DirectoryUser, patch: DirectoryPatch) => ({ ...u, ...patch }),
   );
   const [, startTransition] = useTransition();
-  const { get, track } = useFieldSave();
   const t = useTranslations("admin.directory");
   const tc = useTranslations("common");
   const tRole = useTranslations("roles");
   const f = useFormat();
   const { confirm, dialog } = useConfirm();
 
-  function update(field: Field, patch: DirectoryPatch) {
-    void track(
-      field,
-      () =>
-        new Promise<string | null>((resolve) => {
-          startTransition(async () => {
-            applyPatch(patch);
-            const res = await updateDirectoryUserAction(user.id, patch);
-            resolve(res.ok ? null : res.message);
-          });
-        }),
-    );
+  function update(patch: DirectoryPatch) {
+    startTransition(async () => {
+      applyPatch(patch);
+      const res = await updateDirectoryUserAction(user.id, patch);
+      if (res.ok) onToast(tc("saved"));
+      else onToast(res.message, "error");
+    });
   }
 
   async function setActive(isActive: boolean) {
@@ -71,7 +62,7 @@ export function DirectoryRow({
       });
       if (!ok) return;
     }
-    update("isActive", { isActive });
+    update({ isActive });
   }
 
   return (
@@ -81,7 +72,7 @@ export function DirectoryRow({
         !view.isActive && "text-muted-foreground",
       )}
     >
-      <Cell state={get("isActive")}>
+      <Cell>
         <span className="flex items-center gap-2">
           <Switch
             checked={view.isActive}
@@ -130,12 +121,12 @@ export function DirectoryRow({
           </span>
         )}
       </td>
-      <Cell state={get("officeId")}>
+      <Cell>
         <FilterSelect
           label={t("officeFor", { name: view.fullName })}
           value={view.officeId ?? NONE}
           onChange={(v) =>
-            update("officeId", { officeId: v === NONE ? null : v })
+            update({ officeId: v === NONE ? null : v })
           }
           options={[
             { value: NONE, label: t("noOffice") },
@@ -147,16 +138,16 @@ export function DirectoryRow({
           className="w-40"
         />
       </Cell>
-      <Cell state={get("role")}>
+      <Cell>
         <FilterSelect
           label={t("roleFor", { name: view.fullName })}
           value={view.role}
-          onChange={(role) => update("role", { role: role as Role })}
+          onChange={(role) => update({ role: role as Role })}
           options={ROLES.map((r) => ({ value: r, label: tRole(r) }))}
           className="w-32"
         />
       </Cell>
-      <Cell state={get("dailyNormHours")} align="right">
+      <Cell align="right">
         <NumberCommitInput
           key={view.dailyNormHours}
           value={view.dailyNormHours}
@@ -166,11 +157,11 @@ export function DirectoryRow({
           step={0.25}
           format={f.hours}
           onCommit={(n) =>
-            n !== null && update("dailyNormHours", { dailyNormHours: n })
+            n !== null && update({ dailyNormHours: n })
           }
         />
       </Cell>
-      <Cell state={get("ptoAllowanceDays")} align="right">
+      <Cell align="right">
         <NumberCommitInput
           key={view.ptoAllowanceDays ?? "none"}
           value={view.ptoAllowanceDays}
@@ -180,20 +171,17 @@ export function DirectoryRow({
           step={0.5}
           allowEmpty
           format={f.count}
-          onCommit={(n) => update("ptoAllowanceDays", { ptoAllowanceDays: n })}
+          onCommit={(n) => update({ ptoAllowanceDays: n })}
         />
       </Cell>
     </tr>
   );
 }
 
-/** Editable cell: control centred in the row; its save status hangs just below it (no row jump). */
 function Cell({
-  state,
   align = "left",
   children,
 }: {
-  state: FieldSave;
   align?: "left" | "right";
   children: ReactNode;
 }) {
@@ -201,18 +189,11 @@ function Cell({
     <td className="px-2 py-3 align-middle">
       <div
         className={cn(
-          "relative flex",
+          "flex",
           align === "right" ? "justify-end" : "justify-start",
         )}
       >
         {children}
-        <SaveIndicator
-          state={state}
-          className={cn(
-            "absolute top-full z-10 mt-0.5 max-w-40 bg-card",
-            align === "right" ? "right-0" : "left-0",
-          )}
-        />
       </div>
     </td>
   );

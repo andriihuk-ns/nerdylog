@@ -178,7 +178,12 @@ export function DirectoryPanel({ users, projects, offices }: Props) {
             </thead>
             <tbody>
               {shown.map((u) => (
-                <DirectoryRow key={u.id} user={u} offices={offices} />
+                <DirectoryRow
+                  key={u.id}
+                  user={u}
+                  offices={offices}
+                  onToast={(message, tone) => show(message, tone ? { tone } : {})}
+                />
               ))}
             </tbody>
           </table>
