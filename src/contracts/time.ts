@@ -7,6 +7,7 @@ export type IsoDate = z.infer<typeof isoDateSchema>;
 
 /** Ticket references like DOG-1364 or CNG-009 (PRD FR-SLACK-02). */
 export const TICKET_REF_REGEX = /\b[A-Z][A-Z0-9]*-\d+\b/g;
+export const MAX_TASK_SUMMARY_LENGTH = 2000;
 
 export function extractTicketRefs(text: string): string[] {
   return [...new Set(text.match(TICKET_REF_REGEX) ?? [])];
@@ -20,7 +21,7 @@ export const timeEntryInputSchema = z
     workDate: isoDateSchema,
     hours: z.number().min(0).max(24).multipleOf(0.25),
     entryType: entryTypeSchema,
-    taskSummary: z.string().max(2000).default(""),
+    taskSummary: z.string().max(MAX_TASK_SUMMARY_LENGTH).default(""),
     source: entrySourceSchema,
     slackViewId: z.string().nullable().default(null),
   })

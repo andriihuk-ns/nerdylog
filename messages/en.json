@@ -129,8 +129,14 @@
     "addProjectRow": "Add a project row",
     "note": {
       "hours": "Hours",
-      "taskNote": "Note",
+      "taskNote": "Task details",
       "taskNoteFirst": "Note (first entry)",
+      "editTasks": "Edit tasks",
+      "addTasks": "Add tasks",
+      "combinedHint": "Tasks from {count} time entries are grouped here. Saving keeps the logged hours unchanged.",
+      "taskRequired": "Add a description to each task or remove the empty task.",
+      "linkRequired": "Add a URL for each link field or remove the empty link.",
+      "tooLong": "Keep task details under {max} characters.",
       "placeholder": "What did you do? Ticket IDs like DOG-1364 are picked up.",
       "detected": "Detected tickets",
       "linksHint": "Paste links to Jira, Figma, Asana, Drive… — they show as previews.",
@@ -476,12 +482,14 @@
     "backDirectory": "People"
   },
   "checklist": {
+    "itemLabel": "Task {number}",
+    "linkLabel": "Link for task {number}",
     "addItem": "Add task",
-    "removeItem": "Remove task",
-    "addLink": "Add link",
-    "removeLink": "Remove link",
+    "removeItem": "Remove task {number}",
+    "addLink": "Add link to task {number}",
+    "removeLink": "Remove link from task {number}",
     "itemPlaceholder": "What did you work on?",
     "linkPlaceholder": "https://...",
-    "toggleDone": "Mark done"
+    "toggleDone": "Mark task {number} done"
   }
 }

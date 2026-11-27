@@ -6,16 +6,17 @@ import {
   checklistSearchText,
   extractArtifactLinks,
   extractTicketRefs,
-  parseChecklist,
+  MAX_CHECKLIST_ITEMS,
+  MAX_TASK_SUMMARY_LENGTH,
   serializeChecklist,
-  textToChecklist,
+  taskSummaryToItems,
   type ChecklistItem,
 } from "@/contracts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { parseHoursInput } from "@/components/lib/format";
-import { ArtifactChip, ArtifactText } from "@/components/shell/artifact-text";
+import { ArtifactChip } from "@/components/shell/artifact-text";
 import { ChecklistEditor } from "./checklist-editor";
 
 interface Props {
@@ -27,15 +28,13 @@ interface Props {
   onCancel: () => void;
 }
 
-function initialItems(raw: string): ChecklistItem[] {
-  if (!raw.trim()) return [{ text: "", done: false }];
-  return parseChecklist(raw) ?? textToChecklist(raw);
-}
-
-/** Shift+Enter popover: hours + checklist task note with optional links and live ticket-ref detection. */
+/** Task editor shared by the project/day cell in My Time and people profiles. */
 export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onCancel }: Props) {
   const [hours, setHours] = useState(hoursDraft);
-  const [items, setItems] = useState<ChecklistItem[]>(() => initialItems(notes[0] ?? ""));
+  const [items, setItems] = useState<ChecklistItem[]>(() => {
+    const saved = notes.flatMap(taskSummaryToItems).filter((item) => item.text.trim() || item.link?.trim());
+    return saved.length > 0 ? saved : [{ text: "", done: false }];
+  });
   const [error, setError] = useState<string | null>(null);
   const searchText = checklistSearchText(items);
   const refs = extractTicketRefs(searchText);
@@ -46,7 +45,19 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
   function submit(e: FormEvent) {
     e.preventDefault();
     const parsed = parseHoursInput(hours);
-    if (!parsed.ok) return setError(t(`input.${parsed.error}`));
+    if (!parsed.ok) {
+      setError(t(`input.${parsed.error}`));
+      return;
+    }
+    const activeItems = items.filter((item) => item.text.trim() || item.link !== undefined);
+    if (activeItems.some((item) => !item.text.trim())) {
+      setError(t("note.taskRequired"));
+      return;
+    }
+    if (activeItems.some((item) => item.link !== undefined && !item.link.trim())) {
+      setError(t("note.linkRequired"));
+      return;
+    }
     const cleaned = items
       .map((item) => ({
         text: item.text.trim(),
@@ -54,7 +65,12 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
         done: item.done,
       }))
       .filter((item) => item.text.length > 0 || Boolean(item.link));
-    onSave(parsed.value, cleaned.length > 0 ? serializeChecklist(cleaned) : "");
+    const summary = cleaned.length > 0 ? serializeChecklist(cleaned) : "";
+    if (summary.length > MAX_TASK_SUMMARY_LENGTH) {
+      setError(t("note.tooLong", { max: MAX_TASK_SUMMARY_LENGTH }));
+      return;
+    }
+    onSave(parsed.value, summary);
   }
 
   return (
@@ -82,9 +98,21 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
           </p>
         ) : null}
       </div>
-      <div className="flex flex-col gap-1.5">
-        <Label>{entryCount > 1 ? t("note.taskNoteFirst") : t("note.taskNote")}</Label>
-        <ChecklistEditor items={items} onChange={setItems} />
+      <div className="flex flex-col gap-2">
+        <p className="text-sm font-medium">{t("note.taskNote")}</p>
+        {entryCount > 1 ? (
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            {t("note.combinedHint", { count: entryCount })}
+          </p>
+        ) : null}
+        <ChecklistEditor
+          items={items}
+          onChange={(next) => {
+            setItems(next);
+            setError(null);
+          }}
+          maxItems={MAX_CHECKLIST_ITEMS}
+        />
         {links.length > 0 ? (
           <ul className="flex flex-wrap gap-1" aria-label={t("note.links")}>
             {links.map((l) => (
@@ -99,15 +127,6 @@ export function CellNoteForm({ title, hoursDraft, notes, entryCount, onSave, onC
             {refs.map((r) => (
               <li key={r} className="rounded-sm bg-muted px-1.5 py-0.5 font-mono text-xs">
                 {r}
-              </li>
-            ))}
-          </ul>
-        ) : null}
-        {entryCount > 1 ? (
-          <ul className="flex flex-col gap-1 text-xs text-muted-foreground">
-            {notes.slice(1).map((n, i) => (
-              <li key={i}>
-                <ArtifactText text={n} />
               </li>
             ))}
           </ul>

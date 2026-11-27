@@ -1,3 +1,5 @@
+import { MAX_CHECKLIST_ITEMS } from "@/contracts";
+
 /** Stable Block Kit identifiers shared by builders, parsers and handlers. */
 
 export const CALLBACK = {
@@ -24,7 +26,7 @@ export const ACTION = {
 } as const;
 
 export const MAX_PROJECT_ROWS = 6;
-export const MAX_TASK_ITEMS = 10;
+export const MAX_TASK_ITEMS = MAX_CHECKLIST_ITEMS;
 export const MAX_PTO_BUSINESS_DAYS = 10;
 
 export const BLOCK = {

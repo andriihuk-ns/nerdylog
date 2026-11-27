@@ -131,6 +131,7 @@ Keyboard (grid uses `role="grid"`, roving tabindex):
 - Enter or typing a digit starts editing; Enter commits and moves down; Tab commits and moves right; Esc cancels.
 - `.` or `,` accepted as decimal; values snap to 0.25 h; > 24 → inline error "Max 24h a day".
 - Shift+Enter opens the cell popover (task note, ticket refs detected, split across projects).
+- Each work cell shows its task/link groups below the hours. “Add tasks” / “Edit tasks” opens a group editor with up to 10 tasks, one optional link per task, and a save that preserves the hours. When several time entries share a project/day cell, their groups are combined for editing and saved together.
 - `[` / `]` previous / next week. `T` today.
 - Day pill: Space cycles Work → Vac → Sick → Hol; changing to PTO with logged hours asks once "Clear 6.0h on Wed?".
 

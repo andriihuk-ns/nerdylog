@@ -3,7 +3,7 @@
 import { refresh } from "next/cache";
 import { getLocale, getTranslations } from "next-intl/server";
 import { z } from "zod";
-import { entryTypeSchema, isoDateSchema, type Actor, type EntryType, type ProjectView, type TimeEntryView } from "@/contracts";
+import { entryTypeSchema, isoDateSchema, MAX_TASK_SUMMARY_LENGTH, type Actor, type EntryType, type ProjectView, type TimeEntryView } from "@/contracts";
 import { requireActor } from "@/server/auth/session";
 import {
   createTimeEntry,
@@ -24,7 +24,7 @@ const saveCellSchema = z.object({
   date: isoDateSchema,
   projectId: z.uuid(),
   hours: z.number().min(0).max(24).multipleOf(0.25),
-  note: z.string().max(2000).optional(),
+  note: z.string().max(MAX_TASK_SUMMARY_LENGTH).optional(),
   userId: z.uuid().optional(), // people page: a manager/admin edits on the person's behalf (PRD §2, A16)
 });
 
@@ -86,11 +86,15 @@ async function saveCell(
   const otherHours = round2(day.filter((e) => e.projectId !== projectId).reduce((s, e) => s + e.hours, 0));
   if (otherHours + hours > 24) return fail(t("dayMax"));
 
-  const plan = planCellSave(inCell, hours, note);
+  const plan = planCellSave(inCell, hours, inCell.length === 0 ? note : undefined);
   if (!plan.ok) {
     const locale = await getLocale();
     return fail(t("cellBelow", { count: plan.entryCount, hours: formatHours(plan.minHours, locale) }));
   }
+  const deleted = new Set(plan.ops.filter((op) => op.op === "delete").map((op) => op.id));
+  const survivingEntries = inCell.filter((entry) => !deleted.has(entry.id));
+  const taskTarget = hours > 0 ? survivingEntries[0] : undefined;
+  const updated = new Set<string>();
   for (const op of plan.ops) {
     if (op.op === "create") {
       await createTimeEntry(actor, {
@@ -102,10 +106,21 @@ async function saveCell(
         taskSummary: op.taskSummary,
       });
     } else if (op.op === "update") {
-      const patch = op.taskSummary === undefined ? { hours: op.hours } : { hours: op.hours, taskSummary: op.taskSummary };
+      const taskSummary = note !== undefined && op.id === taskTarget?.id ? note : op.taskSummary;
+      const patch = taskSummary === undefined ? { hours: op.hours } : { hours: op.hours, taskSummary };
       await updateTimeEntry(actor, op.id, patch);
+      updated.add(op.id);
     } else {
       await deleteTimeEntry(actor, op.id);
+    }
+  }
+  if (note !== undefined && taskTarget) {
+    for (const entry of survivingEntries) {
+      if (entry.id === taskTarget.id) {
+        if (!updated.has(entry.id)) await updateTimeEntry(actor, entry.id, { taskSummary: note });
+      } else if (entry.taskSummary) {
+        await updateTimeEntry(actor, entry.id, { taskSummary: "" });
+      }
     }
   }
   refresh();

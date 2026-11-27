@@ -8,6 +8,8 @@ export const checklistItemSchema = z.object({
 });
 export type ChecklistItem = z.infer<typeof checklistItemSchema>;
 
+export const MAX_CHECKLIST_ITEMS = 10;
+
 /** Parse `taskSummary`: returns checklist items if stored as JSON array, or `null` for plain text. */
 export function parseChecklist(taskSummary: string): ChecklistItem[] | null {
   const trimmed = taskSummary.trim();
@@ -41,6 +43,11 @@ export function textToChecklist(text: string): ChecklistItem[] {
     if (openMatch) return { text: openMatch[1], done: false };
     return { text: line, done: false };
   });
+}
+
+/** Shared web/Slack interpretation: structured checklist when present, legacy text otherwise. */
+export function taskSummaryToItems(taskSummary: string): ChecklistItem[] {
+  return parseChecklist(taskSummary) ?? textToChecklist(taskSummary);
 }
 
 /** Render checklist items as Latin-1 safe bulleted text (for PDF, CSV, and plain-text views). */

@@ -1,4 +1,4 @@
-import { taskSummaryDisplayText, type EntryType, type IsoDate, type TimeEntryView } from "@/contracts";
+import { type EntryType, type IsoDate, type TimeEntryView } from "@/contracts";
 
 /** Pure model for the /my-time weekly matrix (docs/05 §6.2). Stream A only. */
 
@@ -67,8 +67,7 @@ export function buildWeekMatrix(
     const cell = ensureRow(e.projectId, e.projectName ?? "" /* the grid shows myTime.unknownProject */).cells[i];
     cell.hours = round2(cell.hours + e.hours);
     cell.entryCount += 1;
-    const display = taskSummaryDisplayText(e.taskSummary).trim();
-    if (display) cell.notes.push(display);
+    if (e.taskSummary.trim()) cell.notes.push(e.taskSummary);
   }
   for (const p of pinned) ensureRow(p.id, p.name);
 

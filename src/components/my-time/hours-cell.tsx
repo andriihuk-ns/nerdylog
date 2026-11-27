@@ -1,13 +1,16 @@
 "use client";
 
 import type { KeyboardEvent } from "react";
+import { PencilLine, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 import { useFormat } from "@/hooks/use-format";
-import { ArtifactText } from "@/components/shell/artifact-text";
+import { taskSummaryDisplayText } from "@/contracts";
 import { CellEditor, type CommitMove } from "./cell-editor";
 import { CellNoteForm } from "./cell-note-form";
+import { TaskGroupList } from "./task-group-list";
 import type { MatrixCell } from "./week-matrix";
 
 export interface HoursCellProps {
@@ -34,6 +37,7 @@ const DRAFT_KEY = /^[0-9.,]$/;
 
 export function HoursCell(p: HoursCellProps) {
   const t = useTranslations("myTime.cell");
+  const tm = useTranslations("myTime");
   const f = useFormat();
   const current = p.cell.hours > 0 ? f.hours(p.cell.hours) : "";
 
@@ -62,7 +66,7 @@ export function HoursCell(p: HoursCellProps) {
     : p.readOnly
       ? t("timeOff")
       : p.cell.notes.length > 0
-        ? t("spokenWithNote", { hours, notes: p.cell.notes.join("; ") })
+        ? t("spokenWithNote", { hours, notes: p.cell.notes.map(taskSummaryDisplayText).join("; ") })
         : t("spoken", { hours });
 
   return (
@@ -78,7 +82,7 @@ export function HoursCell(p: HoursCellProps) {
         }
       }}
       className={cn(
-        "relative min-w-[64px] border-b p-0 text-right outline-none transition-colors duration-[var(--duration-base)] ease-standard",
+        "relative min-w-[112px] border-b p-0 text-right outline-none transition-colors duration-[var(--duration-base)] ease-standard",
         "focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset focus-visible:outline-none",
         p.weekend && !p.columnTint && "bg-muted/50",
         p.columnTint,
@@ -100,24 +104,36 @@ export function HoursCell(p: HoursCellProps) {
                 onOpenNote={p.onOpenNote}
               />
             ) : (
-              <div className="flex min-h-11 flex-col items-end justify-center gap-1 px-3 py-2">
+              <div className="flex min-h-11 flex-col items-end justify-center gap-1 px-2 py-2 sm:px-3">
                 <span className={cn("tabular font-medium", p.cell.hours === 0 && "text-muted-foreground")}>
                   {p.weekendLocked ? "" : p.readOnly ? "—" : p.cell.hours > 0 ? hours : "·"}
                 </span>
                 {p.cell.notes.length > 0 ? (
-                  <ul className="w-full space-y-1 text-left text-xs leading-snug text-muted-foreground">
-                    {p.cell.notes.map((summary, index) => (
-                      <li key={`${index}-${summary}`} onClick={(event) => event.stopPropagation()}>
-                        <ArtifactText text={summary} />
-                      </li>
-                    ))}
-                  </ul>
+                  <div onClick={(event) => event.stopPropagation()}>
+                    <TaskGroupList summaries={p.cell.notes} />
+                  </div>
+                ) : null}
+                {!p.readOnly && p.cell.hours > 0 ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="hit-target h-11 w-full justify-start gap-1.5 px-1.5 text-xs text-muted-foreground"
+                    aria-label={`${p.label}: ${tm(p.cell.notes.length > 0 ? "note.editTasks" : "note.addTasks")}`}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      p.onOpenNote(current);
+                    }}
+                  >
+                    {p.cell.notes.length > 0 ? <PencilLine aria-hidden className="size-3.5" /> : <Plus aria-hidden className="size-3.5" />}
+                    {tm(p.cell.notes.length > 0 ? "note.editTasks" : "note.addTasks")}
+                  </Button>
                 ) : null}
               </div>
             )}
           </div>
         </PopoverAnchor>
-        <PopoverContent align="end" className="w-80">
+        <PopoverContent align="end" className="w-[min(24rem,calc(100vw-2rem))]">
           {p.noteDraft !== null ? (
             <CellNoteForm
               title={p.title}

@@ -1,4 +1,4 @@
-import type { Locale, ProjectView } from "@/contracts";
+import { MAX_TASK_SUMMARY_LENGTH, type Locale, type ProjectView } from "@/contracts";
 import { longDate } from "../dates";
 import { t } from "../i18n";
 import { ACTION, BLOCK, CALLBACK, INPUT_ACTION, MAX_PROJECT_ROWS, MAX_TASK_ITEMS, rowBlock } from "../ids";
@@ -8,7 +8,6 @@ import { context, divider, header, modalTitle, mrkdwnSection, plain } from "./co
 
 /** Slack allows at most 100 options in a static_select. */
 const MAX_OPTIONS = 100;
-export const TASK_MAX_LENGTH = 2000;
 export const PLAN_MAX_LENGTH = 4000;
 
 export interface TimeModalInput {
@@ -89,7 +88,7 @@ function projectRow(
         element: {
           type: "plain_text_input",
           action_id: INPUT_ACTION,
-          max_length: TASK_MAX_LENGTH,
+          max_length: MAX_TASK_SUMMARY_LENGTH,
           placeholder: plain(t(locale, "time.taskLinkPlaceholder")),
         },
       });
@@ -102,7 +101,7 @@ function projectRow(
         type: "button",
         action_id: ACTION.toggleTaskLink,
         value: `${n}:${i}`,
-        text: plain(t(locale, hasLink ? "time.removeTaskLink" : "time.addTaskLink")),
+        text: plain(t(locale, hasLink ? "time.removeTaskLink" : "time.addTaskLink", { i })),
       },
     });
   }

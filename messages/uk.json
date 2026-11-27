@@ -129,8 +129,14 @@
     "addProjectRow": "Додати рядок проєкту",
     "note": {
       "hours": "Години",
-      "taskNote": "Нотатка",
+      "taskNote": "Опис задач",
       "taskNoteFirst": "Нотатка (перший запис)",
+      "editTasks": "Редагувати задачі",
+      "addTasks": "Додати задачі",
+      "combinedHint": "Задачі з {count} записів часу згруповано тут. Збереження не змінює кількість годин.",
+      "taskRequired": "Опиши кожну задачу або видали порожню.",
+      "linkRequired": "Додай URL або прибери порожнє посилання.",
+      "tooLong": "Опис задач має бути коротшим за {max} символів.",
       "placeholder": "Що робив? Тікети на кшталт DOG-1364 підхопляться.",
       "detected": "Знайдені тікети",
       "linksHint": "Встав посилання на Jira, Figma, Asana, Drive… — вони покажуться як прев’ю.",
@@ -476,12 +482,14 @@
     "backDirectory": "Люди"
   },
   "checklist": {
+    "itemLabel": "Задача {number}",
+    "linkLabel": "Посилання до задачі {number}",
     "addItem": "Додати задачу",
-    "removeItem": "Прибрати задачу",
-    "addLink": "Додати посилання",
-    "removeLink": "Прибрати посилання",
+    "removeItem": "Прибрати задачу {number}",
+    "addLink": "Додати посилання до задачі {number}",
+    "removeLink": "Прибрати посилання із задачі {number}",
     "itemPlaceholder": "Коротко опиши, що зроблено",
     "linkPlaceholder": "https://...",
-    "toggleDone": "Позначити виконаним"
+    "toggleDone": "Позначити задачу {number} виконаною"
   }
 }

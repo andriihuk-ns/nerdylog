@@ -1,7 +1,7 @@
-import { isoDateSchema, serializeChecklist, type ChecklistItem, type Locale, type SlackSubmissionInput, type TimeEntryInput } from "@/contracts";
+import { isoDateSchema, MAX_TASK_SUMMARY_LENGTH, serializeChecklist, type ChecklistItem, type Locale, type SlackSubmissionInput, type TimeEntryInput } from "@/contracts";
 import { formatNumber } from "../dates";
 import { t } from "../i18n";
-import { PLAN_MAX_LENGTH, TASK_MAX_LENGTH } from "../blocks/time-modal";
+import { PLAN_MAX_LENGTH } from "../blocks/time-modal";
 import { BLOCK, rowBlock } from "../ids";
 import { getRowTaskMeta, type ModalMetadata } from "../metadata";
 import { dateValue, optionValue, textValue, type FieldErrors, type ParseResult, type ViewStateValues } from "./state";
@@ -73,10 +73,9 @@ export function parseTimeSubmission({ viewId, meta, values, locale }: TimeSubmis
       items.push({ text, ...(link ? { link } : {}), done: false });
     }
 
-    const taskSummary =
-      items.length === 1 && !items[0].link ? items[0].text : serializeChecklist(items);
-    if (!taskInvalid && taskSummary.length > TASK_MAX_LENGTH) {
-      errors[rowBlock.taskItem(n, taskMeta.count)] = t(locale, "err.tooLong", { max: TASK_MAX_LENGTH });
+    const taskSummary = serializeChecklist(items);
+    if (!taskInvalid && taskSummary.length > MAX_TASK_SUMMARY_LENGTH) {
+      errors[rowBlock.taskItem(n, taskMeta.count)] = t(locale, "err.tooLong", { max: MAX_TASK_SUMMARY_LENGTH });
       taskInvalid = true;
     }
 
