@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { useFormat } from "@/hooks/use-format";
+import { ArtifactText } from "@/components/shell/artifact-text";
 import { CellEditor, type CommitMove } from "./cell-editor";
 import { CellNoteForm } from "./cell-note-form";
 import type { MatrixCell } from "./week-matrix";
@@ -77,7 +78,7 @@ export function HoursCell(p: HoursCellProps) {
         }
       }}
       className={cn(
-        "relative h-11 min-w-[64px] border-b p-0 text-right outline-none transition-colors duration-[var(--duration-base)] ease-standard",
+        "relative min-w-[64px] border-b p-0 text-right outline-none transition-colors duration-[var(--duration-base)] ease-standard",
         "focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset focus-visible:outline-none",
         p.weekend && !p.columnTint && "bg-muted/50",
         p.columnTint,
@@ -89,7 +90,7 @@ export function HoursCell(p: HoursCellProps) {
     >
       <Popover open={p.noteDraft !== null} onOpenChange={(open) => !open && p.onCancel()}>
         <PopoverAnchor asChild>
-          <div className="h-full">
+          <div className="min-h-11">
             {p.editing !== null ? (
               <CellEditor
                 initial={p.editing}
@@ -99,17 +100,20 @@ export function HoursCell(p: HoursCellProps) {
                 onOpenNote={p.onOpenNote}
               />
             ) : (
-              <span
-                className={cn(
-                  "tabular flex h-11 items-center justify-end gap-1 px-3 font-medium",
-                  p.cell.hours === 0 && "text-muted-foreground",
-                )}
-              >
+              <div className="flex min-h-11 flex-col items-end justify-center gap-1 px-3 py-2">
+                <span className={cn("tabular font-medium", p.cell.hours === 0 && "text-muted-foreground")}>
+                  {p.weekendLocked ? "" : p.readOnly ? "—" : p.cell.hours > 0 ? hours : "·"}
+                </span>
                 {p.cell.notes.length > 0 ? (
-                  <span aria-hidden className="size-1 rounded-full bg-muted-foreground/60" title={t("hasNote")} />
+                  <ul className="w-full space-y-1 text-left text-xs leading-snug text-muted-foreground">
+                    {p.cell.notes.map((summary, index) => (
+                      <li key={`${index}-${summary}`} onClick={(event) => event.stopPropagation()}>
+                        <ArtifactText text={summary} />
+                      </li>
+                    ))}
+                  </ul>
                 ) : null}
-                {p.weekendLocked ? "" : p.readOnly ? "—" : p.cell.hours > 0 ? hours : "·"}
-              </span>
+              </div>
             )}
           </div>
         </PopoverAnchor>
