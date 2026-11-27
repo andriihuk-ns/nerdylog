@@ -6,12 +6,12 @@ import { encodeMetadata, getRowTaskMeta, type ModalMetadata } from "../metadata"
 import type { ModalView, SlackBlock } from "../types";
 import { context, divider, header, modalTitle, mrkdwnSection, plain } from "./common";
 
-/** Slack's own ceiling for a plain_text_input; the field holds any number of links. */
-const LINKS_MAX_LENGTH = 3000;
+/** Slack rejects the whole view when a plain_text_input asks for more than this. */
+const SLACK_INPUT_MAX_LENGTH = 3000;
 
 /** Slack allows at most 100 options in a static_select. */
 const MAX_OPTIONS = 100;
-export const PLAN_MAX_LENGTH = 4000;
+export const PLAN_MAX_LENGTH = SLACK_INPUT_MAX_LENGTH;
 
 export interface TimeModalInput {
   meta: ModalMetadata; // kind "standup" or "log"
@@ -92,7 +92,7 @@ function projectRow(
           type: "plain_text_input",
           action_id: INPUT_ACTION,
           multiline: true,
-          max_length: LINKS_MAX_LENGTH,
+          max_length: SLACK_INPUT_MAX_LENGTH,
           placeholder: plain(t(locale, "time.taskLinkPlaceholder")),
         },
       });
