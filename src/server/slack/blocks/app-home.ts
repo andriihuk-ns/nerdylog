@@ -1,5 +1,5 @@
-import { capStatus, type HolidayView, type Locale, type ProjectCapUsage, type PtoBalance } from "@/contracts";
-import { formatHours, formatHoursFixed, formatNumber, monthName, shortDate } from "../dates";
+import type { HolidayView, Locale, ProjectHours, PtoBalance } from "@/contracts";
+import { formatHours, formatHoursFixed, formatNumber, shortDate } from "../dates";
 import { t, tPlural } from "../i18n";
 import { ACTION } from "../ids";
 import type { HomeView, SlackBlock } from "../types";
@@ -11,28 +11,23 @@ export interface AppHomeInput {
   locale: Locale; // A14: viewer's language
   /** null → nothing logged today; an already-translated label like "Відпустка" for PTO days. */
   today: { hours: number } | { label: string } | null;
-  month: string; // "YYYY-MM"
-  caps: ProjectCapUsage[];
+  projectHours: ProjectHours[]; // A15: the viewer's hours per project this month
   pto: PtoBalance;
-  nextHoliday: HolidayView | null;
+  nextHoliday: Pick<HolidayView, "holidayDate" | "name"> | null; // from the viewer's own office (A15)
   updatedLabel: string; // e.g. "09:41" (already locale-formatted)
 }
 
-const SEGMENTS = 10;
+/** Keeps the section under Slack's 3000-character text limit. */
+const MAX_PROJECT_LINES = 20;
 
-/** 10-segment text bar, e.g. `▰▰▰▰▰▰▰▰▱▱` for 80 %. */
-export function capBar(used: number, cap: number): string {
-  const filled = cap > 0 ? Math.min(SEGMENTS, Math.max(0, Math.round((used / cap) * SEGMENTS))) : 0;
-  return "▰".repeat(filled) + "▱".repeat(SEGMENTS - filled);
-}
-
-function capLine(c: ProjectCapUsage & { capHours: number }, locale: Locale): SlackBlock {
-  const pct = Math.round((c.usedHours / c.capHours) * 100);
-  const status = capStatus(c.usedHours, c.capHours);
-  const emoji = status === "over" ? " :red_circle:" : status === "warning" ? " :large_orange_circle:" : "";
-  const name = escapeMrkdwn(c.projectName);
-  const usage = `${formatHoursFixed(c.usedHours, locale)} / ${formatHoursFixed(c.capHours, locale)} · ${pct}%`;
-  return mrkdwnSection(`*${name}*  ${usage}${emoji}\n\`${capBar(c.usedHours, c.capHours)}\``);
+/** A15: one line per project with hours this month, most hours first (caps were removed). */
+function projectHoursBlocks(rows: ProjectHours[], locale: Locale): SlackBlock[] {
+  const withHours = rows.filter((r) => r.hours > 0).sort((a, b) => b.hours - a.hours || a.projectName.localeCompare(b.projectName));
+  if (withHours.length === 0) return [context(t(locale, "home.noProjectHours"))];
+  const lines = withHours
+    .slice(0, MAX_PROJECT_LINES)
+    .map((r) => `*${escapeMrkdwn(r.projectName)}*  ${formatHoursFixed(r.hours, locale)}`);
+  return [mrkdwnSection(lines.join("\n"))];
 }
 
 function days(n: number, locale: Locale): string {
@@ -44,7 +39,7 @@ function todayText(today: AppHomeInput["today"], locale: Locale): string {
   return "label" in today ? today.label : formatHours(today.hours, locale);
 }
 
-function ptoFields(pto: PtoBalance, nextHoliday: HolidayView | null, locale: Locale) {
+function ptoFields(pto: PtoBalance, nextHoliday: AppHomeInput["nextHoliday"], locale: Locale) {
   // Amendment A9: remaining when an allowance is set, otherwise vacation used only.
   const vacation =
     pto.remainingDays !== null && pto.allowanceDays !== null
@@ -66,7 +61,6 @@ function ptoFields(pto: PtoBalance, nextHoliday: HolidayView | null, locale: Loc
 /** Design system 7.4 (FR-SLACK-04). A14: rendered in the viewer's locale. */
 export function buildAppHome(input: AppHomeInput): HomeView {
   const { locale } = input;
-  const capped = input.caps.filter((c): c is ProjectCapUsage & { capHours: number } => c.capHours !== null);
   const blocks: SlackBlock[] = [
     header(t(locale, "home.yourWeek")),
     {
@@ -79,8 +73,9 @@ export function buildAppHome(input: AppHomeInput): HomeView {
     {
       type: "actions",
       elements: [
+        // A15: open the same modals as /log and /pto from the Apps list, anytime.
         { type: "button", action_id: ACTION.homeLog, text: plain(t(locale, "home.logTime")), style: "primary" },
-        { type: "button", action_id: ACTION.homePto, text: plain(t(locale, "home.quickPto")) },
+        { type: "button", action_id: ACTION.homePto, text: plain(t(locale, "home.timeOffButton")), style: "primary" },
         {
           type: "button",
           action_id: ACTION.openWeb,
@@ -90,14 +85,10 @@ export function buildAppHome(input: AppHomeInput): HomeView {
       ],
     },
   ];
-  if (capped.length > 0) {
-    blocks.push(
-      divider(),
-      header(t(locale, "home.clientCaps", { month: monthName(input.month, locale) })),
-      ...capped.map((c) => capLine(c, locale)),
-    );
-  }
   blocks.push(
+    divider(),
+    header(t(locale, "home.byProject")),
+    ...projectHoursBlocks(input.projectHours, locale),
     divider(),
     header(t(locale, "home.timeOff")),
     { type: "section", fields: ptoFields(input.pto, input.nextHoliday, locale) },

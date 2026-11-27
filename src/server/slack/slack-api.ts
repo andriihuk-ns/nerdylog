@@ -3,6 +3,9 @@ import type { WebClient } from "@slack/web-api";
 import { getSlackClient } from "./client";
 import type { SlackApi } from "./types";
 
+/** Budget for the channel-name lookup inside a view_submission (Slack wants the reply within 3 s). */
+const CHANNEL_NAME_TIMEOUT_MS = 800;
+
 /** Production SlackApi over @slack/web-api. The Web API client throws on `ok: false`. */
 export function createSlackApi(client: WebClient = getSlackClient()): SlackApi {
   return {
@@ -25,6 +28,21 @@ export function createSlackApi(client: WebClient = getSlackClient()): SlackApi {
       const res = await client.conversations.open({ users: slackUserId });
       if (!res.channel?.id) throw new Error("conversations.open returned no channel");
       return res.channel.id;
+    },
+    async channelName(channelId) {
+      const lookup = client.conversations
+        .info({ channel: channelId })
+        .then((res) => res.channel?.name ?? null)
+        .catch(() => null);
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const timeout = new Promise<null>((resolve) => {
+        timer = setTimeout(() => resolve(null), CHANNEL_NAME_TIMEOUT_MS);
+      });
+      try {
+        return await Promise.race([lookup, timeout]);
+      } finally {
+        clearTimeout(timer);
+      }
     },
   };
 }

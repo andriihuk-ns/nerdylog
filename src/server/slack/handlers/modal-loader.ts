@@ -1,4 +1,4 @@
-import { DEFAULT_LOCALE, type Actor, type IsoDate, type Locale, type SlackSubmissionKind } from "@/contracts";
+import { DEFAULT_LOCALE, type IsoDate, type Locale, type SlackSubmissionKind } from "@/contracts";
 import { previousBusinessDay } from "@/server/services/calendar";
 import { loadingModal, noticeModal, notLinkedMessage } from "../blocks/common";
 import { buildPtoModal } from "../blocks/pto-modal";
@@ -7,6 +7,7 @@ import { localIsoDate, yearOf } from "../dates";
 import { localeOf, t, type MessageKey } from "../i18n";
 import type { ModalMetadata } from "../metadata";
 import type { SlackDeps, TempoPorts } from "../types";
+import { selectableProjects } from "./project-access";
 
 export interface OpenModalRequest {
   kind: SlackSubmissionKind;
@@ -18,10 +19,9 @@ export interface OpenModalRequest {
 
 const TITLES: Record<SlackSubmissionKind, MessageKey> = { standup: "title.standup", log: "title.log", pto: "title.pto" };
 
-/** Company holidays for the given years as a Set of ISO dates. */
-export async function holidaySet(tempo: TempoPorts, actor: Actor, years: number[]): Promise<Set<IsoDate>> {
-  const lists = await Promise.all([...new Set(years)].map((y) => tempo.listHolidays(actor, y)));
-  return new Set(lists.flat().map((h) => h.holidayDate));
+/** A15: holidays of the user's own office in [from, to] (no office → empty set). */
+export async function holidaySet(tempo: TempoPorts, userId: string, from: IsoDate, to: IsoDate): Promise<Set<IsoDate>> {
+  return new Set(await tempo.listHolidayDates(userId, from, to));
 }
 
 /**
@@ -57,7 +57,7 @@ async function fillModal(deps: SlackDeps, req: OpenModalRequest, viewId: string)
       logDate =
         req.kind === "pto"
           ? today
-          : previousBusinessDay(today, await holidaySet(deps.tempo, profile, [yearOf(today), yearOf(today) - 1]));
+          : previousBusinessDay(today, await holidaySet(deps.tempo, profile.userId, `${yearOf(today) - 1}-01-01`, today));
     }
     const meta: ModalMetadata = { kind: req.kind, logDate, userId: profile.userId, today, rows: 1 };
     if (req.kind === "pto") {
@@ -65,7 +65,7 @@ async function fillModal(deps: SlackDeps, req: OpenModalRequest, viewId: string)
       return;
     }
     const projects = await deps.tempo.listProjects(profile);
-    await deps.slack.updateView(viewId, buildTimeModal({ meta, projects: projects.filter((p) => p.isActive), locale }));
+    await deps.slack.updateView(viewId, buildTimeModal({ meta, projects: selectableProjects(projects), locale }));
   } catch (error) {
     console.error("slack: modal load failed", error instanceof Error ? error.message : error);
     await deps.slack
@@ -83,6 +83,6 @@ export async function resizeTimeModal(
   if (!profile || profile.userId !== args.meta.userId) return;
   const projects = await deps.tempo.listProjects(profile);
   const meta = { ...args.meta, rows: args.rows };
-  const view = buildTimeModal({ meta, projects: projects.filter((p) => p.isActive), locale: localeOf(profile) });
+  const view = buildTimeModal({ meta, projects: selectableProjects(projects), locale: localeOf(profile) });
   await deps.slack.updateView(args.viewId, view, args.hash);
 }

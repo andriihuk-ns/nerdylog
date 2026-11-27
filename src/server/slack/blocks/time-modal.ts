@@ -13,13 +13,13 @@ export const PLAN_MAX_LENGTH = 4000;
 
 export interface TimeModalInput {
   meta: ModalMetadata; // kind "standup" or "log"
-  projects: ProjectView[]; // active projects only
+  projects: ProjectView[]; // A15: active projects the user is a member of
   locale: Locale; // A14: recipient's language
 }
 
 function projectOptions(projects: ProjectView[]) {
   return projects.slice(0, MAX_OPTIONS).map((p) => ({
-    text: plain((p.code ? `${p.name} (${p.code})` : p.name).slice(0, 75)),
+    text: plain(p.name.slice(0, 75)),
     value: p.id,
   }));
 }

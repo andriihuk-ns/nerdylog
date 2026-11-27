@@ -139,7 +139,7 @@ describe("interactions", () => {
     expect(tempo.submit).not.toHaveBeenCalled();
   });
 
-  it("PTO submission fetches holidays and submits one entry per business day", async () => {
+  it("PTO submission uses the user's office holidays and submits one entry per business day", async () => {
     const { deps, tempo, flush } = fakeDeps();
     const res = await handleInteraction(
       payload({
@@ -164,6 +164,34 @@ describe("interactions", () => {
     await flush();
     const input = (tempo.submit.mock.calls[0] as unknown[])[0] as { entries: Array<{ workDate: string }> };
     expect(input.entries.map((e) => e.workDate)).toEqual(["2026-12-24", "2026-12-28"]); // 25th holiday, weekend
+    expect(tempo.listHolidayDates).toHaveBeenCalledWith(USER_ID, "2026-12-24", "2026-12-28");
+  });
+
+  it("A15: a user without office holidays gets PTO on the 25th too", async () => {
+    const { deps, tempo, flush } = fakeDeps();
+    tempo.listHolidayDates.mockResolvedValue([]);
+    await handleInteraction(
+      payload({
+        type: "view_submission",
+        user: { id: "U123" },
+        view: {
+          id: "V_PTO2",
+          callback_id: CALLBACK.pto,
+          private_metadata: encodeMetadata(meta({ kind: "pto" })),
+          state: {
+            values: {
+              [BLOCK.ptoType]: field({ selected_option: { value: "vacation" } }),
+              [BLOCK.ptoStart]: field({ selected_date: "2026-12-24" }),
+              [BLOCK.ptoEnd]: field({ selected_date: "2026-12-25" }),
+            },
+          },
+        },
+      }),
+      deps,
+    );
+    await flush();
+    const input = (tempo.submit.mock.calls[0] as unknown[])[0] as { entries: Array<{ workDate: string }> };
+    expect(input.entries.map((e) => e.workDate)).toEqual(["2026-12-24", "2026-12-25"]);
   });
 });
 
@@ -206,7 +234,7 @@ describe("A11 channel routing", () => {
     const { deps, slack, tempo } = fakeDeps();
     await routeSubmission(deps, profile, input("log", [entry(PROJECT_ID, 3, "Map modal")]));
     expect([...posts(slack).keys()]).toEqual(["C_DTP"]);
-    expect(tempo.listStandupChannelsForUser).not.toHaveBeenCalled();
+    expect(tempo.getStandupChannelId).not.toHaveBeenCalled();
     expect(tempo.setCheckinChannelTs).not.toHaveBeenCalled();
   });
 
@@ -216,9 +244,9 @@ describe("A11 channel routing", () => {
     expect(slack.postMessage).not.toHaveBeenCalled();
   });
 
-  it("empty standup channel list → no card; projects without a channel get nothing", async () => {
+  it("no general standup channel → no card; projects without a channel get nothing", async () => {
     const { deps, slack, tempo } = fakeDeps();
-    tempo.listStandupChannelsForUser.mockResolvedValueOnce([]);
+    tempo.getStandupChannelId.mockResolvedValueOnce(null);
     tempo.listProjectChannels.mockResolvedValueOnce([{ projectId: PROJECT_ID, projectName: "DogTeamPro", slackChannelId: "C_DTP" }]);
     await routeSubmission(deps, profile, input("standup", [entry(PROJECT_ID, 1, "a"), entry(OTHER_PROJECT_ID, 1, "b")]));
     expect([...posts(slack).keys()]).toEqual(["C_DTP"]);
@@ -230,43 +258,22 @@ describe("A11 channel routing", () => {
       .filter((c) => JSON.stringify(c).includes("Secret plan"))
       .map((c) => (c as unknown[])[0] as string);
 
-  it("A13: user in two teams → the full card goes to both team channels", async () => {
+  it("A15: the full card goes to the general standup channel only; its ts is stored", async () => {
     const { deps, slack, tempo } = fakeDeps();
-    tempo.listStandupChannelsForUser.mockResolvedValueOnce(["C_DESIGN", "C_MOBILE"]);
+    tempo.getStandupChannelId.mockResolvedValueOnce("C_GENERAL");
     await routeSubmission(deps, profile, input("standup", [entry(PROJECT_ID, 1, "a")]));
-    expect(tempo.listStandupChannelsForUser).toHaveBeenCalledWith(USER_ID);
-    expect(cardChannels(slack).sort()).toEqual(["C_DESIGN", "C_MOBILE"]);
-    expect(posts(slack).has("C_DTP")).toBe(true); // project lines unchanged
-    expect(tempo.setCheckinChannelTs).toHaveBeenCalledTimes(1);
-  });
-
-  it("A13: a duplicate channel gets the card once", async () => {
-    const { deps, slack, tempo } = fakeDeps();
-    tempo.listStandupChannelsForUser.mockResolvedValueOnce(["C_DESIGN", "C_DESIGN"]);
-    await routeSubmission(deps, profile, input("standup", []));
-    expect(cardChannels(slack)).toEqual(["C_DESIGN"]);
-  });
-
-  it("A13: no team → the general channel returned by the service gets the card", async () => {
-    const { deps, slack, tempo } = fakeDeps();
-    tempo.listStandupChannelsForUser.mockResolvedValueOnce(["C_GENERAL"]);
-    await routeSubmission(deps, profile, input("standup", []));
     expect(cardChannels(slack)).toEqual(["C_GENERAL"]);
+    expect(posts(slack).has("C_DTP")).toBe(true); // project lines unchanged
     expect(tempo.setCheckinChannelTs).toHaveBeenCalledWith(USER_ID, "2026-11-26", "1700000000.000100");
   });
 
-  it("A13: a failing team channel does not block the others; first successful ts is stored", async () => {
+  it("A15: a failing general post is logged and stores no ts", async () => {
     const { deps, slack, tempo } = fakeDeps();
     const errors = vi.spyOn(console, "error").mockImplementation(() => undefined);
-    tempo.listStandupChannelsForUser.mockResolvedValueOnce(["C_A", "C_B", "C_C"]);
-    slack.postMessage.mockImplementation((async (channel: string) => {
-      if (channel === "C_A") throw new Error("not_in_channel");
-      return channel === "C_B" ? "1700000000.000B" : "1700000000.000C";
-    }) as never);
+    slack.postMessage.mockRejectedValueOnce(new Error("not_in_channel"));
     await routeSubmission(deps, profile, input("standup", []));
-    expect(cardChannels(slack).sort()).toEqual(["C_A", "C_B", "C_C"]);
-    expect(tempo.setCheckinChannelTs).toHaveBeenCalledWith(USER_ID, "2026-11-26", "1700000000.000B");
-    expect(errors).toHaveBeenCalledWith("slack: standup post failed", "C_A", "not_in_channel");
+    expect(tempo.setCheckinChannelTs).not.toHaveBeenCalled();
+    expect(errors).toHaveBeenCalledWith("slack: standup post failed", "C_STANDUP", "not_in_channel");
     errors.mockRestore();
   });
 
@@ -314,12 +321,30 @@ describe("events", () => {
 });
 
 describe("morning ping", () => {
+  const target = (id: string, locale: "en" | "uk" = "en") => ({
+    userId: USER_ID,
+    slackUserId: id,
+    fullName: "Olena Petrenko",
+    locale,
+    timezone: "Europe/Kyiv",
+    localDate: "2026-11-26",
+    logDate: "2026-11-25",
+  });
+
   it("DMs each claimed user and continues past failures", async () => {
     const { deps, slack, tempo } = fakeDeps();
-    const target = (id: string) => ({ userId: USER_ID, slackUserId: id, timezone: "Europe/Kyiv", localDate: "2026-11-26", logDate: "2026-11-25" });
-    tempo.claimMorningPings.mockResolvedValueOnce([target("U1"), target("U2"), target("U3")] as never);
+    tempo.claimMorningPings.mockResolvedValueOnce([target("U1"), target("U2"), target("U3")]);
     slack.openDm.mockRejectedValueOnce(new Error("user_not_found"));
     expect(await runMorningPings(deps)).toEqual({ claimed: 3, sent: 2, failed: 1 });
     expect(slack.postMessage).toHaveBeenCalledTimes(2);
+  });
+
+  it("A15: uses PingTarget.locale without a per-target user lookup", async () => {
+    const { deps, slack, tempo } = fakeDeps();
+    tempo.claimMorningPings.mockResolvedValueOnce([target("U1", "en"), target("U2", "uk")]);
+    await runMorningPings(deps);
+    const texts = slack.postMessage.mock.calls.map((c) => (c as unknown[])[1] as string);
+    expect(texts).toEqual(["Morning, Olena. Log Wednesday and plan today.", "Доброго ранку, Olena! Запиши роботу за середу і сплануй сьогодні."]);
+    expect(tempo.resolveUser).not.toHaveBeenCalled();
   });
 });

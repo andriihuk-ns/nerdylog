@@ -1,5 +1,5 @@
 import "server-only";
-import type { JoinSlackChannelResult, SlackChannelOption } from "@/contracts";
+import type { FetchChannelMemberSlackIds, JoinSlackChannelResult, SlackChannelOption } from "@/contracts";
 import { getSlackClient } from "./client";
 
 /** Minimal shape of the `conversations.*` methods we use, so tests can pass a fake. */
@@ -18,6 +18,10 @@ export interface ConversationsClient {
     }>;
     info(args: { channel: string }): Promise<{ channel?: SlackConversation }>;
     join(args: { channel: string }): Promise<unknown>;
+    members(args: { channel: string; limit: number; cursor?: string }): Promise<{
+      members?: string[];
+      response_metadata?: { next_cursor?: string };
+    }>;
   };
 }
 
@@ -116,3 +120,36 @@ function privateNeedsInvite(): JoinSlackChannelResult {
   return { ok: false, reason: "private_needs_invite", message: "Private channel: invite @nerdylog to it first" };
 }
 
+
+/** Channel states where "no members" is the honest answer (bot removed, channel deleted). */
+const MEMBERS_EMPTY_ERRORS = new Set(["channel_not_found", "not_in_channel"]);
+
+/**
+ * A15 project members: every Slack user id in a channel (paginated conversations.members,
+ * limit 1000; needs channels:read / groups:read and the bot in private channels). Includes bots;
+ * the service keeps only ids that map to Tempo users. channel_not_found / not_in_channel → []
+ * with the code logged; other errors (incl. rate limits, the client rejects on 429) throw.
+ */
+export async function fetchChannelMemberSlackIds(
+  channelId: string,
+  client: ConversationsClient = getSlackClient(),
+): ReturnType<FetchChannelMemberSlackIds> {
+  const ids = new Set<string>();
+  let cursor: string | undefined;
+  try {
+    for (let page = 0; page < MAX_PAGES; page += 1) {
+      const res = await client.conversations.members({ channel: channelId, limit: PAGE_SIZE, ...(cursor ? { cursor } : {}) });
+      for (const id of res.members ?? []) ids.add(id);
+      cursor = res.response_metadata?.next_cursor || undefined;
+      if (!cursor) break;
+    }
+  } catch (error) {
+    const code = slackErrorCode(error);
+    if (MEMBERS_EMPTY_ERRORS.has(code)) {
+      console.warn("slack: conversations.members returned no members", channelId, code);
+      return [];
+    }
+    throw error;
+  }
+  return [...ids];
+}

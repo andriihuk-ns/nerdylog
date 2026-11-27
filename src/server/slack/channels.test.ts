@@ -5,16 +5,17 @@ vi.mock("./client", () => ({ getSlackClient: () => ({}) }));
 
 import type { ConversationsClient } from "./channels";
 
-const { listSlackChannels, joinSlackChannel } = await import("./channels");
+const { listSlackChannels, joinSlackChannel, fetchChannelMemberSlackIds } = await import("./channels");
 
 const platformError = (code: string) => Object.assign(new Error(`An API error occurred: ${code}`), { data: { ok: false, error: code } });
 
 type Conv = ConversationsClient["conversations"];
-function fakeClient(over: { list?: Conv["list"]; info?: Conv["info"]; join?: Conv["join"] } = {}) {
+function fakeClient(over: { list?: Conv["list"]; info?: Conv["info"]; join?: Conv["join"]; members?: Conv["members"] } = {}) {
   const conversations = {
     list: vi.fn<Conv["list"]>(over.list ?? (async () => ({ channels: [] }))),
     info: vi.fn<Conv["info"]>(over.info ?? (async () => ({ channel: { id: "C1", is_member: false, is_private: false } }))),
     join: vi.fn<Conv["join"]>(over.join ?? (async () => ({ ok: true }))),
+    members: vi.fn<Conv["members"]>(over.members ?? (async () => ({ members: [] }))),
   };
   return { conversations };
 }
@@ -77,5 +78,31 @@ describe("joinSlackChannel", () => {
     const res = await joinSlackChannel("C1", client);
     expect(res).toMatchObject({ ok: false, reason: "error" });
     expect(res.ok === false && res.message).toContain("missing_scope");
+  });
+});
+
+describe("fetchChannelMemberSlackIds", () => {
+  it("follows cursors with limit 1000 and returns unique ids", async () => {
+    const members = vi
+      .fn<Conv["members"]>()
+      .mockResolvedValueOnce({ members: ["U1", "U2"], response_metadata: { next_cursor: "n2" } })
+      .mockResolvedValueOnce({ members: ["U2", "U3"], response_metadata: { next_cursor: "" } });
+    const client = fakeClient({ members });
+    expect(await fetchChannelMemberSlackIds("C1", client)).toEqual(["U1", "U2", "U3"]);
+    expect(members).toHaveBeenNthCalledWith(1, { channel: "C1", limit: 1000 });
+    expect(members).toHaveBeenNthCalledWith(2, { channel: "C1", limit: 1000, cursor: "n2" });
+  });
+
+  it.each(["channel_not_found", "not_in_channel"])("%s → [] and the code is logged", async (code) => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const client = fakeClient({ members: async () => Promise.reject(platformError(code)) });
+    expect(await fetchChannelMemberSlackIds("C404", client)).toEqual([]);
+    expect(warn).toHaveBeenCalledWith(expect.any(String), "C404", code);
+    warn.mockRestore();
+  });
+
+  it("other errors (e.g. rate limited) are thrown", async () => {
+    const client = fakeClient({ members: async () => Promise.reject(platformError("ratelimited")) });
+    await expect(fetchChannelMemberSlackIds("C1", client)).rejects.toThrow("ratelimited");
   });
 });

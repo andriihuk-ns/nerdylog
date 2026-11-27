@@ -1,5 +1,5 @@
 import { vi } from "vitest";
-import type { ProjectView, PtoBalance } from "@/contracts";
+import type { PingTarget, ProjectHours, ProjectView, PtoBalance } from "@/contracts";
 import type { SlackActorProfile, SlackDeps } from "../types";
 
 /** Test-only fakes for SlackDeps. Deferred tasks are collected and run by `flush()`. */
@@ -19,22 +19,34 @@ export const profile: SlackActorProfile = {
 export const project: ProjectView = {
   id: PROJECT_ID,
   name: "DogTeamPro",
-  code: "DTP",
-  monthlyHourCap: 40,
-  isBillable: true,
   isActive: true,
   slackChannelId: "C_DTP",
+  createdBy: { userId: "0b4c6a52-8f1e-4c1b-9a35-3b1f8f0f6a09", fullName: "Andrii Admin" },
+  memberIds: [USER_ID],
+  isMember: true,
 };
 
 export const OTHER_PROJECT_ID = "2b3c4d5e-8f1e-4c1b-9a35-3b1f8f0f6a04";
 export const otherProject: ProjectView = {
   id: OTHER_PROJECT_ID,
   name: "Changelly",
-  code: "CNG",
-  monthlyHourCap: null,
-  isBillable: true,
   isActive: true,
   slackChannelId: "C_CNG",
+  createdBy: null,
+  memberIds: [USER_ID],
+  isMember: true,
+};
+
+/** A15: a project the test user is NOT a member of (hidden from modals, rejected on submit). */
+export const FOREIGN_PROJECT_ID = "3c4d5e6f-8f1e-4c1b-9a35-3b1f8f0f6a05";
+export const foreignProject: ProjectView = {
+  id: FOREIGN_PROJECT_ID,
+  name: "Swapzone",
+  isActive: true,
+  slackChannelId: "C_SWZ",
+  createdBy: { userId: "0b4c6a52-8f1e-4c1b-9a35-3b1f8f0f6a09", fullName: "Andrii Admin" },
+  memberIds: [],
+  isMember: false,
 };
 
 export const ptoBalance: PtoBalance = {
@@ -54,17 +66,21 @@ export function fakeDeps(over: Partial<SlackDeps> = {}) {
     publishHome: vi.fn(async () => undefined),
     postMessage: vi.fn(async () => "1700000000.000100"),
     openDm: vi.fn(async (id: string) => `D_${id}`),
+    channelName: vi.fn<(channelId: string) => Promise<string | null>>(async (id: string) => id.replace(/^C_/, "").toLowerCase()),
   };
   const tempo = {
     resolveUser: vi.fn(async (id: string) => (id === profile.slackUserId ? profile : null)),
-    listProjects: vi.fn(async () => [project, otherProject]),
-    listHolidays: vi.fn(async () => [{ id: "h1", holidayDate: "2026-12-25", name: "Christmas" }]),
+    listProjects: vi.fn(async () => [project, otherProject, foreignProject]),
+    listHolidays: vi.fn(async () => [{ id: "h1", officeId: "office-ua", holidayDate: "2026-12-25", name: "Christmas" }]),
+    listHolidayDates: vi.fn<(userId: string, from: string, to: string) => Promise<string[]>>(async (_u, from, to) =>
+      ["2026-12-25"].filter((d) => d >= from && d <= to),
+    ),
     submit: vi.fn(async () => ({ status: "created" as const, entryIds: ["e1"] })),
     listWeekEntries: vi.fn(async () => []),
-    getProjectCapUsage: vi.fn(async () => []),
+    getProjectHours: vi.fn(async () => [] as ProjectHours[]),
     getPtoBalance: vi.fn(async () => ptoBalance),
-    claimMorningPings: vi.fn(async () => []),
-    listStandupChannelsForUser: vi.fn<(userId: string) => Promise<string[]>>(async () => ["C_STANDUP"]),
+    claimMorningPings: vi.fn<(now: Date) => Promise<PingTarget[]>>(async () => []),
+    getStandupChannelId: vi.fn<() => Promise<string | null>>(async () => "C_STANDUP"),
     listProjectChannels: vi.fn(async () =>
       [project, otherProject].map((p) => ({ projectId: p.id, projectName: p.name, slackChannelId: p.slackChannelId! })),
     ),

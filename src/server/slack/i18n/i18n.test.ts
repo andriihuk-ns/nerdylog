@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import type { ProjectCapUsage } from "@/contracts";
 import { buildAppHome } from "../blocks/app-home";
 import { buildMorningDm } from "../blocks/morning-dm";
 import { buildPtoModal } from "../blocks/pto-modal";
@@ -136,22 +135,50 @@ describe("Ukrainian surfaces", () => {
   });
 
   it("App Home renders in Ukrainian with uk dates and numbers", () => {
-    const cap: ProjectCapUsage = { projectId: "p", projectName: "DogTeamPro", month: "2026-11", usedHours: 32, capHours: 40, status: "neutral" };
     const home = buildAppHome({
       appBaseUrl: "https://tempo.example",
       locale: "uk",
       weekHours: 32.5,
       today: null,
-      month: "2026-11",
-      caps: [cap],
+      projectHours: [{ projectId: "p", projectName: "DogTeamPro", month: "2026-11", hours: 32 }],
       pto: ptoBalance,
-      nextHoliday: { id: "h", holidayDate: "2026-12-25", name: "Різдво" },
+      nextHoliday: { holidayDate: "2026-12-25", name: "Різдво" },
       updatedLabel: "09:41",
     });
     const text = JSON.stringify(home.blocks);
-    for (const s of ["Твій тиждень", "32,5 год", "Ще не записано", "Ліміти клієнтів · листопад", "32,0 год / 40,0 год · 80%", "Залишок відпустки (2026)*\\n12 днів з 20", "2 дні", "25 груд.", "Відкрити веб-панель", "Оновлено о 09:41"]) {
+    for (const s of ["Твій тиждень", "32,5 год", "Ще не записано", "Цього місяця за проєктами", "*DogTeamPro*  32,0 год", "Записати час", "Відпустка / лікарняний", "Залишок відпустки (2026)*\\n12 днів з 20", "2 дні", "25 груд.", "Відкрити веб-панель", "Оновлено о 09:41"]) {
       expect(text).toContain(s);
     }
+  });
+});
+
+describe("A15 copy", () => {
+  it("project-access and App Home strings exist in both locales; cap copy is gone", () => {
+    for (const key of ["err.notMember", "err.anAdmin", "err.projectChannel", "home.byProject", "home.timeOffButton", "time.noProjects"] as const) {
+      expect(en[key], key).toBeTruthy();
+      expect(uk[key], key).toBeTruthy();
+    }
+    expect(Object.keys(en).some((k) => k.includes("Cap") || k.includes("cap"))).toBe(false);
+    expect(t("uk", "time.noProjects")).toBe("Тебе ще немає в жодному каналі проєкту. Попроси адміна додати тебе.");
+  });
+
+  it("App Home handler renders the user's month hours per project in their locale", async () => {
+    const { deps, slack, tempo } = fakeDeps();
+    tempo.resolveUser.mockResolvedValue({ ...profile, locale: "uk" });
+    tempo.getProjectHours.mockResolvedValueOnce([{ projectId: "p", projectName: "DogTeamPro", month: "2026-11", hours: 12.5 }]);
+    await publishHome(deps, "U123");
+    expect(tempo.getProjectHours).toHaveBeenCalledWith(expect.objectContaining({ userId: USER_ID }), "2026-11");
+    expect(tempo.listHolidayDates).toHaveBeenCalledWith(USER_ID, "2026-11-26", "2027-12-31");
+    const text = JSON.stringify((slack.publishHome.mock.calls[0] as unknown[])[1]);
+    expect(text).toContain("*DogTeamPro*  12,5 год");
+    expect(text).toContain("25 груд. · Christmas");
+  });
+
+  it("App Home shows no holiday when the user's office has none", async () => {
+    const { deps, slack, tempo } = fakeDeps();
+    tempo.listHolidayDates.mockResolvedValue([]);
+    await publishHome(deps, "U123");
+    expect(JSON.stringify((slack.publishHome.mock.calls[0] as unknown[])[1])).toContain("None planned");
   });
 });
 
@@ -182,10 +209,10 @@ describe("handlers pick the recipient's locale", () => {
     expect(view.title.text).toBe("Записати час");
   });
 
-  it("morning DM uses each recipient's locale (unknown → uk)", async () => {
+  it("morning DM uses each target's locale", async () => {
     const { deps, slack, tempo } = fakeDeps();
-    const target = (slackUserId: string) => ({ userId: USER_ID, slackUserId, fullName: "Olena Petrenko", timezone: "Europe/Kyiv", localDate: "2026-11-26", logDate: "2026-11-25" });
-    tempo.claimMorningPings.mockResolvedValueOnce([target("U123"), target("U_GONE")] as never);
+    const target = (slackUserId: string, locale: "en" | "uk") => ({ userId: USER_ID, slackUserId, fullName: "Olena Petrenko", locale, timezone: "Europe/Kyiv", localDate: "2026-11-26", logDate: "2026-11-25" });
+    tempo.claimMorningPings.mockResolvedValueOnce([target("U123", "en"), target("U_OTHER", "uk")]);
     await runMorningPings(deps);
     const texts = slack.postMessage.mock.calls.map((c) => (c as unknown[])[1] as string);
     expect(texts).toContain("Morning, Olena. Log Wednesday and plan today.");

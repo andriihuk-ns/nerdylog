@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { ProjectCapUsage } from "@/contracts";
+import type { ProjectHours } from "@/contracts";
 import { ACTION, BLOCK, CALLBACK, MAX_PROJECT_ROWS, rowBlock } from "../ids";
 import { decodeMetadata, type ModalMetadata } from "../metadata";
 import { project, ptoBalance, USER_ID } from "../testing/fake-deps";
-import { buildAppHome, capBar } from "./app-home";
+import { buildAppHome } from "./app-home";
 import { buildMorningDm } from "./morning-dm";
 import { buildPtoModal } from "./pto-modal";
 import { buildStandupCard } from "./standup-card";
@@ -84,7 +84,7 @@ describe("buildTimeModal", () => {
   it("shows an empty state instead of rows when there are no projects", () => {
     const view = buildTimeModal({ meta: meta(), projects: [], locale: "en" });
     expect(ids(view.blocks)).not.toContain(rowBlock.project(1));
-    expect(JSON.stringify(view.blocks)).toContain("No projects assigned yet");
+    expect(JSON.stringify(view.blocks)).toContain("You're not in any project channel yet. Ask an admin to add you.");
   });
 });
 
@@ -124,55 +124,50 @@ describe("buildStandupCard", () => {
 });
 
 describe("buildAppHome", () => {
-  const cap = (used: number, capHours: number | null): ProjectCapUsage => ({
-    projectId: "p",
-    projectName: "DogTeamPro",
-    month: "2026-11",
-    usedHours: used,
-    capHours,
-    status: "neutral",
-  });
+  const hours = (projectName: string, h: number): ProjectHours => ({ projectId: projectName, projectName, month: "2026-11", hours: h });
   const base = {
     appBaseUrl: "https://tempo.example",
     locale: "en" as const,
     weekHours: 32.5,
     today: null,
-    month: "2026-11",
-    caps: [cap(32, 40), cap(10, null)],
+    projectHours: [hours("Changelly", 6), hours("DogTeamPro", 32), hours("Idle", 0)],
     pto: ptoBalance,
-    nextHoliday: { id: "h", holidayDate: "2026-12-25", name: "Christmas" },
+    nextHoliday: { holidayDate: "2026-12-25", name: "Christmas" },
     updatedLabel: "09:41",
   };
 
-  it("shows hours, cap bars, remaining PTO and the web panel link", () => {
+  it("shows hours, hours per project (most first), remaining PTO and the web panel link", () => {
     const home = buildAppHome(base);
     const text = JSON.stringify(home.blocks);
     expect(home.type).toBe("home");
     expect(text).toContain("32.5h");
     expect(text).toContain("Not logged");
-    expect(text).toContain("Client caps · November");
-    expect(text).toContain("32.0h / 40.0h · 80%");
-    expect(text.match(/32\.0h/g)).toHaveLength(1); // uncapped project hidden
+    expect(text).toContain("This month by project");
+    expect(text).toContain("*DogTeamPro*  32.0h\\n*Changelly*  6.0h");
+    expect(text).not.toContain("Idle"); // zero-hour projects hidden
     expect(text).toContain("Vacation left (2026)*\\n12 days of 20");
     expect(text).toContain("https://tempo.example/my-time");
     expect(text).toContain("25 Dec"); // en-GB
   });
 
-  it("shows vacation used when no allowance is set (A9) and hides caps when none", () => {
-    const home = buildAppHome({ ...base, caps: [], pto: { ...ptoBalance, allowanceDays: null, remainingDays: null } });
+  it("A15: no caps anywhere (no bars, no percentages, no cap emoji)", () => {
+    const text = JSON.stringify(buildAppHome(base).blocks);
+    expect(text).not.toMatch(/Client caps|▰|▱|%|:red_circle:|:large_orange_circle:/);
+  });
+
+  it("shows vacation used when no allowance is set (A9) and an empty note without project hours", () => {
+    const home = buildAppHome({ ...base, projectHours: [], pto: { ...ptoBalance, allowanceDays: null, remainingDays: null } });
     const text = JSON.stringify(home.blocks);
     expect(text).toContain("Vacation used (2026)*\\n8 days");
-    expect(text).not.toContain("Client caps");
+    expect(text).toContain("No hours logged this month yet.");
   });
 
-  it("marks caps over 85% and 100%", () => {
-    expect(JSON.stringify(buildAppHome({ ...base, caps: [cap(36, 40)] }).blocks)).toContain(":large_orange_circle:");
-    expect(JSON.stringify(buildAppHome({ ...base, caps: [cap(44, 40)] }).blocks)).toContain(":red_circle:");
-  });
-
-  it("capBar has 10 segments and clamps", () => {
-    expect(capBar(32, 40)).toBe("▰▰▰▰▰▰▰▰▱▱");
-    expect(capBar(80, 40)).toBe("▰".repeat(10));
-    expect(capBar(0, 40)).toBe("▱".repeat(10));
+  it("A15: has two primary buttons, Log time and Time off", () => {
+    const actions = json(buildAppHome(base).blocks).find((b) => b.type === "actions") as { elements: Json[] };
+    const primary = actions.elements.filter((e) => e.style === "primary");
+    expect(primary.map((e) => [e.action_id, (e.text as Json).text])).toEqual([
+      [ACTION.homeLog, "Log time"],
+      [ACTION.homePto, "Time off"],
+    ]);
   });
 });

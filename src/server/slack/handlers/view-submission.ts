@@ -1,6 +1,5 @@
 import { DEFAULT_LOCALE, type IsoDate, type Locale } from "@/contracts";
 import { noticeModal, notLinkedMessage } from "../blocks/common";
-import { yearOf } from "../dates";
 import { localeOf, t } from "../i18n";
 import { CALLBACK } from "../ids";
 import { decodeMetadata } from "../metadata";
@@ -10,6 +9,7 @@ import { parseTimeSubmission } from "../parse/time-submission";
 import type { ViewSubmissionPayload } from "../payloads";
 import type { SlackDeps } from "../types";
 import { holidaySet } from "./modal-loader";
+import { projectAccessErrors } from "./project-access";
 import { processSubmission } from "./submit";
 
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
@@ -45,12 +45,19 @@ export async function handleViewSubmission(payload: ViewSubmissionPayload, deps:
   let result;
   if (callback === CALLBACK.pto) {
     const { start, end } = ptoRange(values);
-    const years = [start, end].filter((d): d is IsoDate => !!d && ISO.test(d)).map(yearOf);
-    const holidays = years.length > 0 ? await holidaySet(deps.tempo, profile, years) : new Set<IsoDate>();
+    const dates = [start, end].filter((d): d is IsoDate => !!d && ISO.test(d)).sort();
+    // A15: weekends and the user's own-office holidays are skipped.
+    const holidays =
+      dates.length > 0 ? await holidaySet(deps.tempo, profile.userId, dates[0], dates[dates.length - 1]) : new Set<IsoDate>();
     result = parsePtoSubmission({ viewId: view.id, meta: { ...meta, kind: "pto" }, values, holidays, locale });
   } else {
     if (meta.kind === "pto") return noticeResponse(t(locale, "common.formExpired"), locale);
     result = parseTimeSubmission({ viewId: view.id, meta, values, locale });
+    if (result.ok) {
+      // A15: only channel members may log to a project; tell them who to ask, in the modal.
+      const denied = await projectAccessErrors(deps, profile, values, meta.rows, locale);
+      if (denied) return errorsResponse(denied);
+    }
   }
 
   if (!result.ok) return errorsResponse(result.errors);

@@ -40,7 +40,7 @@ export const uk: Messages = {
   // Time / standup modal
   "time.workHeader": "Робота · {date}",
   "time.workDate": "Дата роботи",
-  "time.noProjects": "Тобі ще не призначили жодного проєкту. Звернися до адміна.",
+  "time.noProjects": "Тебе ще немає в жодному каналі проєкту. Попроси адміна додати тебе.",
   "time.projectLabel": "Проєкт {n}",
   "time.projectPlaceholder": "Обери проєкт",
   "time.hoursLabel": "Години",
@@ -62,7 +62,7 @@ export const uk: Messages = {
   "pto.date": "Дата",
   "pto.until": "Останній день (необовʼязково)",
   "pto.untilHint": "Залиш порожнім, якщо це лише один день.",
-  "pto.rules": "До {max} робочих днів за раз. Вихідні та свята компанії не рахуються.",
+  "pto.rules": "До {max} робочих днів за раз. Вихідні та свята твого офісу не рахуються.",
 
   // Validation errors
   "err.workDateMissing": "Обери дату роботи",
@@ -81,6 +81,11 @@ export const uk: Messages = {
   "err.ptoOrder": "Останній день не може бути раніше за перший",
   "err.ptoMax": "Не більше {max} робочих днів за раз",
   "err.ptoNoBusinessDays": "У цьому проміжку лише вихідні або свята",
+  "err.notMember": "Тебе немає в {channel}. Попроси {creator} додати тебе.",
+  "err.anAdmin": "адміна",
+  "err.projectChannel": "каналі проєкту {project}",
+  "err.notMemberDm": "Час для {project} не збережено. {hint}",
+  "err.notMemberGeneric": "Час не збережено: тебе немає в одному з цих каналів проєктів. Попроси адміна додати тебе.",
 
   // App Home
   "home.yourWeek": "Твій тиждень",
@@ -88,8 +93,9 @@ export const uk: Messages = {
   "home.today": "Сьогодні",
   "home.notLogged": "Ще не записано",
   "home.logTime": "Записати час",
-  "home.quickPto": "Відпустка / лікарняний",
-  "home.clientCaps": "Ліміти клієнтів · {month}",
+  "home.timeOffButton": "Відпустка / лікарняний",
+  "home.byProject": "Цього місяця за проєктами",
+  "home.noProjectHours": "Цього місяця ще немає записаних годин.",
   "home.timeOff": "Відпустки й лікарняні",
   "home.vacationLeft": "Залишок відпустки ({year})",
   "home.vacationUsed": "Використано відпустки ({year})",

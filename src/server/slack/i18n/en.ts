@@ -39,7 +39,7 @@ export const en = {
   // Time / standup modal
   "time.workHeader": "Work · {date}",
   "time.workDate": "Work date",
-  "time.noProjects": "No projects assigned yet. Ask an admin.",
+  "time.noProjects": "You're not in any project channel yet. Ask an admin to add you.",
   "time.projectLabel": "Project {n}",
   "time.projectPlaceholder": "Pick a project",
   "time.hoursLabel": "Hours",
@@ -61,7 +61,7 @@ export const en = {
   "pto.date": "Date",
   "pto.until": "Until (optional)",
   "pto.untilHint": "Leave empty for a single day.",
-  "pto.rules": "Up to {max} business days at a time. Weekends and company holidays are skipped.",
+  "pto.rules": "Up to {max} business days at a time. Weekends and your office's holidays are skipped.",
 
   // Validation errors (response_action "errors")
   "err.workDateMissing": "Pick a work date",
@@ -79,7 +79,13 @@ export const en = {
   "err.ptoEnd": "Pick a valid end date",
   "err.ptoOrder": "End date must be on or after the start date",
   "err.ptoMax": "Up to {max} business days at a time",
-  "err.ptoNoBusinessDays": "That range has only weekends or company holidays",
+  "err.ptoNoBusinessDays": "That range has only weekends or holidays",
+  // A15 project access (field error on the project select; plain text, no mrkdwn)
+  "err.notMember": "You're not in {channel}. Ask {creator} to add you.",
+  "err.anAdmin": "an admin",
+  "err.projectChannel": "the {project} channel",
+  "err.notMemberDm": "Your time for {project} was not saved. {hint}",
+  "err.notMemberGeneric": "Your time was not saved: you're not in one of those project channels. Ask an admin to add you.",
 
   // App Home
   "home.yourWeek": "Your week",
@@ -87,8 +93,9 @@ export const en = {
   "home.today": "Today",
   "home.notLogged": "Not logged",
   "home.logTime": "Log time",
-  "home.quickPto": "Quick PTO",
-  "home.clientCaps": "Client caps · {month}",
+  "home.timeOffButton": "Time off",
+  "home.byProject": "This month by project",
+  "home.noProjectHours": "No hours logged this month yet.",
   "home.timeOff": "Time off",
   "home.vacationLeft": "Vacation left ({year})",
   "home.vacationUsed": "Vacation used ({year})",

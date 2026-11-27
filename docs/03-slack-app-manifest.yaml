@@ -49,13 +49,12 @@ oauth_config:
       #   Channels (general standup + one per project) are chosen in /admin (amendment A11). nerdylog
       #   joins public ones itself; private ones need `/invite @nerdylog`. No chat:write.public, so
       #   nerdylog only posts in channels it is a member of.
-      - channels:read # /admin channel picker: list public channels (conversations.list/info)
-      - groups:read # /admin channel picker: list private channels nerdylog was invited to
+      - channels:read # /admin channel picker (conversations.list/info); A15 project members = public channel members (conversations.members)
+      - groups:read # /admin channel picker + A15 members of private project channels nerdylog was invited to
       - channels:join # join a public channel when an admin picks it in /admin (conversations.join)
       - im:write # open a DM channel with a user (conversations.open) for the morning ping
       - users:read # "Sync from Slack": list members, read tz + avatar
       - users:read.email # "Sync from Slack": match members to nerdylog users by email
-      - usergroups:read # "Sync from Slack" (A13): read user groups, members and default channels → teams
       - commands # register /log and /pto
 
 settings:

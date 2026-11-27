@@ -1,11 +1,17 @@
 import type { SlackSubmissionInput } from "@/contracts";
+import { InvalidInputError } from "@/server/services/errors";
 import { buildProjectLinesMessage, groupProjectLines } from "../blocks/project-lines";
 import { buildStandupCard } from "../blocks/standup-card";
 import { localeOf, t } from "../i18n";
 import type { SlackActorProfile, SlackDeps } from "../types";
+import { notMemberMessage } from "./project-access";
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+function isNotMemberError(error: unknown): boolean {
+  return error instanceof InvalidInputError && (error.fieldErrors.projectId ?? []).includes("not_member");
 }
 
 /**
@@ -37,9 +43,8 @@ export async function postProjectLines(
 }
 
 /**
- * FR-SLACK-03 / A11 / A13: the full standup card goes to every distinct channel of the member's
- * active teams (the service falls back to the general standup channel; empty → no card). Posts
- * fail independently; the FIRST successful post's ts is stored on daily_checkins.
+ * FR-SLACK-03 / A11 / A15: the full standup card goes to the general standup channel (teams were
+ * removed). No channel configured → no card. The post's ts is stored on daily_checkins.
  */
 export async function broadcastStandup(
   deps: SlackDeps,
@@ -47,8 +52,8 @@ export async function broadcastStandup(
   input: SlackSubmissionInput,
 ): Promise<string | null> {
   if (input.kind !== "standup" || !input.checkin) return null;
-  const channels = [...new Set(await deps.tempo.listStandupChannelsForUser(input.checkin.userId))];
-  if (channels.length === 0) return null;
+  const channel = await deps.tempo.getStandupChannelId();
+  if (!channel) return null;
   const projects = await deps.tempo.listProjects(profile);
   const names = new Map(projects.map((p) => [p.id, p.name]));
   const card = buildStandupCard({
@@ -64,18 +69,13 @@ export async function broadcastStandup(
     plannedToday: input.checkin.plannedToday,
     blockers: input.checkin.blockers,
   });
-  // Posts run in parallel; results keep channel order, so "first" is the first listed channel that succeeded.
-  const results = await Promise.all(
-    channels.map(async (channel) => {
-      try {
-        return await deps.slack.postMessage(channel, card.text, card.blocks);
-      } catch (error) {
-        console.error("slack: standup post failed", channel, errorMessage(error));
-        return null;
-      }
-    }),
-  );
-  const ts = results.find((t): t is string => Boolean(t)) ?? null;
+  let ts: string | null;
+  try {
+    ts = await deps.slack.postMessage(channel, card.text, card.blocks);
+  } catch (error) {
+    console.error("slack: standup post failed", channel, errorMessage(error));
+    return null;
+  }
   if (ts) await deps.tempo.setCheckinChannelTs(input.checkin.userId, input.checkin.checkinDate, ts);
   return ts;
 }
@@ -111,10 +111,34 @@ export async function processSubmission(
   } catch (error) {
     // The modal already closed, so tell the user in a DM instead of failing silently.
     console.error("slack: submission failed", input.kind, error instanceof Error ? error.message : error);
-    await notify(deps, profile, t(localeOf(profile), "common.saveFailedDm"));
+    await notify(deps, profile, await failureText(deps, profile, input, error));
     return;
   }
   await routeSubmission(deps, profile, input);
+}
+
+/**
+ * A15: the service rejects work on a project the user is not a member of (InvalidInputError
+ * fieldErrors.projectId "not_member"). The synchronous pre-check normally catches this; if
+ * membership changed in between, the DM names the creator and channel instead of a generic error.
+ */
+async function failureText(
+  deps: SlackDeps,
+  profile: SlackActorProfile,
+  input: SlackSubmissionInput,
+  error: unknown,
+): Promise<string> {
+  const locale = localeOf(profile);
+  if (!isNotMemberError(error)) return t(locale, "common.saveFailedDm");
+  try {
+    const projects = await deps.tempo.listProjects(profile);
+    const ids = new Set(input.entries.map((e) => e.projectId).filter(Boolean));
+    const blocked = projects.find((p) => ids.has(p.id) && !p.isMember);
+    if (blocked) return t(locale, "err.notMemberDm", { project: blocked.name, hint: await notMemberMessage(deps, blocked, locale) });
+  } catch (lookupError) {
+    console.error("slack: not_member lookup failed", errorMessage(lookupError));
+  }
+  return t(locale, "err.notMemberGeneric");
 }
 
 async function notify(deps: SlackDeps, profile: SlackActorProfile, text: string): Promise<void> {
