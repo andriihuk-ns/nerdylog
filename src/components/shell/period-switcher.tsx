@@ -31,13 +31,13 @@ export function PeriodSwitcher({ label, unit, prevHref, nextHref, todayHref, tod
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
+    <div className={`flex flex-wrap items-center ${unit === "year" ? "gap-1" : "gap-1.5"}`}>
       <Button asChild variant="ghost" size="icon" className="hit-target">
         <Link href={prevHref} scroll={false} aria-label={t("previous", { unit })} aria-keyshortcuts="[">
           <ChevronLeft aria-hidden />
         </Link>
       </Button>
-      <p className="tabular min-w-0 text-center text-sm font-medium whitespace-nowrap sm:min-w-44" aria-live="polite">
+      <p className={`tabular min-w-0 text-center text-sm font-medium whitespace-nowrap ${unit === "year" ? "sm:min-w-20" : "sm:min-w-44"}`} aria-live="polite">
         {label}
       </p>
       <Button asChild variant="ghost" size="icon" className="hit-target">

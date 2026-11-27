@@ -73,7 +73,7 @@ export function HolidaysPanel({ holidays, offices, officeId, year, currentYear }
 
   return (
     <section aria-label={t("title")} className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-end gap-3">
+      <div className="flex flex-wrap items-end gap-3">
         <HolidayToolbar
           offices={offices}
           officeId={officeId}
@@ -81,25 +81,25 @@ export function HolidaysPanel({ holidays, offices, officeId, year, currentYear }
           currentYear={currentYear}
           onToast={(message, tone = "neutral") => show(message, { tone })}
         />
+        <form onSubmit={add} aria-label={t("addFor", { office: office.name })} className="flex min-w-0 flex-1 flex-wrap items-end gap-3">
+          <div className="flex w-full flex-col gap-1.5 sm:w-auto">
+            <Label htmlFor="holiday-date">{t("date")}</Label>
+            <DatePicker id="holiday-date" value={date} label={t("date")} placeholder={t("pickDate")} onChange={setDate} className="w-full sm:w-44" />
+          </div>
+          <div className="flex min-w-48 flex-1 flex-col gap-1.5">
+            <Label htmlFor="holiday-name">{t("name")}</Label>
+            <Input id="holiday-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={120} placeholder={t("placeholder")} className="h-11" />
+          </div>
+          <Button type="submit" disabled={adding} className="hit-target w-full sm:w-auto">
+            {adding ? t("adding") : t("addTo", { code: office.code })}
+          </Button>
+          {error ? (
+            <p role="alert" className="w-full text-destructive">
+              {error}
+            </p>
+          ) : null}
+        </form>
       </div>
-      <form onSubmit={add} aria-label={t("addFor", { office: office.name })} className="flex flex-wrap items-end gap-3 rounded-lg border bg-card p-4">
-        <div className="flex w-full flex-col gap-1.5 sm:w-auto">
-          <Label htmlFor="holiday-date">{t("date")}</Label>
-          <DatePicker id="holiday-date" value={date} label={t("date")} placeholder={t("pickDate")} onChange={setDate} className="w-full sm:w-44" />
-        </div>
-        <div className="flex min-w-48 flex-1 flex-col gap-1.5">
-          <Label htmlFor="holiday-name">{t("name")}</Label>
-          <Input id="holiday-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={120} placeholder={t("placeholder")} className="h-11" />
-        </div>
-        <Button type="submit" disabled={adding} className="hit-target w-full sm:w-auto">
-          {adding ? t("adding") : t("addTo", { code: office.code })}
-        </Button>
-        {error ? (
-          <p role="alert" className="w-full text-destructive">
-            {error}
-          </p>
-        ) : null}
-      </form>
       {sorted.length === 0 ? (
         <p className="rounded-lg border bg-card p-6 text-muted-foreground">{t("empty", { year: String(year), office: office.name })}</p>
       ) : (
