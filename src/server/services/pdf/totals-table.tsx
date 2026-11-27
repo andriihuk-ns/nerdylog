@@ -24,7 +24,7 @@ export function TotalsTable({ lines, projectScoped }: { lines: readonly TotalsLi
         </Text>
       </View>
       {lines.map((l) => {
-        const weight = l.bold ? { fontFamily: "Helvetica-Bold" } : {};
+        const weight = l.bold ? { fontFamily: "NotoSans-Bold" } : {};
         return (
           <View key={l.label} style={styles.row} wrap={false}>
             <Text style={[{ width: totalsCols.label }, weight]}>{l.label}</Text>

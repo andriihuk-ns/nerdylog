@@ -1,8 +1,9 @@
 import { StyleSheet } from "@react-pdf/renderer";
+import "./fonts";
 
 /**
  * Print styles for the FR-EXP-02 report: neutral ink on white, hairline rules,
- * right-aligned numbers. Built-in Helvetica (Latin-1 only; see export-service notes).
+ * right-aligned numbers. Embedded Noto Sans supports Cyrillic report text.
  */
 export const colors = {
   ink: "#111113",
@@ -13,17 +14,17 @@ export const colors = {
 };
 
 export const styles = StyleSheet.create({
-  page: { paddingTop: 36, paddingBottom: 48, paddingHorizontal: 36, fontSize: 9, color: colors.ink, fontFamily: "Helvetica" },
+  page: { paddingTop: 36, paddingBottom: 48, paddingHorizontal: 36, fontSize: 9, color: colors.ink, fontFamily: "NotoSans" },
   header: { marginBottom: 16, borderBottomWidth: 1, borderBottomColor: colors.ink, paddingBottom: 8 },
   brand: { fontSize: 8, color: colors.muted, letterSpacing: 1 },
-  title: { fontSize: 18, fontFamily: "Helvetica-Bold", marginTop: 2 },
+  title: { fontSize: 18, fontFamily: "NotoSans-Bold", marginTop: 2 },
   meta: { fontSize: 9, color: colors.muted, marginTop: 4 },
-  sectionTitle: { fontSize: 12, fontFamily: "Helvetica-Bold", marginTop: 14, marginBottom: 6 },
-  subTitle: { fontSize: 9, fontFamily: "Helvetica-Bold", marginTop: 8, marginBottom: 4, color: colors.muted },
+  sectionTitle: { fontSize: 12, fontFamily: "NotoSans-Bold", marginTop: 14, marginBottom: 6 },
+  subTitle: { fontSize: 9, fontFamily: "NotoSans-Bold", marginTop: 8, marginBottom: 4, color: colors.muted },
   table: { borderTopWidth: 0.5, borderTopColor: colors.hairline },
   row: { flexDirection: "row", borderBottomWidth: 0.5, borderBottomColor: colors.hairline, paddingVertical: 3 },
   headRow: { flexDirection: "row", backgroundColor: colors.band, paddingVertical: 3 },
-  headCell: { fontFamily: "Helvetica-Bold", fontSize: 8, color: colors.muted },
+  headCell: { fontFamily: "NotoSans-Bold", fontSize: 8, color: colors.muted },
   num: { textAlign: "right" },
   coral: { color: colors.coral },
   empty: { color: colors.muted, marginTop: 6 },
