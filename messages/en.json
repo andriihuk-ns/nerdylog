@@ -265,9 +265,8 @@
     },
     "directory": {
       "counts": "<n>{active}</n> active · <n>{archived}</n> archived",
-      "sync": "Sync from Slack",
       "syncing": "Syncing…",
-      "empty": "Nobody yet. Sync from Slack.",
+      "empty": "No one is in the directory.",
       "columns": {
         "name": "Name",
         "title": "Title",

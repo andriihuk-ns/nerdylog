@@ -72,7 +72,7 @@ export function WeekGrid({ matrix, display, addable, pendingKeys, failedKey, onS
                   key={d}
                   scope="col"
                   className={cn(
-                    "h-10 border-b px-3 text-right font-medium",
+                    "h-10 border-b px-3 text-center font-medium",
                     DAY_STATUS_COLUMN[display[i]] || (isWeekend(d) && "bg-muted/50"),
                   )}
                 >

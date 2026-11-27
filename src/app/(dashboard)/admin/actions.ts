@@ -2,17 +2,14 @@
 
 import { refresh } from "next/cache";
 import { z } from "zod";
-import { roleSchema, type AppSettings, type DirectoryUser, type ProjectView } from "@/contracts";
+import { roleSchema, type AppSettings, type DirectoryUser } from "@/contracts";
 import { requireActor } from "@/server/auth/session";
 import { syncDirectoryFromSlack, updateDirectoryUser } from "@/server/services/directory-service";
-import { listProjects } from "@/server/services/project-service";
 import { getAppSettings, updateAppSettings } from "@/server/services/settings-service";
 import { fetchSlackDirectory } from "@/server/slack/directory";
 import { actionError, fail, ok, type ActionResult } from "../action-result";
 import { channelFailure, channelFieldError, type ChannelActionResult } from "./channel-result";
 import { channelIdSchema, ensureBotInChannel, serverCopy } from "./channel-guard";
-import { refreshAllMembers } from "./project-members";
-import type { SlackSyncResult } from "./sync-result";
 
 const ADMIN = ["admin"] as const;
 
@@ -43,16 +40,14 @@ export async function updateDirectoryUserAction(userId: string, patch: Directory
   }
 }
 
-/** A15: directory first (its result always stands), then members of every project with a channel. */
-export async function syncFromSlackAction(): Promise<ActionResult<SlackSyncResult>> {
+/** Refresh only people when the admin directory opens; project channel membership has its own action. */
+export async function syncPeopleFromSlackAction(): Promise<ActionResult<{ created: number; updated: number }>> {
   try {
     const actor = await requireActor(ADMIN);
     const members = await fetchSlackDirectory();
-    const people: { created: number; updated: number } = await syncDirectoryFromSlack(actor, members);
-    const projects: ProjectView[] = await listProjects(actor, { includeArchived: true });
-    const refreshed = await refreshAllMembers(projects);
+    const people = await syncDirectoryFromSlack(actor, members);
     refresh();
-    return ok({ people, projects: refreshed });
+    return ok(people);
   } catch (err) {
     return actionError(err);
   }

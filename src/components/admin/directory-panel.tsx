@@ -1,11 +1,10 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
-import { RefreshCw } from "lucide-react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import type { DirectoryUser, OfficeView, ProjectView } from "@/contracts";
 import { cn } from "@/lib/utils";
-import { syncFromSlackAction } from "@/app/(dashboard)/admin/actions";
+import { syncPeopleFromSlackAction } from "@/app/(dashboard)/admin/actions";
 import { useToast } from "@/hooks/use-toast";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Button } from "@/components/ui/button";
@@ -20,7 +19,6 @@ import {
   hasFilters,
   NONE,
 } from "./directory-filters";
-import { syncSummary } from "./sync-summary";
 
 interface Props {
   users: DirectoryUser[];
@@ -38,7 +36,7 @@ const COLUMNS = [
   "allowance",
 ] as const;
 
-/** FR-WEB-06 Team Directory (A15): Sync from Slack, search + project/office filters, per-field save status. */
+/** FR-WEB-06 directory: refresh Slack people on entry, with search and project/office filters. */
 export function DirectoryPanel({ users, projects, offices }: Props) {
   const t = useTranslations("admin.directory");
   const { toast, show, dismiss } = useToast();
@@ -53,21 +51,20 @@ export function DirectoryPanel({ users, projects, offices }: Props) {
     [users, debounced, projectId, officeId],
   );
 
-  function sync() {
+  useEffect(() => {
+    const syncKey = "nerdylog-directory-sync-at";
+    const lastSync = Number(window.localStorage.getItem(syncKey));
+    if (Number.isFinite(lastSync) && Date.now() - lastSync < 12 * 60 * 60 * 1000) return;
+
+    window.localStorage.setItem(syncKey, String(Date.now()));
     startSync(async () => {
-      const res = await syncFromSlackAction();
-      if (!res.ok)
-        show(t("syncFailed", { reason: res.message }), {
-          tone: "error",
-          onRetry: sync,
-        });
-      else
-        show(
-          syncSummary(res.data, t),
-          res.data.projects.failed > 0 ? { tone: "error", onRetry: sync } : {},
-        );
+      const res = await syncPeopleFromSlackAction();
+      if (!res.ok) {
+        window.localStorage.removeItem(syncKey);
+        show(t("syncFailed", { reason: res.message }), { tone: "error" });
+      }
     });
-  }
+  }, [show, startSync, t]);
 
   return (
     <section aria-labelledby="directory-title" className="flex flex-col gap-4">
@@ -117,21 +114,11 @@ export function DirectoryPanel({ users, projects, offices }: Props) {
             })}
           </p>
         </div>
-        <Button
-          onClick={sync}
-          disabled={syncing}
-          className="hit-target w-full sm:w-auto"
-        >
-          <RefreshCw
-            aria-hidden
-            className={cn(syncing && "motion-safe:animate-spin")}
-          />
-          {syncing ? t("syncing") : t("sync")}
-        </Button>
+        {syncing ? <p role="status" className="text-sm text-muted-foreground">{t("syncing")}</p> : null}
       </div>
       {users.length === 0 ? (
         <p className="rounded-lg border bg-card p-6 text-muted-foreground">
-          {t("empty")}
+          {syncing ? t("syncing") : t("empty")}
         </p>
       ) : shown.length === 0 ? (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card p-6 text-muted-foreground">
