@@ -21,6 +21,7 @@ interface Props {
   matrix: WeekMatrix;
   /** A16: per-day pill state incl. display-only "weekend" (locks the column). */
   display: DayDisplay[];
+  holidayNames: Array<{ date: IsoDate; name: string }>;
   addable: ProjectOption[];
   pendingKeys: readonly string[];
   failedKey: string | null;
@@ -34,13 +35,14 @@ type Draft = { row: number; col: number; draft: string } | null;
 
 export const cellKey = (projectId: string, date: IsoDate) => `${projectId}:${date}`;
 
-export function WeekGrid({ matrix, display, addable, pendingKeys, failedKey, onSaveCell, onSetStatus, onRemoveRow, onAddProject }: Props) {
+export function WeekGrid({ matrix, display, holidayNames, addable, pendingKeys, failedKey, onSaveCell, onSetStatus, onRemoveRow, onAddProject }: Props) {
   const { days, rows } = matrix;
   const { gridRef, focusCell, handleNavKey, cellProps } = useGridNavigation({ rows: rows.length, cols: days.length });
   const [editing, setEditing] = useState<Draft>(null);
   const [note, setNote] = useState<Draft>(null);
   const t = useTranslations("myTime");
   const f = useFormat();
+  const holidayNameByDate = new Map(holidayNames.map(({ date, name }) => [date, name]));
 
   function close(row: number, col: number, move: CommitMove) {
     setEditing(null);
@@ -92,6 +94,7 @@ export function WeekGrid({ matrix, display, addable, pendingKeys, failedKey, onS
                   dayLabel={f.dayLong(d)}
                   weekend={isWeekend(d)}
                   hasHours={(matrix.dayTotals[i] ?? 0) > 0}
+                  holidayName={holidayNameByDate.get(d)}
                   onChange={(s) => onSetStatus(d, s)}
                 />
               </td>

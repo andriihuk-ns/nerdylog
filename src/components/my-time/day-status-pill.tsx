@@ -19,11 +19,12 @@ interface Props {
   dayLabel: string; // "Tue, Nov 24"
   weekend: boolean; // Sat/Sun → "Weekend" is an option
   hasHours: boolean; // Weekend can't be picked while hours exist
+  holidayName?: string;
   onChange: (status: DayDisplay) => void;
 }
 
 /** Day-status pill above each grid column: (Weekend) / Work / Vacation / Sick day / Public holiday. */
-export function DayStatusPill({ status, dayLabel, weekend, hasHours, onChange }: Props) {
+export function DayStatusPill({ status, dayLabel, weekend, hasHours, holidayName, onChange }: Props) {
   const t = useTranslations("dayStatus");
   const options: DayDisplay[] = weekend ? ["weekend", ...ENTRY_TYPES] : [...ENTRY_TYPES];
   return (
@@ -35,7 +36,9 @@ export function DayStatusPill({ status, dayLabel, weekend, hasHours, onChange }:
           DAY_STATUS_PILL[status],
         )}
       >
-        <span className="truncate">{t(`short.${status}`)}</span>
+        <span className="truncate" title={status === "holiday" ? holidayName : undefined}>
+          {status === "holiday" && holidayName ? holidayName : t(`short.${status}`)}
+        </span>
         <ChevronDown className="size-3 shrink-0 opacity-60" aria-hidden />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="center" className="min-w-44">

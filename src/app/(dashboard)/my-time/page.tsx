@@ -6,6 +6,7 @@ import { listWeekEntries } from "@/server/services/time-entry-service";
 import { listProjects } from "@/server/services/project-service";
 import { getProjectHours } from "@/server/services/rollup-service";
 import { getPtoBalance } from "@/server/services/pto-service";
+import { listCalendarHolidayNames } from "@/server/services/holiday-service";
 import { addDays, monthForWeek, parseWeekParam, todayIn } from "@/components/lib/dates";
 import { WeekView } from "@/components/my-time/week-view";
 import { ProjectHoursCard } from "@/components/my-time/project-hours-card";
@@ -29,11 +30,12 @@ export default async function MyTimePage({ searchParams }: { searchParams: Searc
   const weekEnd = addDays(weekStart, 6);
   const month = monthForWeek(weekStart, today);
 
-  const [entries, projects, hours, pto] = await Promise.all([
+  const [entries, projects, hours, pto, holidayNames] = await Promise.all([
     listWeekEntries(actor, actor.userId, weekStart),
     listProjects(actor),
     getProjectHours(actor, month),
     getPtoBalance(actor, actor.userId, Number(today.slice(0, 4))),
+    listCalendarHolidayNames(actor, actor.userId, weekStart, weekEnd),
   ]);
   const options = await projectOptions(projects, (p: ProjectView) => p.isMember, { kind: "self" });
   const monthHours: ProjectHours[] = hours;
@@ -45,6 +47,7 @@ export default async function MyTimePage({ searchParams }: { searchParams: Searc
         weekStart={weekStart}
         today={today}
         entries={entries}
+        holidayNames={holidayNames}
         projects={options}
         storageUserId={actor.userId}
         actions={<ExportMenus groups={rangeExports({ from: weekStart, to: weekEnd }, month)} />}

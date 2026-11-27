@@ -157,6 +157,21 @@ export async function listUserHolidayDates(db: DbOrTx, userId: string, start: Is
   return rows.map((r) => r.date);
 }
 
+/** A15: named holidays for one user's office in [start, end]. */
+export async function listUserHolidayNames(
+  db: DbOrTx,
+  userId: string,
+  start: IsoDate,
+  end: IsoDate,
+): Promise<Array<{ date: IsoDate; name: string }>> {
+  return db
+    .select({ date: companyHolidays.holidayDate, name: companyHolidays.name })
+    .from(companyHolidays)
+    .innerJoin(users, eq(users.officeId, companyHolidays.officeId))
+    .where(and(eq(users.id, userId), gte(companyHolidays.holidayDate, start), lte(companyHolidays.holidayDate, end)))
+    .orderBy(asc(companyHolidays.holidayDate));
+}
+
 /** A15: holiday dates of the given offices in [start, end]. */
 export async function listOfficeHolidayDates(
   db: DbOrTx,

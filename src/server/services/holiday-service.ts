@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   isoDateSchema,
+  type Actor,
   type AddHoliday,
   type CopyHolidays,
   type IsoDate,
@@ -14,6 +15,7 @@ import {
   insertHolidaysSkipExisting,
   listHolidayViews,
   listUserHolidayDates,
+  listUserHolidayNames,
 } from "@/server/db/queries/catalog";
 import { officeExists } from "@/server/db/queries/offices";
 import { addDays } from "./calendar";
@@ -21,7 +23,7 @@ import { InvalidInputError, NotFoundError } from "./errors";
 import { clearOfficeHolidayEntries, fillOfficeHolidayEntries } from "./holiday-entries";
 import { isUniqueViolation } from "./pg-errors";
 import { yearRange } from "./pto-balance";
-import { assertAdmin } from "./rbac";
+import { assertAdmin, assertCanActOnUser } from "./rbac";
 import { assertIsoDate, assertRowId, isRowId, parseInput } from "./validation";
 
 /** Postgres name of the (office_id, holiday_date) unique constraint (drizzle/0011). */
@@ -52,6 +54,19 @@ export const listHolidays: ListHolidays = async (_actor, year, officeId) => {
   if (officeId !== undefined && !isRowId(officeId)) return [];
   return listHolidayViews(getDb(), start, end, officeId);
 };
+
+/** Named holidays for a user's calendar; members can only read their own office calendar. */
+export async function listCalendarHolidayNames(
+  actor: Actor,
+  userId: string,
+  start: IsoDate,
+  end: IsoDate,
+): Promise<Array<{ date: IsoDate; name: string }>> {
+  assertCanActOnUser(actor, userId);
+  assertIsoDate(start, "start");
+  assertIsoDate(end, "end");
+  return listUserHolidayNames(getDb(), userId, start, end);
+}
 
 /**
  * Contract AddHoliday (admin). Writes company_holidays (suppresses morning pings and feeds

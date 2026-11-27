@@ -8,6 +8,7 @@ import { listOffices } from "@/server/services/office-service";
 import { listProjects } from "@/server/services/project-service";
 import { getProjectHours, getTeamMonthRollup } from "@/server/services/rollup-service";
 import { getPtoBalance } from "@/server/services/pto-service";
+import { listCalendarHolidayNames } from "@/server/services/holiday-service";
 import { listWeekEntries } from "@/server/services/time-entry-service";
 import { addDays, monthForWeek, parseWeekParam, todayIn } from "@/components/lib/dates";
 import { ExportMenus } from "@/components/shell/export-menu";
@@ -40,18 +41,20 @@ export default async function PersonPage({ params, searchParams }: { params: Par
   const weekStart = parseWeekParam(query.week, today);
   const weekEnd = addDays(weekStart, 6);
   const month = monthForWeek(weekStart, today);
-  const [projects, rollup, hours, pto, entries]: [
+  const [projects, rollup, hours, pto, entries, holidayNames]: [
     ProjectView[],
     UserMonthRollup[],
     ProjectHours[],
     Awaited<ReturnType<typeof getPtoBalance>>,
     Awaited<ReturnType<typeof listWeekEntries>>,
+    Awaited<ReturnType<typeof listCalendarHolidayNames>>,
   ] = await Promise.all([
     listProjects(actor),
     getTeamMonthRollup(actor, month),
     getProjectHours(actor, month, user.id),
     getPtoBalance(actor, user.id, Number(today.slice(0, 4))),
     listWeekEntries(actor, user.id, weekStart),
+    listCalendarHolidayNames(actor, user.id, weekStart, weekEnd),
   ]);
   const options = await projectOptions(projects, (p) => p.memberIds.includes(user.id), { kind: "other", name: user.fullName });
   const totals = rollup.find((r) => r.userId === user.id)?.total ?? null;
@@ -69,6 +72,7 @@ export default async function PersonPage({ params, searchParams }: { params: Par
         weekStart={weekStart}
         today={today}
         entries={entries}
+        holidayNames={holidayNames}
         projects={options}
         userId={user.id}
         basePath={`/people/${user.id}`}

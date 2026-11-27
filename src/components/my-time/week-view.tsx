@@ -21,6 +21,7 @@ interface Props {
   weekStart: IsoDate;
   today: IsoDate;
   entries: TimeEntryView[];
+  holidayNames: Array<{ date: IsoDate; name: string }>;
   /** A15: all active projects; non-members carry a disabledReason. */
   projects: ProjectOption[];
   /** People page: edit this person's week (manager/admin); omitted → the signed-in user. */
@@ -39,7 +40,7 @@ interface Props {
 }
 
 /** Weekly matrix client island (My Time and the people page): optimistic state, toasts, confirms, week shortcuts. */
-export function WeekView({ weekStart, today, entries, projects, userId, storageUserId, basePath = "/my-time", preserveParams, title, showTitle = true, actions }: Props) {
+export function WeekView({ weekStart, today, entries, holidayNames, projects, userId, storageUserId, basePath = "/my-time", preserveParams, title, showTitle = true, actions }: Props) {
   const weekHref = (d: IsoDate) => `${basePath}?week=${d}`;
   const router = useRouter();
   const t = useTranslations("myTime");
@@ -170,6 +171,7 @@ export function WeekView({ weekStart, today, entries, projects, userId, storageU
       <WeekGrid
         matrix={matrix}
         display={display}
+        holidayNames={holidayNames}
         addable={addable}
         pendingKeys={pendingKeys}
         failedKey={failedKey}
