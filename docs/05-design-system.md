@@ -23,7 +23,8 @@ Ratios are WCAG 2.1 relative-luminance contrast, computed from the hex values (s
 | `background` | `#FAFAFA` | `#111113` | — | | |
 | `foreground` | `#111113` | `#F4F4F5` | background | 18.07 | 17.16 |
 | `card` / `popover` | `#FFFFFF` | `#18181B` / `#1C1C1F` | foreground on card | 18.86 | 16.12 |
-| `primary` / `-foreground` | `#18181B` / `#FAFAFA` | `#F4F4F5` / `#18181B` | fg on primary | 16.97 | 16.12 |
+| `primary` / `-foreground` | `#FFA500` / `#111113` | `#FFA500` / `#111113` | fg on primary | 9.55 | 9.55 |
+| `primary-strong` (links) | `#A64B00` | `#FFB54A` | background | 5.55 | 10.74 |
 | `muted` / `secondary` / `accent` | `#F4F4F5` | `#232326` | secondary-fg on muted | 16.12 | 14.26 |
 | `muted-foreground` | `#5F5F67` | `#A1A1AA` | background | 6.06 | 7.36 |
 | | | | muted | 5.76 | 6.12 |
@@ -31,7 +32,7 @@ Ratios are WCAG 2.1 relative-luminance contrast, computed from the hex values (s
 | `border` (hairline, decorative) | `#E4E4E7` | `#2A2A2E` | background | 1.22 | 1.32 |
 | `input` (control edge) | `#8A8A93` | `#6E6E76` | card | 3.42 | 3.51 |
 | | | | background | 3.28 | 3.73 |
-| `ring` (focus) | `#71717A` | `#A1A1AA` | background | 4.63 | 7.36 |
+| `ring` (focus) | `#A64B00` | `#FFA500` | background | 5.55 | 9.55 |
 | `destructive` | `#C81E1E` | `#F87171` | background | 5.50 | 6.82 |
 
 `border` is below 3:1 on purpose: it separates grid cells, it does not identify a control (WCAG 1.4.11 exempts it). Anything the user must find to operate (inputs, select triggers, editable cells on focus) uses `input` or `ring`.
@@ -123,6 +124,7 @@ Layout:
 - Header: week switcher (`‹`, `Nov 23 – 29, 2026`, `›`, `Today`), right: weekly total `32.5h` (Display, tabular).
 - Day-status row: one pill per day (`Work`, `Vac`, `Sick`, `Hol`) above the grid.
 - Grid: rows = projects (sticky first column, 200 px), columns = Mon–Sun (min 72 px, right-aligned) + `Total` (bold). Footer row = daily totals. Weekend columns use `muted` background at 50 %.
+- The `Add project` control stays in the sticky project column while the day columns scroll horizontally on phones.
 - PTO day: whole column tinted `pto-subtle` (`holiday-subtle` for holidays), cells show `—` and are read-only; the pill shows the label.
 - Cap pills for the user's projects sit below the grid (6.1).
 - Under 768 px: one day per card, swipe/arrow between days.

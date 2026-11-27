@@ -47,7 +47,7 @@ export function UserMenu({ profile, navItems, navLabel }: { profile: MyProfile; 
         <DropdownMenuSeparator />
         <DropdownMenuGroup aria-label={navLabel} className="sm:hidden">
           {navItems.map((item) => (
-            <DropdownMenuItem key={item.href} asChild className="min-h-11 font-medium data-[current=true]:bg-muted">
+            <DropdownMenuItem key={item.href} asChild className="min-h-11 font-medium data-[current=true]:bg-muted data-[current=true]:text-primary-strong">
               <Link href={item.href} aria-current={active === item.href ? "page" : undefined} data-current={active === item.href}>
                 {item.label}
               </Link>

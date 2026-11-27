@@ -51,7 +51,7 @@ export function ProjectRow({ project: p, channels, offices, onEdit, onDelete, on
       className={cn("group h-11 cursor-pointer border-b last:border-b-0 hover:bg-muted/50", !p.isActive && "text-muted-foreground")}
     >
       <th scope="row" className="sticky left-0 z-10 max-w-56 truncate bg-card px-4 text-left font-medium group-hover:bg-muted/50">
-        <Link href={href} className="rounded-sm underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <Link href={href} className="rounded-sm underline-offset-4 hover:text-primary-strong hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           {p.name}
         </Link>
       </th>

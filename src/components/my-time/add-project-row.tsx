@@ -4,9 +4,9 @@ import { Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { ProjectOption, ProjectRef } from "./week-matrix";
+import { STICKY_PROJECT_COLUMN } from "./week-grid-styles";
 
 interface Props {
-  colSpan: number;
   options: ProjectOption[];
   onAdd: (project: ProjectRef) => void;
 }
@@ -15,13 +15,13 @@ interface Props {
  * Last grid row: pick another active project to add an empty row for it. A15: every project is
  * listed; ones the person is not a member of are disabled with the reason underneath.
  */
-export function AddProjectRow({ colSpan, options, onAdd }: Props) {
+export function AddProjectRow({ options, onAdd }: Props) {
   const t = useTranslations("myTime");
   if (options.length === 0) return null;
   const sorted = [...options].sort((a, b) => Number(a.disabledReason !== null) - Number(b.disabledReason !== null));
   return (
     <tr>
-      <td colSpan={colSpan} className="border-b px-2 py-1">
+      <td className={`${STICKY_PROJECT_COLUMN} border-b px-2 py-1 sm:px-3`}>
         <Select
           value=""
           onValueChange={(id) => {

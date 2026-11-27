@@ -9,6 +9,7 @@ import { useGridNavigation } from "@/hooks/use-grid-navigation";
 import { isWeekend } from "@/components/lib/dates";
 import { useFormat } from "@/hooks/use-format";
 import { AddProjectRow } from "./add-project-row";
+import { STICKY_PROJECT_COLUMN } from "./week-grid-styles";
 import type { CommitMove } from "./cell-editor";
 import { DAY_STATUS_COLUMN, type DayDisplay } from "./day-status";
 import { DayStatusPill } from "./day-status-pill";
@@ -31,9 +32,6 @@ interface Props {
 type Draft = { row: number; col: number; draft: string } | null;
 
 export const cellKey = (projectId: string, date: IsoDate) => `${projectId}:${date}`;
-
-/** Sticky first column: narrower on phones so day columns stay visible at 375px. */
-const STICKY = "sticky left-0 z-10 w-[132px] min-w-[132px] max-w-[132px] bg-card text-left sm:w-[200px] sm:min-w-[200px] sm:max-w-[200px]";
 
 export function WeekGrid({ matrix, display, addable, pendingKeys, failedKey, onSaveCell, onSetStatus, onRemoveRow, onAddProject }: Props) {
   const { days, rows } = matrix;
@@ -62,7 +60,7 @@ export function WeekGrid({ matrix, display, addable, pendingKeys, failedKey, onS
       <table ref={gridRef} role="grid" aria-label={t("grid.label")} className="w-full border-collapse">
         <thead>
           <tr className="text-xs font-medium text-muted-foreground">
-            <th scope="col" className={cn(STICKY, "h-10 border-b px-3 font-medium sm:px-4")}>
+            <th scope="col" className={cn(STICKY_PROJECT_COLUMN, "h-10 border-b px-3 font-medium sm:px-4")}>
               {t("grid.project")}
             </th>
             {days.map((d, i) => {
@@ -85,7 +83,7 @@ export function WeekGrid({ matrix, display, addable, pendingKeys, failedKey, onS
             </th>
           </tr>
           <tr>
-            <td className={cn(STICKY, "border-b px-3 text-xs text-muted-foreground sm:px-4")}>{t("grid.dayStatus")}</td>
+            <td className={cn(STICKY_PROJECT_COLUMN, "border-b px-3 text-xs text-muted-foreground sm:px-4")}>{t("grid.dayStatus")}</td>
             {days.map((d, i) => (
               <td key={d} className={cn("border-b px-1 py-1", DAY_STATUS_COLUMN[display[i]])}>
                 <DayStatusPill
@@ -106,7 +104,7 @@ export function WeekGrid({ matrix, display, addable, pendingKeys, failedKey, onS
             const project = { id: row.projectId, name };
             return (
               <tr key={row.projectId}>
-                <th scope="row" className={cn(STICKY, "group h-11 border-b pr-1 pl-3 font-medium sm:pl-4")}>
+                <th scope="row" className={cn(STICKY_PROJECT_COLUMN, "group h-11 border-b pr-1 pl-3 font-medium sm:pl-4")}>
                   <span className="flex items-center gap-1">
                     <span className="min-w-0 flex-1 truncate" title={name}>
                       {name}
@@ -158,11 +156,11 @@ export function WeekGrid({ matrix, display, addable, pendingKeys, failedKey, onS
               </tr>
             );
           })}
-          <AddProjectRow colSpan={days.length + 2} options={addable} onAdd={onAddProject} />
+          <AddProjectRow options={addable} onAdd={onAddProject} />
         </tbody>
         <tfoot>
           <tr className="font-semibold">
-            <th scope="row" className={cn(STICKY, "h-11 px-3 text-left sm:px-4")}>
+            <th scope="row" className={cn(STICKY_PROJECT_COLUMN, "h-11 px-3 text-left sm:px-4")}>
               {t("grid.dailyTotal")}
             </th>
             {matrix.dayTotals.map((total, i) => (

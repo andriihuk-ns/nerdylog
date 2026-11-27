@@ -91,7 +91,7 @@ export function DirectoryRow({
       >
         <Link
           href={`/people/${view.id}?from=directory`}
-          className="flex min-h-11 items-center gap-3 rounded-md px-2 hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          className="flex min-h-11 items-center gap-3 rounded-md px-2 hover:bg-muted/60 hover:text-primary-strong focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           <Avatar size="sm">
             {view.avatarUrl ? (

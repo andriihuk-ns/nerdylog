@@ -55,7 +55,7 @@ export function DatePicker({ value, mode = "date", label, onChange, id, classNam
   }
 
   function selectedClass(selected: boolean) {
-    return cn("h-11 min-w-11 rounded-md px-1 text-sm", selected ? "bg-primary text-primary-foreground hover:bg-primary/90" : "hover:bg-muted");
+    return cn("h-11 min-w-11 rounded-md px-1 text-sm", selected ? "bg-muted text-foreground hover:bg-muted" : "hover:bg-muted");
   }
 
   const display = !value ? placeholder ?? label : mode === "year" ? value : mode === "month" ? f.month(value) : f.dayLong(fallbackDate);

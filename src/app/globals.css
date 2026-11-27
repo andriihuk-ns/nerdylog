@@ -27,6 +27,7 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-strong: var(--primary-strong);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -110,8 +111,9 @@
   --card-foreground: #111113;
   --popover: #ffffff;
   --popover-foreground: #111113;
-  --primary: #18181b;
-  --primary-foreground: #fafafa;
+  --primary: #ffa500;
+  --primary-foreground: #111113;
+  --primary-strong: #a64b00;
   --secondary: #f4f4f5;
   --secondary-foreground: #18181b;
   --muted: #f4f4f5;
@@ -122,7 +124,7 @@
   --border: #e4e4e7; /* decorative hairline */
   --input: #d4d4d8; /* A16: light form control edge; focus gets a 2px ring */
   --input-hover: #a1a1aa; /* hover edge */
-  --ring: #71717a;
+  --ring: #a64b00;
 
   /* Semantic (light) */
   --work: #047857;
@@ -148,12 +150,12 @@
   /* Sidebar */
   --sidebar: #f4f4f5;
   --sidebar-foreground: #111113;
-  --sidebar-primary: #18181b;
-  --sidebar-primary-foreground: #fafafa;
+  --sidebar-primary: #ffa500;
+  --sidebar-primary-foreground: #111113;
   --sidebar-accent: #e9e9ec;
   --sidebar-accent-foreground: #111113;
   --sidebar-border: #e4e4e7;
-  --sidebar-ring: #71717a;
+  --sidebar-ring: #a64b00;
 }
 
 .dark {
@@ -164,8 +166,9 @@
   --card-foreground: #f4f4f5;
   --popover: #1c1c1f;
   --popover-foreground: #f4f4f5;
-  --primary: #f4f4f5;
-  --primary-foreground: #18181b;
+  --primary: #ffa500;
+  --primary-foreground: #111113;
+  --primary-strong: #ffb54a;
   --secondary: #232326;
   --secondary-foreground: #f4f4f5;
   --muted: #232326;
@@ -176,7 +179,7 @@
   --border: #2a2a2e;
   --input: #3f3f46;
   --input-hover: #5c5c66;
-  --ring: #a1a1aa;
+  --ring: #ffa500;
 
   /* Semantic (dark): lighter ink, dark text on solid fills */
   --work: #34d399;
@@ -196,12 +199,12 @@
 
   --sidebar: #18181b;
   --sidebar-foreground: #f4f4f5;
-  --sidebar-primary: #f4f4f5;
-  --sidebar-primary-foreground: #18181b;
+  --sidebar-primary: #ffa500;
+  --sidebar-primary-foreground: #111113;
   --sidebar-accent: #232326;
   --sidebar-accent-foreground: #f4f4f5;
   --sidebar-border: #2a2a2e;
-  --sidebar-ring: #a1a1aa;
+  --sidebar-ring: #ffa500;
 
   --sticky-edge-shadow-left: 4px 0 8px -5px rgb(0 0 0 / 0.48);
   --sticky-edge-shadow-right: -4px 0 8px -5px rgb(0 0 0 / 0.48);

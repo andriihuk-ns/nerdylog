@@ -24,7 +24,7 @@ export function PersonHeader({ user, office, from }: { user: DirectoryUser; offi
     <header className="flex flex-col gap-4">
       <Link
         href={from === "directory" ? "/admin?tab=directory" : "/team"}
-        className="hit-target inline-flex w-fit items-center gap-1 rounded-md text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        className="hit-target inline-flex w-fit items-center gap-1 rounded-md text-muted-foreground hover:text-primary-strong focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
       >
         <ChevronLeft aria-hidden className="size-4" />
         {from === "directory" ? t("backDirectory") : t("backTeam")}
@@ -37,19 +37,21 @@ export function PersonHeader({ user, office, from }: { user: DirectoryUser; offi
         <div className="flex min-w-0 flex-col gap-2">
           <h1 className="text-xl font-semibold tracking-[-0.01em] sm:text-2xl">{user.fullName}</h1>
           <dl className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
-            <div className="inline-flex items-center gap-1.5">
-              <dt className="sr-only">{t("position")}</dt>
-              <dd className="inline-flex items-center gap-1.5">
-                <BriefcaseBusiness aria-hidden className="size-4 shrink-0" />
-                {user.title || t("noTitle")}
-              </dd>
-            </div>
+            {user.title?.trim() ? (
+              <div className="inline-flex items-center gap-1.5">
+                <dt className="sr-only">{t("position")}</dt>
+                <dd className="inline-flex items-center gap-1.5">
+                  <BriefcaseBusiness aria-hidden className="size-4 shrink-0" />
+                  {user.title.trim()}
+                </dd>
+              </div>
+            ) : null}
             <div className="inline-flex items-center gap-1.5">
               <dt className="sr-only">{t("email")}</dt>
               <dd>
                 <a
                   href={`mailto:${user.email}`}
-                  className="inline-flex items-center gap-1.5 rounded-sm hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  className="inline-flex items-center gap-1.5 rounded-sm hover:text-primary-strong focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 >
                   <Mail aria-hidden className="size-4 shrink-0" />
                   {user.email}

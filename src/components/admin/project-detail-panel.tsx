@@ -44,7 +44,7 @@ export function ProjectDetailPanel({ project, channels }: Props) {
 
   return (
     <section className="flex flex-col gap-6" aria-labelledby="project-detail-title">
-      <Link href="/admin?tab=projects" className="inline-flex min-h-11 w-fit items-center gap-2 rounded-sm text-sm font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      <Link href="/admin?tab=projects" className="inline-flex min-h-11 w-fit items-center gap-2 rounded-sm text-sm font-medium text-muted-foreground hover:text-primary-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
         <ArrowLeft aria-hidden className="size-4" />
         {t("backToProjects")}
       </Link>

@@ -86,7 +86,7 @@ export function SummaryGrid({ rows, weeks, today, avatars, selfId }: Props) {
                 <Link
                   href={row.userId === selfId ? "/my-time" : `/people/${row.userId}?from=team`}
                   title={tTeam("open", { name: row.fullName })}
-                  className="flex min-h-11 items-center gap-2 rounded-md px-2 hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  className="flex min-h-11 items-center gap-2 rounded-md px-2 hover:bg-muted/60 hover:text-primary-strong focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 >
                   <Avatar size="sm">
                     {avatars[row.userId] ? <AvatarImage src={avatars[row.userId] ?? undefined} alt="" /> : null}

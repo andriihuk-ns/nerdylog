@@ -22,11 +22,11 @@ export function NavLinks({ items, label }: { items: NavItem[]; label: string }) 
             href={item.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "hit-target inline-flex items-center rounded-md px-3 font-medium text-muted-foreground transition-colors duration-[var(--duration-fast)] ease-standard hover:text-foreground",
-              active && "text-foreground",
+              "hit-target inline-flex items-center rounded-md px-3 font-medium text-muted-foreground transition-colors duration-[var(--duration-fast)] ease-standard hover:text-primary-strong",
+              active && "text-primary-strong",
             )}
           >
-            <span className={cn("border-b-2 border-transparent py-1", active && "border-foreground")}>
+            <span className={cn("border-b-2 border-transparent py-1", active && "border-primary-strong")}>
               {item.label}
             </span>
           </Link>
