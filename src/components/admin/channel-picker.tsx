@@ -145,6 +145,7 @@ export function ChannelPicker({ channels, value, onChange, taken, noneLabel, dis
             </li>
           ))}
         </ul>
+        {channels ? <p className="px-2 pt-2 text-xs text-muted-foreground">{t("privateHint")}</p> : null}
       </PopoverContent>
     </Popover>
   );
